@@ -1,0 +1,79 @@
+<?php
+
+use App\Http\Controllers\Baak\BaakController;
+use App\Http\Controllers\Baak\FakultasController;
+use App\Http\Controllers\Baak\KelasController;
+use App\Http\Controllers\DosenController;
+use App\Http\Controllers\MahasiswaController;
+use App\Http\Controllers\Baak\MataKuliahController;
+use App\Http\Controllers\Baak\ProdiController;
+use Illuminate\Support\Facades\Route;
+
+// Root route
+Route::get('/', function () {
+    if (auth()->check()) {
+        return match (auth()->user()->role) {
+            'mahasiswa' => redirect()->route('mahasiswa.dashboard'),
+            'dosen' => redirect()->route('dosen.dashboard'),
+            'baak' => redirect()->route('baak.dashboard'),
+            default => redirect()->route('login'),
+        };
+    }
+    return redirect()->route('login');
+})->name('home');
+
+// Auth routes
+require __DIR__ . '/auth.php';
+
+// BAAK routes
+Route::middleware(['auth', 'role:baak'])->prefix('baak')->name('baak.')->group(function () {
+    Route::get('/dashboard', [BaakController::class, 'dashboard'])->name('dashboard');
+
+    // Mahasiswa Routes
+    Route::resource('mahasiswa', \App\Http\Controllers\Baak\MahasiswaController::class);
+    Route::post('/mahasiswa/{mahasiswa}/reset-password', [\App\Http\Controllers\Baak\MahasiswaController::class, 'resetPassword'])->name('mahasiswa.reset-password');
+    // Dosen Routes
+    Route::resource('dosen', \App\Http\Controllers\Baak\DosenController::class);
+    Route::resource('kelas', KelasController::class);
+    // Fakultas Routes
+    Route::resource('fakultas', FakultasController::class)->parameters([
+        'fakultas' => 'kode_fakultas'
+    ]);
+    // Prodi Routes
+    Route::resource('prodi', ProdiController::class)->parameters([
+        'prodi' => 'kode_prodi'
+    ]);
+    // Mata Kuliah Routes
+    Route::resource('mata-kuliah', MataKuliahController::class)->parameters([
+        'mata-kuliah' => 'kode_matkul'
+    ]);
+});
+
+
+// Mahasiswa routes
+Route::middleware(['auth', 'role:mahasiswa'])->prefix('mahasiswa')->name('mahasiswa.')->group(function () {
+    Route::get('/dashboard', [MahasiswaController::class, 'dashboard'])->name('dashboard');
+    Route::get('/nilai', [MahasiswaController::class, 'nilai'])->name('nilai');
+    Route::get('/penjadwalan', [MahasiswaController::class, 'penjadwalan'])->name('penjadwalan');
+    Route::get('/krs', [MahasiswaController::class, 'krs'])->name('krs');
+    Route::get('/absensi', [MahasiswaController::class, 'absensi'])->name('absensi');
+    Route::get('/profile', [MahasiswaController::class, 'profile'])->name('profile');
+    Route::get('/perbarui-data', [MahasiswaController::class, 'perbarui_data'])->name('profile.perbarui-data');
+    Route::get('/ganti-password', [MahasiswaController::class, 'ganti_password'])->name('profile.ganti-password');
+});
+
+// Dosen routes
+Route::middleware(['auth', 'role:dosen'])->prefix('dosen')->name('dosen.')->group(function () {
+    Route::get('/dashboard', action: [DosenController::class, 'dashboard'])->name('dashboard');
+    Route::get('/nilai', [DosenController::class, 'nilai'])->name('nilai');
+    Route::get('/nilai/input-nilai', [DosenController::class, 'input_nilai'])->name('input_nilai');
+    Route::get('/nilai/edit-nilai', [DosenController::class, 'edit_nilai'])->name('edit_nilai');
+    Route::get('/rps', [DosenController::class,'rps'])->name('rps');
+    Route::get('/rps/tambah-rps', [DosenController::class, 'tambah_rps'])->name('tambah_rps');
+    Route::get('/rps/edit-rps', [DosenController::class, 'edit_rps'])->name('edit_rps');
+    Route::get('/absensi', [DosenController::class, 'absensi'])->name('absensi');
+    Route::get('/jadwal', [DosenController::class, 'jadwal'])->name('jadwal');
+});
+
+
+
