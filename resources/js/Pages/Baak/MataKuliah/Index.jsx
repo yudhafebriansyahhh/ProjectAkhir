@@ -2,14 +2,34 @@ import { useState } from 'react';
 import { Head, Link, router, usePage } from '@inertiajs/react';
 import BaakLayout from '@/Layouts/BaakLayout';
 
-export default function Index({ mataKuliah, filters }) {
+export default function Index({ mata_kuliah, prodi_list, filters }) {
     const { flash } = usePage().props;
     const [search, setSearch] = useState(filters.search || '');
+    const [prodi, setProdi] = useState(filters.prodi || '');
     const [semester, setSemester] = useState(filters.semester || '');
+    const [kategori, setKategori] = useState(filters.kategori || '');
+    const [status, setStatus] = useState(filters.status || '');
+
+    const kategoriList = [
+        { value: 'wajib', label: 'Wajib' },
+        { value: 'pilihan', label: 'Pilihan' },
+        { value: 'umum', label: 'Umum' }
+    ];
+
+    const statusList = [
+        { value: '1', label: 'Aktif' },
+        { value: '0', label: 'Nonaktif' }
+    ];
 
     const handleFilter = (e) => {
         e.preventDefault();
-        router.get(route('baak.mata-kuliah.index'), { search, semester }, {
+        router.get(route('baak.mata-kuliah.index'), {
+            search,
+            prodi,
+            semester,
+            kategori,
+            status
+        }, {
             preserveState: true,
             preserveScroll: true,
         });
@@ -17,7 +37,10 @@ export default function Index({ mataKuliah, filters }) {
 
     const handleReset = () => {
         setSearch('');
+        setProdi('');
         setSemester('');
+        setKategori('');
+        setStatus('');
         router.get(route('baak.mata-kuliah.index'));
     };
 
@@ -48,25 +71,49 @@ export default function Index({ mataKuliah, filters }) {
         }
     };
 
-    const getSemesterBadge = (sem) => {
-        const colors = {
-            1: 'bg-blue-100 text-blue-800',
-            2: 'bg-green-100 text-green-800',
-            3: 'bg-yellow-100 text-yellow-800',
-            4: 'bg-orange-100 text-orange-800',
-            5: 'bg-red-100 text-red-800',
-            6: 'bg-purple-100 text-purple-800',
-            7: 'bg-pink-100 text-pink-800',
-            8: 'bg-indigo-100 text-indigo-800',
+    const handleToggleStatus = (kode_matkul, nama_matkul, is_active) => {
+        const action = is_active ? 'nonaktifkan' : 'aktifkan';
+
+        if (window.Swal) {
+            window.Swal.fire({
+                title: `${action.charAt(0).toUpperCase() + action.slice(1)} Mata Kuliah?`,
+                text: `Apakah Anda yakin ingin ${action} mata kuliah "${nama_matkul}"?`,
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonColor: is_active ? '#dc2626' : '#10b981',
+                cancelButtonColor: '#6b7280',
+                confirmButtonText: `Ya, ${action.charAt(0).toUpperCase() + action.slice(1)}!`,
+                cancelButtonText: 'Batal'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    router.post(route('baak.mata-kuliah.toggle-status', kode_matkul), {}, {
+                        preserveScroll: true,
+                    });
+                }
+            });
+        } else {
+            if (confirm(`Apakah Anda yakin ingin ${action} mata kuliah "${nama_matkul}"?`)) {
+                router.post(route('baak.mata-kuliah.toggle-status', kode_matkul), {}, {
+                    preserveScroll: true,
+                });
+            }
+        }
+    };
+
+    const getKategoriBadge = (kategori) => {
+        const badges = {
+            'wajib': 'bg-red-100 text-red-700',
+            'pilihan': 'bg-blue-100 text-blue-700',
+            'umum': 'bg-green-100 text-green-700'
         };
-        return colors[sem] || 'bg-gray-100 text-gray-800';
+        return badges[kategori] || 'bg-gray-100 text-gray-700';
     };
 
     return (
         <BaakLayout title="Data Mata Kuliah">
             <Head title="Data Mata Kuliah" />
 
-            <div className="container mx-auto px-4 py-8">
+            <div className="p-4 md:p-6">
                 {/* Header */}
                 <div className="mb-8">
                     <h1 className="text-2xl font-bold text-gray-700 mb-2">Data Mata Kuliah</h1>
@@ -89,10 +136,10 @@ export default function Index({ mataKuliah, filters }) {
                 )}
 
                 {/* Filter & Add */}
-                <div className="mb-6 bg-white rounded-lg shadow-sm border border-gray-200 p-4">
-                    <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
+                <div className="mb-6 bg-white rounded-lg border border-gray-200 p-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-3">
                         {/* Search */}
-                        <div className="md:col-span-2">
+                        <div className="lg:col-span-2">
                             <input
                                 type="text"
                                 value={search}
@@ -102,6 +149,21 @@ export default function Index({ mataKuliah, filters }) {
                             />
                         </div>
 
+                        {/* Prodi Filter */}
+                        <select
+                            value={prodi}
+                            onChange={(e) => setProdi(e.target.value)}
+                            className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                        >
+                            <option value="">Semua Prodi</option>
+                            <option value="umum">Mata Kuliah Umum</option>
+                            {prodi_list.map((item) => (
+                                <option key={item.kode_prodi} value={item.kode_prodi}>
+                                    {item.nama_prodi}
+                                </option>
+                            ))}
+                        </select>
+
                         {/* Semester Filter */}
                         <select
                             value={semester}
@@ -110,20 +172,33 @@ export default function Index({ mataKuliah, filters }) {
                         >
                             <option value="">Semua Semester</option>
                             {[1, 2, 3, 4, 5, 6, 7, 8].map((sem) => (
-                                <option key={sem} value={sem}>
-                                    Semester {sem}
-                                </option>
+                                <option key={sem} value={sem}>Semester {sem}</option>
                             ))}
                         </select>
 
-                        {/* Add Button Desktop */}
-                        <Link
-                            href={route('baak.mata-kuliah.create')}
-                            className="hidden md:inline-flex items-center justify-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium whitespace-nowrap"
+                        {/* Kategori Filter */}
+                        <select
+                            value={kategori}
+                            onChange={(e) => setKategori(e.target.value)}
+                            className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
                         >
-                            <i className="fas fa-plus mr-2"></i>
-                            Tambah Mata Kuliah
-                        </Link>
+                            <option value="">Semua Kategori</option>
+                            {kategoriList.map((item) => (
+                                <option key={item.value} value={item.value}>{item.label}</option>
+                            ))}
+                        </select>
+
+                        {/* Status Filter */}
+                        <select
+                            value={status}
+                            onChange={(e) => setStatus(e.target.value)}
+                            className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                        >
+                            <option value="">Semua Status</option>
+                            {statusList.map((item) => (
+                                <option key={item.value} value={item.value}>{item.label}</option>
+                            ))}
+                        </select>
                     </div>
 
                     {/* Filter Buttons */}
@@ -135,7 +210,7 @@ export default function Index({ mataKuliah, filters }) {
                             <i className="fas fa-filter"></i>
                             <span>Filter</span>
                         </button>
-                        {(search || semester) && (
+                        {(search || prodi || semester || kategori || status) && (
                             <button
                                 onClick={handleReset}
                                 className="flex-1 md:flex-none bg-gray-100 hover:bg-gray-200 px-4 py-2 rounded-lg text-sm font-medium text-gray-700 flex items-center justify-center gap-2 transition-colors"
@@ -144,21 +219,20 @@ export default function Index({ mataKuliah, filters }) {
                                 <span>Reset</span>
                             </button>
                         )}
-                        {/* Add Button Mobile */}
                         <Link
                             href={route('baak.mata-kuliah.create')}
-                            className="md:hidden flex-1 bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm font-medium flex items-center justify-center gap-2 transition-colors"
+                            className="flex-1 md:flex-none bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm font-medium flex items-center justify-center gap-2 transition-colors"
                         >
                             <i className="fas fa-plus"></i>
-                            <span>Tambah</span>
+                            <span>Tambah Mata Kuliah</span>
                         </Link>
                     </div>
                 </div>
 
                 {/* Table - Desktop */}
-                <div className="hidden md:block bg-white rounded-lg shadow-sm overflow-hidden border border-gray-200">
+                <div className="hidden md:block bg-white rounded-lg overflow-hidden border border-gray-200">
                     <div className="overflow-x-auto">
-                        <table className="w-full min-w-[800px]">
+                        <table className="w-full">
                             <thead className="bg-gray-50">
                                 <tr className="text-gray-600 font-semibold text-xs">
                                     <th className="px-6 py-4 text-left uppercase tracking-wider">No</th>
@@ -166,16 +240,19 @@ export default function Index({ mataKuliah, filters }) {
                                     <th className="px-6 py-3 text-left uppercase tracking-wider">Nama Mata Kuliah</th>
                                     <th className="px-6 py-3 text-center uppercase tracking-wider">SKS</th>
                                     <th className="px-6 py-3 text-center uppercase tracking-wider">Semester</th>
-                                    <th className="px-6 py-3 text-center uppercase tracking-wider">Jumlah Kelas</th>
+                                    <th className="px-6 py-3 text-left uppercase tracking-wider">Program Studi</th>
+                                    <th className="px-6 py-3 text-center uppercase tracking-wider">Kategori</th>
+                                    <th className="px-6 py-3 text-center uppercase tracking-wider">Kelas</th>
+                                    <th className="px-6 py-3 text-center uppercase tracking-wider">Status</th>
                                     <th className="px-6 py-3 text-center uppercase tracking-wider">Aksi</th>
                                 </tr>
                             </thead>
                             <tbody className="bg-white divide-y divide-gray-200">
-                                {mataKuliah.data.length > 0 ? (
-                                    mataKuliah.data.map((item, index) => (
+                                {mata_kuliah.data.length > 0 ? (
+                                    mata_kuliah.data.map((item, index) => (
                                         <tr key={item.kode_matkul} className="hover:bg-gray-50">
                                             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
-                                                {mataKuliah.from + index}
+                                                {mata_kuliah.from + index}
                                             </td>
                                             <td className="px-6 py-4 whitespace-nowrap">
                                                 <span className="px-2 py-1 text-xs font-semibold text-blue-800 bg-blue-100 rounded-lg">
@@ -185,21 +262,46 @@ export default function Index({ mataKuliah, filters }) {
                                             <td className="px-6 py-4 text-sm text-gray-700 font-medium">
                                                 {item.nama_matkul}
                                             </td>
-                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700 text-center font-medium">
+                                            <td className="px-6 py-4 whitespace-nowrap text-center text-sm text-gray-700 font-medium">
                                                 {item.sks}
                                             </td>
+                                            <td className="px-6 py-4 whitespace-nowrap text-center text-sm text-gray-700">
+                                                {item.semester}
+                                            </td>
+                                            <td className="px-6 py-4 text-sm text-gray-700">
+                                                {item.prodi ? item.prodi.nama_prodi : <span className="text-green-600 font-medium">Mata Kuliah Umum</span>}
+                                            </td>
                                             <td className="px-6 py-4 whitespace-nowrap text-center">
-                                                <span className={`px-2 py-1 rounded-lg text-xs font-semibold ${getSemesterBadge(item.semester)}`}>
-                                                    Semester {item.semester}
+                                                <span className={`px-3 py-1 rounded-full text-xs font-semibold ${getKategoriBadge(item.kategori)}`}>
+                                                    {item.kategori.toUpperCase()}
                                                 </span>
                                             </td>
-                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700 text-center">
-                                                <span className="inline-flex items-center px-2 py-1 rounded-lg text-xs font-medium bg-gray-100 text-gray-800">
+                                            <td className="px-6 py-4 whitespace-nowrap text-center">
+                                                <span className="inline-flex items-center px-2 py-1 rounded-lg text-xs font-medium bg-purple-100 text-purple-800">
                                                     {item.kelas_count} Kelas
                                                 </span>
                                             </td>
+                                            <td className="px-6 py-4 whitespace-nowrap text-center">
+                                                <button
+                                                    onClick={() => handleToggleStatus(item.kode_matkul, item.nama_matkul, item.is_active)}
+                                                    className={`px-3 py-1 rounded-full text-xs font-semibold transition-colors ${
+                                                        item.is_active
+                                                            ? 'bg-green-100 text-green-700 hover:bg-green-200'
+                                                            : 'bg-red-100 text-red-700 hover:bg-red-200'
+                                                    }`}
+                                                >
+                                                    {item.is_active ? 'AKTIF' : 'NONAKTIF'}
+                                                </button>
+                                            </td>
                                             <td className="px-6 py-4 whitespace-nowrap text-sm text-center">
                                                 <div className="flex items-center justify-center gap-2">
+                                                    <Link
+                                                        href={route('baak.mata-kuliah.show', item.kode_matkul)}
+                                                        className="bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded text-xs font-medium transition-colors"
+                                                        title="Detail"
+                                                    >
+                                                        <i className="fas fa-eye"></i>
+                                                    </Link>
                                                     <Link
                                                         href={route('baak.mata-kuliah.edit', item.kode_matkul)}
                                                         className="bg-yellow-500 hover:bg-yellow-600 text-white px-3 py-1 rounded text-xs font-medium transition-colors"
@@ -220,7 +322,7 @@ export default function Index({ mataKuliah, filters }) {
                                     ))
                                 ) : (
                                     <tr>
-                                        <td colSpan="7" className="px-6 py-8 text-center text-gray-500">
+                                        <td colSpan="10" className="px-6 py-8 text-center text-gray-500">
                                             <i className="fas fa-inbox text-4xl mb-2 text-gray-400"></i>
                                             <p>Tidak ada data mata kuliah</p>
                                         </td>
@@ -231,13 +333,13 @@ export default function Index({ mataKuliah, filters }) {
                     </div>
 
                     {/* Pagination Desktop */}
-                    {mataKuliah.last_page > 1 && (
+                    {mata_kuliah.last_page > 1 && (
                         <div className="bg-gray-50 px-6 py-4 border-t border-gray-200 flex items-center justify-between">
                             <div className="text-sm text-gray-600">
-                                Menampilkan {mataKuliah.from} - {mataKuliah.to} dari {mataKuliah.total} data
+                                Menampilkan {mata_kuliah.from} - {mata_kuliah.to} dari {mata_kuliah.total} data
                             </div>
                             <div className="flex gap-2">
-                                {mataKuliah.links.map((link, index) => (
+                                {mata_kuliah.links.map((link, index) => (
                                     <Link
                                         key={index}
                                         href={link.url || '#'}
@@ -260,48 +362,62 @@ export default function Index({ mataKuliah, filters }) {
 
                 {/* Cards - Mobile */}
                 <div className="block md:hidden space-y-4">
-                    {mataKuliah.data.length > 0 ? (
-                        mataKuliah.data.map((item) => (
-                            <div key={item.kode_matkul} className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
+                    {mata_kuliah.data.length > 0 ? (
+                        mata_kuliah.data.map((item) => (
+                            <div key={item.kode_matkul} className="bg-white rounded-lg border border-gray-200 p-4">
                                 <div className="flex justify-between items-start mb-3">
-                                    <div className="flex-1">
-                                        <h3 className="font-semibold text-gray-900">{item.nama_matkul}</h3>
-                                        <div className="flex gap-2 mt-1">
-                                            <span className="inline-block px-2 py-1 text-xs font-semibold text-blue-800 bg-blue-100 rounded-lg">
+                                    <div className="flex-1 min-w-0">
+                                        <div className="flex items-center gap-2 mb-1 flex-wrap">
+                                            <span className="px-2 py-0.5 text-xs font-semibold text-blue-800 bg-blue-100 rounded">
                                                 {item.kode_matkul}
                                             </span>
-                                            <span className={`px-2 py-1 rounded-lg text-xs font-semibold ${getSemesterBadge(item.semester)}`}>
-                                                Sem {item.semester}
+                                            <span className={`px-2 py-0.5 text-xs font-semibold rounded ${getKategoriBadge(item.kategori)}`}>
+                                                {item.kategori.toUpperCase()}
                                             </span>
                                         </div>
+                                        <h3 className="font-semibold text-gray-900 text-sm break-words">{item.nama_matkul}</h3>
                                     </div>
+                                    <button
+                                        onClick={() => handleToggleStatus(item.kode_matkul, item.nama_matkul, item.is_active)}
+                                        className={`px-2 py-1 rounded text-xs font-semibold ml-2 flex-shrink-0 ${
+                                            item.is_active
+                                                ? 'bg-green-100 text-green-700'
+                                                : 'bg-red-100 text-red-700'
+                                        }`}
+                                    >
+                                        {item.is_active ? 'AKTIF' : 'NON'}
+                                    </button>
                                 </div>
-                                <div className="space-y-1 mb-3">
-                                    <p className="text-sm text-gray-600">
-                                        <span className="font-medium">SKS:</span> {item.sks}
+                                <div className="space-y-1 mb-3 text-sm">
+                                    <p className="text-gray-600">
+                                        <span className="font-medium">SKS:</span> {item.sks} | <span className="font-medium">Semester:</span> {item.semester}
                                     </p>
-                                    <p className="text-sm text-gray-600">
-                                        <span className="font-medium">Jumlah Kelas:</span>{' '}
-                                        <span className="inline-flex items-center px-2 py-0.5 rounded-lg text-xs font-medium bg-gray-100 text-gray-800">
+                                    <p className="text-gray-600">
+                                        <span className="font-medium">Prodi:</span> {item.prodi ? item.prodi.nama_prodi : <span className="text-green-600">Mata Kuliah Umum</span>}
+                                    </p>
+                                    <p className="text-gray-600">
+                                        <span className="font-medium">Kelas:</span>{' '}
+                                        <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-purple-100 text-purple-800">
                                             {item.kelas_count} Kelas
                                         </span>
                                     </p>
-                                    {item.deskripsi && (
-                                        <p className="text-sm text-gray-600">
-                                            <span className="font-medium">Deskripsi:</span> {item.deskripsi.substring(0, 50)}...
-                                        </p>
-                                    )}
                                 </div>
-                                <div className="flex gap-2 mt-3 pt-3 border-t border-gray-100">
+                                <div className="grid grid-cols-3 gap-2 mt-3 pt-3 border-t border-gray-100">
+                                    <Link
+                                        href={route('baak.mata-kuliah.show', item.kode_matkul)}
+                                        className="bg-blue-500 hover:bg-blue-600 text-white px-3 py-2 rounded text-sm font-medium text-center transition-colors"
+                                    >
+                                        <i className="fas fa-eye mr-1"></i> Detail
+                                    </Link>
                                     <Link
                                         href={route('baak.mata-kuliah.edit', item.kode_matkul)}
-                                        className="flex-1 bg-yellow-500 hover:bg-yellow-600 text-white px-3 py-2 rounded text-sm font-medium text-center transition-colors"
+                                        className="bg-yellow-500 hover:bg-yellow-600 text-white px-3 py-2 rounded text-sm font-medium text-center transition-colors"
                                     >
                                         <i className="fas fa-edit mr-1"></i> Edit
                                     </Link>
                                     <button
                                         onClick={() => handleDelete(item.kode_matkul, item.nama_matkul)}
-                                        className="flex-1 bg-red-500 hover:bg-red-600 text-white px-3 py-2 rounded text-sm font-medium transition-colors"
+                                        className="bg-red-500 hover:bg-red-600 text-white px-3 py-2 rounded text-sm font-medium transition-colors"
                                     >
                                         <i className="fas fa-trash mr-1"></i> Hapus
                                     </button>
@@ -309,20 +425,20 @@ export default function Index({ mataKuliah, filters }) {
                             </div>
                         ))
                     ) : (
-                        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-8 text-center">
+                        <div className="bg-white rounded-lg border border-gray-200 p-8 text-center">
                             <i className="fas fa-inbox text-4xl mb-2 text-gray-400"></i>
                             <p className="text-gray-500">Tidak ada data mata kuliah</p>
                         </div>
                     )}
 
                     {/* Pagination Mobile */}
-                    {mataKuliah.last_page > 1 && (
-                        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
+                    {mata_kuliah.last_page > 1 && (
+                        <div className="bg-white rounded-lg border border-gray-200 p-4">
                             <div className="text-sm text-gray-600 mb-3 text-center">
-                                Menampilkan {mataKuliah.from} - {mataKuliah.to} dari {mataKuliah.total} data
+                                Menampilkan {mata_kuliah.from} - {mata_kuliah.to} dari {mata_kuliah.total} data
                             </div>
                             <div className="flex flex-wrap gap-2 justify-center">
-                                {mataKuliah.links.map((link, index) => (
+                                {mata_kuliah.links.map((link, index) => (
                                     <Link
                                         key={index}
                                         href={link.url || '#'}

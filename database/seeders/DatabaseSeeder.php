@@ -1,463 +1,613 @@
 <?php
-// database/seeders/DatabaseSeeder.php
 
 namespace Database\Seeders;
 
-use App\Models\JadwalPengisianKrs;
-use App\Models\RiwayatAkademik;
-use App\Models\Rps;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
-use App\Models\User;
-use App\Models\Fakultas;
-use App\Models\Prodi;
-use App\Models\Baak;
-use App\Models\Dosen;
-use App\Models\Mahasiswa;
-use App\Models\MataKuliah;
-use App\Models\Kelas;
-use App\Models\PeriodeRegistrasi;
-use App\Models\RegistrasiSemester;
-use App\Models\Krs;
-use App\Models\DetailKrs;
-use App\Models\BobotNilai;
-use App\Models\NilaiMahasiswa;
+use Carbon\Carbon;
 
 class DatabaseSeeder extends Seeder
 {
     public function run(): void
     {
-        // ============================================
-        // 1. FAKULTAS
-        // ============================================
-        $fakultasTeknologi = Fakultas::create([
-            'kode_fakultas' => '301',
-            'nama_fakultas' => 'Fakultas Teknologi Informasi',
-        ]);
+        DB::statement('SET FOREIGN_KEY_CHECKS=0;');
 
-        // ============================================
-        // 2. PRODI
-        // ============================================
-        $prodiTI = Prodi::create([
-            'kode_prodi' => '55',
-            'kode_fakultas' => '301',
-            'nama_prodi' => 'Teknik Informatika',
-            'jenjang' => 'S1',
-        ]);
-
-        // ============================================
-        // 3. USER & BAAK
-        // ============================================
-        $userBaak = User::create([
-            'role' => 'baak',
-            'username' => 'baak@itbriau.ac.id',
-            'email' => 'baak@itbriau.ac.id',
-            'password' => Hash::make('password'),
-        ]);
-
-        Baak::create([
-            'user_id' => $userBaak->id,
-            'nama' => 'Admin BAAK',
-            'nip' => '198501012010011001',
-            'no_hp' => '081234567890',
-        ]);
-
-        // ============================================
-        // 4. USER & DOSEN
-        // ============================================
-        $userDosen1 = User::create([
-            'role' => 'dosen',
-            'username' => '1234567890',
-            'email' => 'dosen1@itbriau.ac.id',
-            'password' => Hash::make('password'),
-        ]);
-
-        $dosen1 = Dosen::create([
-            'user_id' => $userDosen1->id,
-            'nama' => 'Dr. Muhammad Raihan, S.Kom., M.T.',
-            'nip' => '1234567890',
-            'kode_prodi' => '55',
-            'jenis_kelamin' => 'Laki-laki',
-            'alamat' => 'Jl. Imam Munandar No. 113, Pekanbaru',
-            'no_hp' => '081234567891',
-        ]);
-
-        // ============================================
-        // 5. MATA KULIAH (Semester 1-7)
-        // ============================================
-        $mataKuliah = [
-            // Semester 1
-            ['kode' => 'TIF101', 'nama' => 'Algoritma dan Pemrograman', 'sks' => 4, 'semester' => 1],
-            ['kode' => 'TIF102', 'nama' => 'Matematika Diskrit', 'sks' => 3, 'semester' => 1],
-            ['kode' => 'TIF103', 'nama' => 'Pengantar Teknologi Informasi', 'sks' => 3, 'semester' => 1],
-            ['kode' => 'TIF104', 'nama' => 'Bahasa Inggris I', 'sks' => 2, 'semester' => 1],
-            ['kode' => 'TIF105', 'nama' => 'Pancasila', 'sks' => 2, 'semester' => 1],
-            ['kode' => 'TIF106', 'nama' => 'Kalkulus I', 'sks' => 3, 'semester' => 1],
-            ['kode' => 'TIF107', 'nama' => 'Fisika Dasar', 'sks' => 3, 'semester' => 1],
-            // Total: 20 SKS
-
-            // Semester 2
-            ['kode' => 'TIF201', 'nama' => 'Struktur Data', 'sks' => 4, 'semester' => 2],
-            ['kode' => 'TIF202', 'nama' => 'Matematika Lanjut', 'sks' => 3, 'semester' => 2],
-            ['kode' => 'TIF203', 'nama' => 'Sistem Digital', 'sks' => 3, 'semester' => 2],
-            ['kode' => 'TIF204', 'nama' => 'Bahasa Inggris II', 'sks' => 2, 'semester' => 2],
-            ['kode' => 'TIF205', 'nama' => 'Agama', 'sks' => 2, 'semester' => 2],
-            ['kode' => 'TIF206', 'nama' => 'Kalkulus II', 'sks' => 3, 'semester' => 2],
-            ['kode' => 'TIF207', 'nama' => 'Statistika', 'sks' => 3, 'semester' => 2],
-            // Total: 20 SKS
-
-            // Semester 3
-            ['kode' => 'TIF301', 'nama' => 'Basis Data', 'sks' => 4, 'semester' => 3],
-            ['kode' => 'TIF302', 'nama' => 'Pemrograman Berorientasi Objek', 'sks' => 4, 'semester' => 3],
-            ['kode' => 'TIF303', 'nama' => 'Organisasi Komputer', 'sks' => 3, 'semester' => 3],
-            ['kode' => 'TIF304', 'nama' => 'Aljabar Linear', 'sks' => 3, 'semester' => 3],
-            ['kode' => 'TIF305', 'nama' => 'Sistem Operasi', 'sks' => 3, 'semester' => 3],
-            ['kode' => 'TIF306', 'nama' => 'Kewarganegaraan', 'sks' => 2, 'semester' => 3],
-            ['kode' => 'TIF307', 'nama' => 'Etika Profesi', 'sks' => 2, 'semester' => 3],
-            // Total: 21 SKS
-
-            // Semester 4
-            ['kode' => 'TIF401', 'nama' => 'Pemrograman Web', 'sks' => 4, 'semester' => 4],
-            ['kode' => 'TIF402', 'nama' => 'Jaringan Komputer', 'sks' => 4, 'semester' => 4],
-            ['kode' => 'TIF403', 'nama' => 'Rekayasa Perangkat Lunak', 'sks' => 3, 'semester' => 4],
-            ['kode' => 'TIF404', 'nama' => 'Grafika Komputer', 'sks' => 3, 'semester' => 4],
-            ['kode' => 'TIF405', 'nama' => 'Metode Numerik', 'sks' => 3, 'semester' => 4],
-            ['kode' => 'TIF406', 'nama' => 'Probabilitas dan Statistik', 'sks' => 3, 'semester' => 4],
-            // Total: 20 SKS
-
-            // Semester 5
-            ['kode' => 'TIF501', 'nama' => 'Kecerdasan Buatan', 'sks' => 4, 'semester' => 5],
-            ['kode' => 'TIF502', 'nama' => 'Keamanan Jaringan', 'sks' => 3, 'semester' => 5],
-            ['kode' => 'TIF503', 'nama' => 'Pemrograman Mobile', 'sks' => 4, 'semester' => 5],
-            ['kode' => 'TIF504', 'nama' => 'Analisis dan Desain Sistem', 'sks' => 3, 'semester' => 5],
-            ['kode' => 'TIF505', 'nama' => 'Data Mining', 'sks' => 3, 'semester' => 5],
-            ['kode' => 'TIF506', 'nama' => 'Manajemen Proyek TI', 'sks' => 3, 'semester' => 5],
-            // Total: 20 SKS
-
-            // Semester 6
-            ['kode' => 'TIF601', 'nama' => 'Machine Learning', 'sks' => 4, 'semester' => 6],
-            ['kode' => 'TIF602', 'nama' => 'Cloud Computing', 'sks' => 3, 'semester' => 6],
-            ['kode' => 'TIF603', 'nama' => 'Internet of Things', 'sks' => 4, 'semester' => 6],
-            ['kode' => 'TIF604', 'nama' => 'Sistem Terdistribusi', 'sks' => 3, 'semester' => 6],
-            ['kode' => 'TIF605', 'nama' => 'Interaksi Manusia Komputer', 'sks' => 3, 'semester' => 6],
-            ['kode' => 'TIF606', 'nama' => 'Metodologi Penelitian', 'sks' => 2, 'semester' => 6],
-            ['kode' => 'TIF607', 'nama' => 'Kewirausahaan', 'sks' => 2, 'semester' => 6],
-            // Total: 21 SKS
-
-            // Semester 7
-            ['kode' => 'TIF701', 'nama' => 'Kerja Praktek', 'sks' => 4, 'semester' => 7],
-            ['kode' => 'TIF702', 'nama' => 'Blockchain Technology', 'sks' => 3, 'semester' => 7],
-            ['kode' => 'TIF703', 'nama' => 'Big Data Analytics', 'sks' => 4, 'semester' => 7],
-            ['kode' => 'TIF704', 'nama' => 'DevOps Engineering', 'sks' => 3, 'semester' => 7],
-            ['kode' => 'TIF705', 'nama' => 'Cyber Security', 'sks' => 3, 'semester' => 7],
-            ['kode' => 'TIF706', 'nama' => 'Sistem Informasi Geografis', 'sks' => 3, 'semester' => 7],
-            // Total: 20 SKS
+        // Truncate semua tabel
+        $tables = [
+            'riwayat_akademik',
+            'nilai_mahasiswa',
+            'bobot_nilai',
+            'absensi',
+            'pertemuan',
+            'detail_krs',
+            'krs',
+            'jadwal_pengisian_krs',
+            'kelas',
+            'mata_kuliah',
+            'registrasi_semester',
+            'periode_registrasi',
+            'mahasiswa',
+            'dosen',
+            'baak',
+            'prodi',
+            'fakultas',
+            'users'
         ];
 
-        $mkObjects = [];
-        foreach ($mataKuliah as $mk) {
-            $mkObjects[$mk['kode']] = MataKuliah::create([
+        foreach ($tables as $table) {
+            DB::table($table)->truncate();
+        }
+
+        DB::statement('SET FOREIGN_KEY_CHECKS=1;');
+
+        // ========================================
+        // 1. FAKULTAS
+        // ========================================
+        DB::table('fakultas')->insert([
+            ['kode_fakultas' => 'FTI', 'nama_fakultas' => 'Fakultas Teknologi Informasi', 'created_at' => now(), 'updated_at' => now()],
+            ['kode_fakultas' => 'FEB', 'nama_fakultas' => 'Fakultas Ekonomi dan Bisnis', 'created_at' => now(), 'updated_at' => now()],
+        ]);
+
+        // ========================================
+        // 2. PRODI
+        // ========================================
+        DB::table('prodi')->insert([
+            ['kode_prodi' => 'IF', 'kode_fakultas' => 'FTI', 'nama_prodi' => 'Teknik Informatika', 'jenjang' => 'S1', 'created_at' => now(), 'updated_at' => now()],
+            ['kode_prodi' => 'SI', 'kode_fakultas' => 'FTI', 'nama_prodi' => 'Sistem Informasi', 'jenjang' => 'S1', 'created_at' => now(), 'updated_at' => now()],
+            ['kode_prodi' => 'MN', 'kode_fakultas' => 'FEB', 'nama_prodi' => 'Manajemen', 'jenjang' => 'S1', 'created_at' => now(), 'updated_at' => now()],
+        ]);
+
+        // ========================================
+        // 3. USERS & BAAK
+        // ========================================
+        $baakUserId = DB::table('users')->insertGetId([
+            'role' => 'baak',
+            'username' => 'baak001',
+            'email' => 'baak@itbriau.ac.id',
+            'password' => Hash::make('baak001'),
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        DB::table('baak')->insert([
+            'user_id' => $baakUserId,
+            'nama' => 'Admin BAAK',
+            'nip' => 'BAAK001',
+            'no_hp' => '081234567890',
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        // ========================================
+        // 4. DOSEN
+        // ========================================
+        $dosenData = [
+            ['nama' => 'Dr. Ahmad Fauzi, M.Kom', 'nip' => '198501012010011001', 'kode_prodi' => 'IF', 'jk' => 'Laki-laki'],
+            ['nama' => 'Siti Nurhaliza, S.Kom., M.T', 'nip' => '198702152011012001', 'kode_prodi' => 'IF', 'jk' => 'Perempuan'],
+            ['nama' => 'Budi Santoso, M.Kom', 'nip' => '198803202012011002', 'kode_prodi' => 'SI', 'jk' => 'Laki-laki'],
+            ['nama' => 'Rina Wati, S.Kom., M.Sc', 'nip' => '198904102013012001', 'kode_prodi' => 'SI', 'jk' => 'Perempuan'],
+            ['nama' => 'Dr. Hendra Wijaya, S.E., M.M', 'nip' => '198605152014011001', 'kode_prodi' => 'MN', 'jk' => 'Laki-laki'],
+        ];
+
+        $dosenIds = [];
+        foreach ($dosenData as $dosen) {
+            // Generate email dari 8 digit terakhir NIP untuk menghindari duplikasi
+            $emailPrefix = 'dosen' . substr($dosen['nip'], -8);
+
+            $userId = DB::table('users')->insertGetId([
+                'role' => 'dosen',
+                'username' => $dosen['nip'],
+                'email' => $emailPrefix . '@itbriau.ac.id',
+                'password' => Hash::make($dosen['nip']),
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
+
+            $dosenIds[] = DB::table('dosen')->insertGetId([
+                'user_id' => $userId,
+                'nama' => $dosen['nama'],
+                'nip' => $dosen['nip'],
+                'kode_prodi' => $dosen['kode_prodi'],
+                'jenis_kelamin' => $dosen['jk'],
+                'alamat' => 'Jl. Riau No. ' . rand(1, 100) . ', Pekanbaru',
+                'no_hp' => '0812' . rand(10000000, 99999999),
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
+        }
+
+        // ========================================
+        // 5. MAHASISWA (Semester 5-7)
+        // ========================================
+        $mahasiswaData = [
+            // Semester 7 (Angkatan 2021)
+            ['nama' => 'Andi Pratama', 'kode_prodi' => 'IF', 'tahun' => 2021, 'jk' => 'Laki-laki', 'tgl_lahir' => '2003-01-15'],
+            ['nama' => 'Dewi Lestari', 'kode_prodi' => 'IF', 'tahun' => 2021, 'jk' => 'Perempuan', 'tgl_lahir' => '2003-03-20'],
+
+            // Semester 6 (Angkatan 2022)
+            ['nama' => 'Riko Saputra', 'kode_prodi' => 'SI', 'tahun' => 2022, 'jk' => 'Laki-laki', 'tgl_lahir' => '2004-05-10'],
+            ['nama' => 'Lina Marlina', 'kode_prodi' => 'SI', 'tahun' => 2022, 'jk' => 'Perempuan', 'tgl_lahir' => '2004-07-25'],
+            ['nama' => 'Fahmi Abdullah', 'kode_prodi' => 'IF', 'tahun' => 2022, 'jk' => 'Laki-laki', 'tgl_lahir' => '2004-02-14'],
+
+            // Semester 5 (Angkatan 2023)
+            ['nama' => 'Sari Melati', 'kode_prodi' => 'IF', 'tahun' => 2023, 'jk' => 'Perempuan', 'tgl_lahir' => '2005-04-18'],
+            ['nama' => 'Budi Hartono', 'kode_prodi' => 'SI', 'tahun' => 2023, 'jk' => 'Laki-laki', 'tgl_lahir' => '2005-08-22'],
+            ['nama' => 'Fitri Handayani', 'kode_prodi' => 'MN', 'tahun' => 2023, 'jk' => 'Perempuan', 'tgl_lahir' => '2005-06-30'],
+        ];
+
+        $mahasiswaIds = [];
+        foreach ($mahasiswaData as $index => $mhs) {
+            $nim = $this->generateNim($mhs['kode_prodi'], $mhs['tahun'], $index + 1);
+
+            $userId = DB::table('users')->insertGetId([
+                'role' => 'mahasiswa',
+                'username' => $nim,
+                'email' => strtolower(str_replace(' ', '', $mhs['nama'])) . '@student.itbriau.ac.id',
+                'password' => Hash::make($nim),
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
+
+            $mahasiswaIds[] = [
+                'id' => DB::table('mahasiswa')->insertGetId([
+                    'user_id' => $userId,
+                    'nim' => $nim,
+                    'nama' => $mhs['nama'],
+                    'kode_prodi' => $mhs['kode_prodi'],
+                    'id_dosen_wali' => $dosenIds[array_rand($dosenIds)],
+                    'tanggal_lahir' => $mhs['tgl_lahir'],
+                    'jenis_kelamin' => $mhs['jk'],
+                    'alamat' => 'Jl. Sudirman No. ' . rand(1, 100) . ', Pekanbaru',
+                    'no_hp' => '0813' . rand(10000000, 99999999),
+                    'status' => 'aktif',
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ]),
+                'nim' => $nim,
+                'tahun' => $mhs['tahun'],
+                'kode_prodi' => $mhs['kode_prodi']
+            ];
+        }
+
+        // ========================================
+        // 6. MATA KULIAH
+        // ========================================
+        $mataKuliahData = [
+            // Mata Kuliah Umum
+            ['kode' => 'MKU101', 'nama' => 'Pendidikan Pancasila', 'sks' => 2, 'sem' => 1, 'prodi' => null, 'kat' => 'umum'],
+            ['kode' => 'MKU102', 'nama' => 'Bahasa Indonesia', 'sks' => 2, 'sem' => 1, 'prodi' => null, 'kat' => 'umum'],
+            ['kode' => 'MKU201', 'nama' => 'Bahasa Inggris', 'sks' => 2, 'sem' => 2, 'prodi' => null, 'kat' => 'umum'],
+
+            // Teknik Informatika
+            ['kode' => 'IF101', 'nama' => 'Algoritma dan Pemrograman', 'sks' => 3, 'sem' => 1, 'prodi' => 'IF', 'kat' => 'wajib'],
+            ['kode' => 'IF102', 'nama' => 'Matematika Diskrit', 'sks' => 3, 'sem' => 1, 'prodi' => 'IF', 'kat' => 'wajib'],
+            ['kode' => 'IF201', 'nama' => 'Struktur Data', 'sks' => 3, 'sem' => 2, 'prodi' => 'IF', 'kat' => 'wajib'],
+            ['kode' => 'IF202', 'nama' => 'Basis Data', 'sks' => 3, 'sem' => 2, 'prodi' => 'IF', 'kat' => 'wajib'],
+            ['kode' => 'IF301', 'nama' => 'Pemrograman Web', 'sks' => 3, 'sem' => 3, 'prodi' => 'IF', 'kat' => 'wajib'],
+            ['kode' => 'IF302', 'nama' => 'Sistem Operasi', 'sks' => 3, 'sem' => 3, 'prodi' => 'IF', 'kat' => 'wajib'],
+            ['kode' => 'IF401', 'nama' => 'Jaringan Komputer', 'sks' => 3, 'sem' => 4, 'prodi' => 'IF', 'kat' => 'wajib'],
+            ['kode' => 'IF402', 'nama' => 'Rekayasa Perangkat Lunak', 'sks' => 3, 'sem' => 4, 'prodi' => 'IF', 'kat' => 'wajib'],
+            ['kode' => 'IF501', 'nama' => 'Kecerdasan Buatan', 'sks' => 3, 'sem' => 5, 'prodi' => 'IF', 'kat' => 'wajib'],
+            ['kode' => 'IF502', 'nama' => 'Machine Learning', 'sks' => 3, 'sem' => 5, 'prodi' => 'IF', 'kat' => 'pilihan'],
+            ['kode' => 'IF503', 'nama' => 'Cloud Computing', 'sks' => 3, 'sem' => 5, 'prodi' => 'IF', 'kat' => 'pilihan'],
+            ['kode' => 'IF601', 'nama' => 'Keamanan Informasi', 'sks' => 3, 'sem' => 6, 'prodi' => 'IF', 'kat' => 'wajib'],
+            ['kode' => 'IF602', 'nama' => 'Data Mining', 'sks' => 3, 'sem' => 6, 'prodi' => 'IF', 'kat' => 'pilihan'],
+            ['kode' => 'IF701', 'nama' => 'Metodologi Penelitian', 'sks' => 2, 'sem' => 7, 'prodi' => 'IF', 'kat' => 'wajib'],
+            ['kode' => 'IF702', 'nama' => 'Manajemen Proyek TI', 'sks' => 3, 'sem' => 7, 'prodi' => 'IF', 'kat' => 'wajib'],
+
+            // Sistem Informasi
+            ['kode' => 'SI101', 'nama' => 'Pengantar Sistem Informasi', 'sks' => 3, 'sem' => 1, 'prodi' => 'SI', 'kat' => 'wajib'],
+            ['kode' => 'SI201', 'nama' => 'Analisis dan Perancangan SI', 'sks' => 3, 'sem' => 2, 'prodi' => 'SI', 'kat' => 'wajib'],
+            ['kode' => 'SI301', 'nama' => 'Sistem Informasi Manajemen', 'sks' => 3, 'sem' => 3, 'prodi' => 'SI', 'kat' => 'wajib'],
+            ['kode' => 'SI401', 'nama' => 'E-Business', 'sks' => 3, 'sem' => 4, 'prodi' => 'SI', 'kat' => 'wajib'],
+            ['kode' => 'SI501', 'nama' => 'Audit Sistem Informasi', 'sks' => 3, 'sem' => 5, 'prodi' => 'SI', 'kat' => 'wajib'],
+            ['kode' => 'SI502', 'nama' => 'Business Intelligence', 'sks' => 3, 'sem' => 5, 'prodi' => 'SI', 'kat' => 'pilihan'],
+            ['kode' => 'SI601', 'nama' => 'Tata Kelola TI', 'sks' => 3, 'sem' => 6, 'prodi' => 'SI', 'kat' => 'wajib'],
+            ['kode' => 'SI701', 'nama' => 'Manajemen Strategi SI', 'sks' => 3, 'sem' => 7, 'prodi' => 'SI', 'kat' => 'wajib'],
+
+            // Manajemen
+            ['kode' => 'MN101', 'nama' => 'Pengantar Manajemen', 'sks' => 3, 'sem' => 1, 'prodi' => 'MN', 'kat' => 'wajib'],
+            ['kode' => 'MN501', 'nama' => 'Manajemen Strategis', 'sks' => 3, 'sem' => 5, 'prodi' => 'MN', 'kat' => 'wajib'],
+        ];
+
+        foreach ($mataKuliahData as $mk) {
+            DB::table('mata_kuliah')->insert([
                 'kode_matkul' => $mk['kode'],
                 'nama_matkul' => $mk['nama'],
                 'sks' => $mk['sks'],
-                'semester' => $mk['semester'],
+                'semester' => $mk['sem'],
+                'kode_prodi' => $mk['prodi'],
+                'kategori' => $mk['kat'],
+                'is_active' => 1,
+                'deskripsi' => 'Deskripsi mata kuliah ' . $mk['nama'],
+                'created_at' => now(),
+                'updated_at' => now(),
             ]);
         }
 
-        // ============================================
-        // 6. KELAS (untuk setiap mata kuliah)
-        // ============================================
-        $kelasObjects = [];
-        foreach ($mkObjects as $kode => $mk) {
-            $kelasObjects[$kode] = Kelas::create([
-                'nama_kelas' => 'A',
-                'kode_matkul' => $kode,
-                'id_dosen' => $dosen1->id_dosen,
-                'ruang_kelas' => 'Lab ' . substr($kode, -1),
-                'hari' => ['Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat'][rand(0, 4)],
-                'jam_mulai' => '08:00:00',
-                'jam_selesai' => '10:00:00',
-                'kapasitas' => 40,
-            ]);
-
-            // Bobot nilai untuk setiap kelas
-            BobotNilai::create([
-                'id_kelas' => $kelasObjects[$kode]->id_kelas,
-                'bobot_tugas' => 30,
-                'bobot_uts' => 30,
-                'bobot_uas' => 40,
-            ]);
-        }
-
-        // Tambahkan di DatabaseSeeder.php setelah generate nilai mahasiswa
-
-        // ============================================
-// RPS untuk beberapa mata kuliah
-// ============================================
-        Rps::create([
-            'kode_matkul' => 'TIF101',
-            'judul' => 'RPS Algoritma dan Pemrograman',
-            'deskripsi' => 'Rencana Pembelajaran Semester untuk mata kuliah Algoritma dan Pemrograman',
-            'capaian_pembelajaran' => 'Mahasiswa mampu memahami konsep algoritma dan membuat program sederhana',
-            'materi' => 'Pengenalan algoritma, flowchart, pseudocode, variabel, tipe data, operator, percabangan, perulangan',
-        ]);
-
-        Rps::create([
-            'kode_matkul' => 'TIF301',
-            'judul' => 'RPS Basis Data',
-            'deskripsi' => 'Rencana Pembelajaran Semester untuk mata kuliah Basis Data',
-            'capaian_pembelajaran' => 'Mahasiswa mampu merancang dan mengimplementasikan database',
-            'materi' => 'Konsep database, ERD, normalisasi, SQL, transaksi, stored procedure',
-        ]);
-
-        // ============================================
-// Jadwal Pengisian KRS
-// ============================================
-        JadwalPengisianKrs::create([
-            'kode_prodi' => '55',
-            'semester' => 5,
-            'tahun_ajaran' => '2024/2025',
-            'tanggal_mulai' => '2024-07-15',
-            'tanggal_selesai' => '2024-07-30',
-        ]);
-
-        JadwalPengisianKrs::create([
-            'kode_prodi' => '55',
-            'semester' => 6,
-            'tahun_ajaran' => '2024/2025',
-            'tanggal_mulai' => '2025-01-05',
-            'tanggal_selesai' => '2025-01-20',
-        ]);
-
-        // ============================================
-// Riwayat Akademik (untuk mahasiswa yang sudah ada)
-// ============================================
-// Ini akan digenerate otomatis berdasarkan nilai yang sudah ada
-// Contoh untuk mahasiswa pertama (Ahmad Fauzi - Semester 5)
-        $mahasiswaAhmad = Mahasiswa::where('nim', 'like', '2255301001')->first();
-        if ($mahasiswaAhmad) {
-            // Semester 1
-            RiwayatAkademik::create([
-                'id_mahasiswa' => $mahasiswaAhmad->id_mahasiswa,
-                'semester' => 1,
-                'tahun_ajaran' => '2022/2023',
-                'ips_semester' => 3.45,
-                'sks_semester' => 20,
-                'sks_kumulatif' => 20,
-                'ipk' => 3.45,
-                'keterangan' => 'Semester 1 - Berhasil',
-            ]);
-
-            // Semester 2
-            RiwayatAkademik::create([
-                'id_mahasiswa' => $mahasiswaAhmad->id_mahasiswa,
-                'semester' => 2,
-                'tahun_ajaran' => '2022/2023',
-                'ips_semester' => 3.52,
-                'sks_semester' => 20,
-                'sks_kumulatif' => 40,
-                'ipk' => 3.49,
-                'keterangan' => 'Semester 2 - Berhasil',
-            ]);
-
-            // Semester 3
-            RiwayatAkademik::create([
-                'id_mahasiswa' => $mahasiswaAhmad->id_mahasiswa,
-                'semester' => 3,
-                'tahun_ajaran' => '2023/2024',
-                'ips_semester' => 3.60,
-                'sks_semester' => 21,
-                'sks_kumulatif' => 61,
-                'ipk' => 3.52,
-                'keterangan' => 'Semester 3 - Berhasil',
-            ]);
-
-            // Semester 4
-            RiwayatAkademik::create([
-                'id_mahasiswa' => $mahasiswaAhmad->id_mahasiswa,
-                'semester' => 4,
-                'tahun_ajaran' => '2023/2024',
-                'ips_semester' => 3.55,
-                'sks_semester' => 20,
-                'sks_kumulatif' => 81,
-                'ipk' => 3.53,
-                'keterangan' => 'Semester 4 - Berhasil',
-            ]);
-        }
-
-        // ============================================
+        // ========================================
         // 7. PERIODE REGISTRASI
-        // ============================================
-        PeriodeRegistrasi::create([
-            'tahun_ajaran' => '2024/2025',
-            'jenis_semester' => 'ganjil',
-            'tanggal_mulai' => '2024-08-01',
-            'tanggal_selesai' => '2024-08-15',
-            'status' => 'tutup',
-        ]);
-
-        // ============================================
-        // 8. MAHASISWA
-        // ============================================
-        $mahasiswaData = [
-            [
-                'nama' => 'Ahmad Fauzi',
-                'tahun_masuk' => 2022,
-                'jenis_kelamin' => 'Laki-laki',
-                'tanggal_lahir' => '2004-03-15',
-                'alamat' => 'Jl. Sudirman No. 123, Pekanbaru',
-                'no_hp' => '082111111111',
-                'semester_awal' => 1,
-                'semester_akhir' => 5, // Sekarang semester 5
-            ],
-            [
-                'nama' => 'Siti Nurhaliza',
-                'tahun_masuk' => 2022,
-                'jenis_kelamin' => 'Perempuan',
-                'tanggal_lahir' => '2004-07-20',
-                'alamat' => 'Jl. Ahmad Yani No. 45, Pekanbaru',
-                'no_hp' => '082222222222',
-                'semester_awal' => 1,
-                'semester_akhir' => 6, // Sekarang semester 6
-            ],
-            [
-                'nama' => 'Budi Santoso',
-                'tahun_masuk' => 2021,
-                'jenis_kelamin' => 'Laki-laki',
-                'tanggal_lahir' => '2003-11-10',
-                'alamat' => 'Jl. Diponegoro No. 78, Pekanbaru',
-                'no_hp' => '082333333333',
-                'semester_awal' => 1,
-                'semester_akhir' => 7, // Sekarang semester 7
-            ],
+        // ========================================
+        $periodeData = [
+            ['ta' => '2021/2022', 'jenis' => 'ganjil', 'mulai' => '2021-08-01', 'selesai' => '2021-08-31', 'status' => 'tutup'],
+            ['ta' => '2021/2022', 'jenis' => 'genap', 'mulai' => '2022-02-01', 'selesai' => '2022-02-28', 'status' => 'tutup'],
+            ['ta' => '2022/2023', 'jenis' => 'ganjil', 'mulai' => '2022-08-01', 'selesai' => '2022-08-31', 'status' => 'tutup'],
+            ['ta' => '2022/2023', 'jenis' => 'genap', 'mulai' => '2023-02-01', 'selesai' => '2023-02-28', 'status' => 'tutup'],
+            ['ta' => '2023/2024', 'jenis' => 'ganjil', 'mulai' => '2023-08-01', 'selesai' => '2023-08-31', 'status' => 'tutup'],
+            ['ta' => '2023/2024', 'jenis' => 'genap', 'mulai' => '2024-02-01', 'selesai' => '2024-02-28', 'status' => 'tutup'],
+            ['ta' => '2024/2025', 'jenis' => 'ganjil', 'mulai' => '2024-08-01', 'selesai' => '2024-08-31', 'status' => 'aktif'],
         ];
 
-        foreach ($mahasiswaData as $mhsData) {
-            // Generate NIM
-            $tahunNim = substr($mhsData['tahun_masuk'], -2);
-            $kodeProdi = $prodiTI->kode_prodi;
-            $kodeFakultas = $prodiTI->fakultas->kode_fakultas;
-
-            // Hitung urutan
-            $prefix = $tahunNim . $kodeProdi . $kodeFakultas;
-            $lastMhs = Mahasiswa::where('nim', 'like', $prefix . '%')
-                ->orderBy('nim', 'desc')->first();
-            $urutan = $lastMhs ? ((int) substr($lastMhs->nim, -3)) + 1 : 1;
-            $nim = $prefix . str_pad($urutan, 3, '0', STR_PAD_LEFT);
-
-            // Buat user
-            $userMhs = User::create([
-                'role' => 'mahasiswa',
-                'username' => $nim,
-                'email' => strtolower(str_replace(' ', '', $mhsData['nama'])) . '@student.itbriau.ac.id',
-                'password' => Hash::make($nim),
+        foreach ($periodeData as $periode) {
+            DB::table('periode_registrasi')->insert([
+                'tahun_ajaran' => $periode['ta'],
+                'jenis_semester' => $periode['jenis'],
+                'tanggal_mulai' => $periode['mulai'],
+                'tanggal_selesai' => $periode['selesai'],
+                'status' => $periode['status'],
+                'created_at' => now(),
+                'updated_at' => now(),
             ]);
+        }
 
-            // Buat mahasiswa
-            $mahasiswa = Mahasiswa::create([
-                'user_id' => $userMhs->id,
-                'nim' => $nim,
-                'nama' => $mhsData['nama'],
-                'kode_prodi' => '55',
-                'id_dosen_wali' => $dosen1->id_dosen,
-                'tanggal_lahir' => $mhsData['tanggal_lahir'],
-                'jenis_kelamin' => $mhsData['jenis_kelamin'],
-                'alamat' => $mhsData['alamat'],
-                'no_hp' => $mhsData['no_hp'],
-                'status' => 'aktif',
-            ]);
+        // ========================================
+        // 8. REGISTRASI SEMESTER & KRS
+        // ========================================
+        foreach ($mahasiswaIds as $mhs) {
+            $currentSemester = $this->getCurrentSemester($mhs['tahun']);
 
-            // Generate registrasi & KRS untuk setiap semester
-            for ($sem = $mhsData['semester_awal']; $sem <= $mhsData['semester_akhir']; $sem++) {
-                $jenisSemester = ($sem % 2 == 1) ? 'ganjil' : 'genap';
-                $tahunAjaran = $this->getTahunAjaran($mhsData['tahun_masuk'], $sem);
+            // Registrasi semester 1 sampai semester saat ini
+            for ($sem = 1; $sem <= $currentSemester; $sem++) {
+                $tahunAjaran = $this->getTahunAjaran($mhs['tahun'], $sem);
+                $jenisSemester = $sem % 2 == 1 ? 'ganjil' : 'genap';
+                $tanggalReg = $this->getTanggalRegistrasi($mhs['tahun'], $sem);
 
-                // Registrasi semester
-                RegistrasiSemester::create([
-                    'id_mahasiswa' => $mahasiswa->id_mahasiswa,
+                // Insert Registrasi Semester
+                DB::table('registrasi_semester')->insert([
+                    'id_mahasiswa' => $mhs['id'],
                     'tahun_ajaran' => $tahunAjaran,
                     'semester' => $sem,
                     'jenis_semester' => $jenisSemester,
                     'status_semester' => 'aktif',
-                    'tanggal_registrasi' => $this->getTanggalRegistrasi($mhsData['tahun_masuk'], $sem),
+                    'tanggal_registrasi' => $tanggalReg,
+                    'created_at' => now(),
+                    'updated_at' => now(),
                 ]);
 
-                // KRS
-                $krs = Krs::create([
-                    'id_mahasiswa' => $mahasiswa->id_mahasiswa,
-                    'semester' => $sem,
-                    'tahun_ajaran' => $tahunAjaran,
-                    'tanggal_pengisian' => $this->getTanggalRegistrasi($mhsData['tahun_masuk'], $sem),
-                    'status' => 'approved',
-                ]);
-
-                // Ambil mata kuliah untuk semester ini
-                $mkSemester = array_filter($mataKuliah, function ($mk) use ($sem) {
-                    return $mk['semester'] == $sem;
-                });
-
-                foreach ($mkSemester as $mk) {
-                    $kelas = $kelasObjects[$mk['kode']];
-
-                    // Detail KRS
-                    DetailKrs::create([
-                        'id_krs' => $krs->id_krs,
-                        'id_kelas' => $kelas->id_kelas,
-                    ]);
-
-                    // Generate nilai (hanya untuk semester yang sudah lewat)
-                    if ($sem < $mhsData['semester_akhir']) {
-                        $nilaiTugas = rand(70, 95);
-                        $nilaiUTS = rand(70, 95);
-                        $nilaiUAS = rand(70, 95);
-                        $nilaiAkhir = ($nilaiTugas * 0.3) + ($nilaiUTS * 0.3) + ($nilaiUAS * 0.4);
-                        $nilaiHuruf = $this->getNilaiHuruf($nilaiAkhir);
-
-                        NilaiMahasiswa::create([
-                            'id_mahasiswa' => $mahasiswa->id_mahasiswa,
-                            'id_kelas' => $kelas->id_kelas,
-                            'nilai_tugas' => $nilaiTugas,
-                            'nilai_uts' => $nilaiUTS,
-                            'nilai_uas' => $nilaiUAS,
-                            'nilai_akhir' => $nilaiAkhir,
-                            'nilai_huruf' => $nilaiHuruf,
-                        ]);
-                    }
-                }
+                // Insert KRS untuk semester tersebut
+                $this->createKRSForSemester($mhs, $sem, $tahunAjaran, $jenisSemester, $dosenIds);
             }
+        }
+
+        // Tambahkan kode ini di dalam method run() DatabaseSeeder, setelah insert periode_registrasi
+
+        // ========================================
+// 9. JADWAL PENGISIAN KRS
+// ========================================
+        $jadwalKrsData = [
+            // Semester Ganjil 2021/2022
+            ['kode_prodi' => 'IF', 'semester' => 1, 'ta' => '2021/2022', 'mulai' => '2021-08-10', 'selesai' => '2021-08-25'],
+            ['kode_prodi' => 'SI', 'semester' => 1, 'ta' => '2021/2022', 'mulai' => '2021-08-10', 'selesai' => '2021-08-25'],
+            ['kode_prodi' => 'MN', 'semester' => 1, 'ta' => '2021/2022', 'mulai' => '2021-08-10', 'selesai' => '2021-08-25'],
+
+            // Semester Genap 2021/2022
+            ['kode_prodi' => 'IF', 'semester' => 2, 'ta' => '2021/2022', 'mulai' => '2022-02-10', 'selesai' => '2022-02-25'],
+            ['kode_prodi' => 'SI', 'semester' => 2, 'ta' => '2021/2022', 'mulai' => '2022-02-10', 'selesai' => '2022-02-25'],
+            ['kode_prodi' => 'MN', 'semester' => 2, 'ta' => '2021/2022', 'mulai' => '2022-02-10', 'selesai' => '2022-02-25'],
+
+            // Semester Ganjil 2022/2023
+            ['kode_prodi' => 'IF', 'semester' => 3, 'ta' => '2022/2023', 'mulai' => '2022-08-10', 'selesai' => '2022-08-25'],
+            ['kode_prodi' => 'SI', 'semester' => 3, 'ta' => '2022/2023', 'mulai' => '2022-08-10', 'selesai' => '2022-08-25'],
+            ['kode_prodi' => 'MN', 'semester' => 3, 'ta' => '2022/2023', 'mulai' => '2022-08-10', 'selesai' => '2022-08-25'],
+
+            // Semester Genap 2022/2023
+            ['kode_prodi' => 'IF', 'semester' => 4, 'ta' => '2022/2023', 'mulai' => '2023-02-10', 'selesai' => '2023-02-25'],
+            ['kode_prodi' => 'SI', 'semester' => 4, 'ta' => '2022/2023', 'mulai' => '2023-02-10', 'selesai' => '2023-02-25'],
+            ['kode_prodi' => 'MN', 'semester' => 4, 'ta' => '2022/2023', 'mulai' => '2023-02-10', 'selesai' => '2023-02-25'],
+
+            // Semester Ganjil 2023/2024
+            ['kode_prodi' => 'IF', 'semester' => 5, 'ta' => '2023/2024', 'mulai' => '2023-08-10', 'selesai' => '2023-08-25'],
+            ['kode_prodi' => 'SI', 'semester' => 5, 'ta' => '2023/2024', 'mulai' => '2023-08-10', 'selesai' => '2023-08-25'],
+            ['kode_prodi' => 'MN', 'semester' => 5, 'ta' => '2023/2024', 'mulai' => '2023-08-10', 'selesai' => '2023-08-25'],
+
+            // Semester Genap 2023/2024
+            ['kode_prodi' => 'IF', 'semester' => 6, 'ta' => '2023/2024', 'mulai' => '2024-02-10', 'selesai' => '2024-02-25'],
+            ['kode_prodi' => 'SI', 'semester' => 6, 'ta' => '2023/2024', 'mulai' => '2024-02-10', 'selesai' => '2024-02-25'],
+            ['kode_prodi' => 'MN', 'semester' => 6, 'ta' => '2023/2024', 'mulai' => '2024-02-10', 'selesai' => '2024-02-25'],
+
+            // Semester Ganjil 2024/2025 (Aktif)
+            ['kode_prodi' => 'IF', 'semester' => 7, 'ta' => '2024/2025', 'mulai' => '2024-08-10', 'selesai' => '2024-08-25'],
+            ['kode_prodi' => 'SI', 'semester' => 7, 'ta' => '2024/2025', 'mulai' => '2024-08-10', 'selesai' => '2024-08-25'],
+            ['kode_prodi' => 'MN', 'semester' => 7, 'ta' => '2024/2025', 'mulai' => '2024-08-10', 'selesai' => '2024-08-25'],
+        ];
+
+        foreach ($jadwalKrsData as $jadwal) {
+            DB::table('jadwal_pengisian_krs')->insert([
+                'kode_prodi' => $jadwal['kode_prodi'],
+                'semester' => $jadwal['semester'],
+                'tahun_ajaran' => $jadwal['ta'],
+                'tanggal_mulai' => $jadwal['mulai'],
+                'tanggal_selesai' => $jadwal['selesai'],
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
+        }
+
+        echo "\n✅ Seeder berhasil dijalankan!\n";
+        echo "📊 Summary:\n";
+        echo "   - BAAK: 1 user\n";
+        echo "   - Dosen: " . count($dosenData) . " users\n";
+        echo "   - Mahasiswa: " . count($mahasiswaData) . " users\n";
+        echo "   - Mata Kuliah: " . count($mataKuliahData) . " items\n";
+        echo "   - Periode Registrasi: " . count($periodeData) . " items\n\n";
+        echo "🔑 Login Credentials:\n";
+        echo "   BAAK: baak001 / baak001\n";
+        echo "   Dosen: NIP / NIP\n";
+        echo "   Mahasiswa: NIM / NIM\n\n";
+    }
+
+    private function generateNim($kodeProdi, $tahun, $urutan)
+    {
+        $tahunMasuk = substr($tahun, 2, 2); // 21, 22, 23
+        $kodeFakultas = $kodeProdi == 'MN' ? 'FEB' : 'FTI';
+        $kodeFakultasShort = $kodeFakultas == 'FTI' ? '01' : '02';
+        $urut = str_pad($urutan, 3, '0', STR_PAD_LEFT);
+
+        return $tahunMasuk . $kodeProdi . $kodeFakultasShort . $urut;
+    }
+
+    private function getCurrentSemester($tahunMasuk)
+    {
+        $yearDiff = 2024 - $tahunMasuk;
+        $currentMonth = 10; // Oktober 2025
+
+        if ($currentMonth >= 8) {
+            return ($yearDiff * 2) + 1; // Semester ganjil
+        } else {
+            return ($yearDiff * 2); // Semester genap
         }
     }
 
     private function getTahunAjaran($tahunMasuk, $semester)
     {
-        $tahun = $tahunMasuk + intdiv($semester - 1, 2);
-        return $tahun . '/' . ($tahun + 1);
+        $yearStart = $tahunMasuk + floor(($semester - 1) / 2);
+        $yearEnd = $yearStart + 1;
+        return $yearStart . '/' . $yearEnd;
     }
 
     private function getTanggalRegistrasi($tahunMasuk, $semester)
     {
-        $tahun = $tahunMasuk + intdiv($semester - 1, 2);
-        $bulan = ($semester % 2 == 1) ? '08' : '01';
-        return $tahun . '-' . $bulan . '-10';
+        $yearStart = $tahunMasuk + floor(($semester - 1) / 2);
+        $month = $semester % 2 == 1 ? '08' : '02';
+        return $yearStart . '-' . $month . '-15';
     }
 
-    private function getNilaiHuruf($nilai)
+    private function createKRSForSemester($mhs, $semester, $tahunAjaran, $jenisSemester, $dosenIds)
     {
-        if ($nilai >= 85)
+        // Ambil mata kuliah sesuai semester dan prodi
+        $mataKuliah = DB::table('mata_kuliah')
+            ->where('semester', $semester)
+            ->where(function ($q) use ($mhs) {
+                $q->where('kode_prodi', $mhs['kode_prodi'])
+                    ->orWhereNull('kode_prodi');
+            })
+            ->where('is_active', 1)
+            ->get();
+
+        if ($mataKuliah->isEmpty()) {
+            return;
+        }
+
+        // Target SKS: 20-24
+        $targetSks = rand(20, 24);
+        $currentSks = 0;
+        $selectedMataKuliah = [];
+
+        // Ambil mata kuliah wajib dulu
+        foreach ($mataKuliah as $mk) {
+            if ($mk->kategori == 'wajib' && $currentSks + $mk->sks <= $targetSks) {
+                $selectedMataKuliah[] = $mk;
+                $currentSks += $mk->sks;
+            }
+        }
+
+        // Tambahkan mata kuliah pilihan jika masih kurang
+        foreach ($mataKuliah as $mk) {
+            if ($mk->kategori != 'wajib' && $currentSks + $mk->sks <= $targetSks) {
+                $selectedMataKuliah[] = $mk;
+                $currentSks += $mk->sks;
+
+                if ($currentSks >= 20) {
+                    break;
+                }
+            }
+        }
+
+        if (empty($selectedMataKuliah)) {
+            return;
+        }
+
+        // Insert KRS
+        $krsId = DB::table('krs')->insertGetId([
+            'id_mahasiswa' => $mhs['id'],
+            'semester' => $semester,
+            'tahun_ajaran' => $tahunAjaran,
+            'tanggal_pengisian' => $this->getTanggalRegistrasi($mhs['tahun'], $semester),
+            'status' => 'approved',
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        // Insert Kelas dan Detail KRS
+        foreach ($selectedMataKuliah as $mk) {
+            // Cek apakah kelas sudah ada
+            $kelas = DB::table('kelas')
+                ->where('kode_matkul', $mk->kode_matkul)
+                ->first();
+
+            if (!$kelas) {
+                // Buat kelas baru
+                $kelasId = DB::table('kelas')->insertGetId([
+                    'nama_kelas' => 'A',
+                    'kode_matkul' => $mk->kode_matkul,
+                    'id_dosen' => $dosenIds[array_rand($dosenIds)],
+                    'ruang_kelas' => 'R' . rand(101, 510),
+                    'hari' => ['Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat'][array_rand(['Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat'])],
+                    'jam_mulai' => ['08:00:00', '10:00:00', '13:00:00', '15:00:00'][rand(0, 3)],
+                    'jam_selesai' => ['09:40:00', '11:40:00', '14:40:00', '16:40:00'][rand(0, 3)],
+                    'kapasitas' => 40,
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ]);
+
+                // Insert Bobot Nilai
+                DB::table('bobot_nilai')->insert([
+                    'id_kelas' => $kelasId,
+                    'bobot_tugas' => 30,
+                    'bobot_uts' => 30,
+                    'bobot_uas' => 40,
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ]);
+            } else {
+                $kelasId = $kelas->id_kelas;
+            }
+
+            // Insert Detail KRS
+            DB::table('detail_krs')->insert([
+                'id_krs' => $krsId,
+                'id_kelas' => $kelasId,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
+
+            // Insert Nilai (untuk semester yang sudah lewat)
+            if ($semester < $this->getCurrentSemester($mhs['tahun'])) {
+                $nilaiTugas = rand(70, 95);
+                $nilaiUts = rand(70, 95);
+                $nilaiUas = rand(70, 95);
+                $nilaiAkhir = ($nilaiTugas * 0.3) + ($nilaiUts * 0.3) + ($nilaiUas * 0.4);
+
+                DB::table('nilai_mahasiswa')->insert([
+                    'id_mahasiswa' => $mhs['id'],
+                    'id_kelas' => $kelasId,
+                    'nilai_tugas' => $nilaiTugas,
+                    'nilai_uts' => $nilaiUts,
+                    'nilai_uas' => $nilaiUas,
+                    'nilai_akhir' => $nilaiAkhir,
+                    'nilai_huruf' => $this->getNilaiHuruf($nilaiAkhir),
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ]);
+            }
+        }
+
+        // Hitung dan insert riwayat akademik untuk semester yang sudah selesai
+        if ($semester < $this->getCurrentSemester($mhs['tahun'])) {
+            $this->insertRiwayatAkademik($mhs['id'], $semester, $tahunAjaran, $currentSks);
+        }
+    }
+
+    private function insertRiwayatAkademik($mahasiswaId, $semester, $tahunAjaran, $sksSemester)
+    {
+        // Ambil semua nilai mahasiswa sampai semester ini
+        $nilaiList = DB::table('nilai_mahasiswa')
+            ->join('kelas', 'nilai_mahasiswa.id_kelas', '=', 'kelas.id_kelas')
+            ->join('mata_kuliah', 'kelas.kode_matkul', '=', 'mata_kuliah.kode_matkul')
+            ->join('detail_krs', 'kelas.id_kelas', '=', 'detail_krs.id_kelas')
+            ->join('krs', 'detail_krs.id_krs', '=', 'krs.id_krs')
+            ->where('nilai_mahasiswa.id_mahasiswa', $mahasiswaId)
+            ->where('krs.semester', $semester)
+            ->select('nilai_mahasiswa.nilai_akhir', 'mata_kuliah.sks')
+            ->get();
+
+        if ($nilaiList->isEmpty()) {
+            return;
+        }
+
+        // Hitung IPS
+        $totalNilai = 0;
+        $totalSks = 0;
+        foreach ($nilaiList as $nilai) {
+            $bobot = $this->getBobotNilai($nilai->nilai_akhir);
+            $totalNilai += $bobot * $nilai->sks;
+            $totalSks += $nilai->sks;
+        }
+        $ips = $totalSks > 0 ? $totalNilai / $totalSks : 0;
+
+        // Hitung IPK (semua semester sampai sekarang)
+        $allNilai = DB::table('nilai_mahasiswa')
+            ->join('kelas', 'nilai_mahasiswa.id_kelas', '=', 'kelas.id_kelas')
+            ->join('mata_kuliah', 'kelas.kode_matkul', '=', 'mata_kuliah.kode_matkul')
+            ->join('detail_krs', 'kelas.id_kelas', '=', 'detail_krs.id_kelas')
+            ->join('krs', 'detail_krs.id_krs', '=', 'krs.id_krs')
+            ->where('nilai_mahasiswa.id_mahasiswa', $mahasiswaId)
+            ->where('krs.semester', '<=', $semester)
+            ->select('nilai_mahasiswa.nilai_akhir', 'mata_kuliah.sks')
+            ->get();
+
+        $totalNilaiKumulatif = 0;
+        $totalSksKumulatif = 0;
+        foreach ($allNilai as $nilai) {
+            $bobot = $this->getBobotNilai($nilai->nilai_akhir);
+            $totalNilaiKumulatif += $bobot * $nilai->sks;
+            $totalSksKumulatif += $nilai->sks;
+        }
+        $ipk = $totalSksKumulatif > 0 ? $totalNilaiKumulatif / $totalSksKumulatif : 0;
+
+        // Insert riwayat akademik
+        DB::table('riwayat_akademik')->insert([
+            'id_mahasiswa' => $mahasiswaId,
+            'semester' => $semester,
+            'tahun_ajaran' => $tahunAjaran,
+            'ips_semester' => round($ips, 2),
+            'sks_semester' => $totalSks,
+            'sks_kumulatif' => $totalSksKumulatif,
+            'ipk' => round($ipk, 2),
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+    }
+
+    private function getBobotNilai($nilaiAkhir)
+    {
+        if ($nilaiAkhir >= 85)
+            return 4.00;
+        if ($nilaiAkhir >= 80)
+            return 3.70;
+        if ($nilaiAkhir >= 75)
+            return 3.30;
+        if ($nilaiAkhir >= 70)
+            return 3.00;
+        if ($nilaiAkhir >= 65)
+            return 2.70;
+        if ($nilaiAkhir >= 60)
+            return 2.30;
+        if ($nilaiAkhir >= 55)
+            return 2.00;
+        if ($nilaiAkhir >= 50)
+            return 1.70;
+        return 0.00;
+    }
+
+    private function getNilaiHuruf($nilaiAkhir)
+    {
+        if ($nilaiAkhir >= 85)
             return 'A';
-        if ($nilai >= 80)
+        if ($nilaiAkhir >= 80)
             return 'A-';
-        if ($nilai >= 75)
+        if ($nilaiAkhir >= 75)
             return 'B+';
-        if ($nilai >= 70)
+        if ($nilaiAkhir >= 70)
             return 'B';
-        if ($nilai >= 65)
+        if ($nilaiAkhir >= 65)
             return 'B-';
-        if ($nilai >= 60)
+        if ($nilaiAkhir >= 60)
             return 'C+';
-        if ($nilai >= 55)
+        if ($nilaiAkhir >= 55)
             return 'C';
-        if ($nilai >= 50)
+        if ($nilaiAkhir >= 50)
             return 'D';
         return 'E';
     }

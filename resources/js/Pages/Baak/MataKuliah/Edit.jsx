@@ -1,34 +1,50 @@
 import { Head, Link, useForm } from '@inertiajs/react';
 import BaakLayout from '@/Layouts/BaakLayout';
 
-export default function Edit({ mataKuliah }) {
+export default function Edit({ mata_kuliah, prodi }) {
     const { data, setData, put, processing, errors } = useForm({
-        kode_matkul: mataKuliah.kode_matkul || '',
-        nama_matkul: mataKuliah.nama_matkul || '',
-        sks: mataKuliah.sks || 3,
-        semester: mataKuliah.semester || 1,
-        deskripsi: mataKuliah.deskripsi || '',
+        kode_matkul: mata_kuliah.kode_matkul || '',
+        nama_matkul: mata_kuliah.nama_matkul || '',
+        sks: mata_kuliah.sks || 2,
+        semester: mata_kuliah.semester || 1,
+        kode_prodi: mata_kuliah.kode_prodi || '',
+        kategori: mata_kuliah.kategori || 'wajib',
+        is_active: mata_kuliah.is_active ?? true,
+        deskripsi: mata_kuliah.deskripsi || '',
     });
+
+    const kategoriList = [
+        { value: 'wajib', label: 'Mata Kuliah Wajib' },
+        { value: 'pilihan', label: 'Mata Kuliah Pilihan' },
+        { value: 'umum', label: 'Mata Kuliah Umum (Semua Prodi)' }
+    ];
 
     const handleSubmit = (e) => {
         e.preventDefault();
-        put(route('baak.mata-kuliah.update', mataKuliah.kode_matkul));
+        put(route('baak.mata-kuliah.update', mata_kuliah.kode_matkul));
     };
 
     return (
         <BaakLayout title="Edit Mata Kuliah">
             <Head title="Edit Mata Kuliah" />
 
-            <div className="container mx-auto px-4 py-8">
+            <div className="p-4 md:p-6">
                 {/* Header */}
-                <div className="mb-8">
-                    <h1 className="text-2xl font-bold text-gray-700 mb-2">Edit Mata Kuliah</h1>
-                    <p className="text-gray-600">Ubah data mata kuliah yang sudah ada</p>
+                <div className="mb-6">
+                    <Link
+                        href={route('baak.mata-kuliah.index')}
+                        className="text-blue-600 hover:text-blue-700 text-sm font-medium mb-3 inline-flex items-center gap-1"
+                    >
+                        <i className="fas fa-arrow-left"></i>
+                        <span>Kembali ke Daftar Mata Kuliah</span>
+                    </Link>
+                    <h1 className="text-2xl font-bold text-gray-700 mt-2">Edit Data Mata Kuliah</h1>
+                    <p className="text-sm text-gray-600 mt-1">Ubah data mata kuliah yang sudah ada</p>
                 </div>
 
                 {/* Form */}
                 <form onSubmit={handleSubmit}>
-                    <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+                    <div className="bg-white rounded-lg border border-gray-200 p-6">
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                             {/* Kode Mata Kuliah */}
                             <div>
@@ -39,7 +55,7 @@ export default function Edit({ mataKuliah }) {
                                     type="text"
                                     value={data.kode_matkul}
                                     onChange={(e) => setData('kode_matkul', e.target.value.toUpperCase())}
-                                    placeholder="Contoh: TIF101"
+                                    placeholder="Contoh: TIF101, SI201"
                                     className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm ${
                                         errors.kode_matkul ? 'border-red-500' : 'border-gray-300'
                                     }`}
@@ -51,39 +67,10 @@ export default function Edit({ mataKuliah }) {
                                         {errors.kode_matkul}
                                     </p>
                                 )}
-                                <p className="text-xs text-gray-500 mt-1">
-                                    Format: 3 huruf + 3 angka (contoh: TIF101)
-                                </p>
-                            </div>
-
-                            {/* SKS */}
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-2">
-                                    SKS <span className="text-red-500">*</span>
-                                </label>
-                                <select
-                                    value={data.sks}
-                                    onChange={(e) => setData('sks', parseInt(e.target.value))}
-                                    className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm ${
-                                        errors.sks ? 'border-red-500' : 'border-gray-300'
-                                    }`}
-                                >
-                                    {[1, 2, 3, 4, 5, 6].map((sks) => (
-                                        <option key={sks} value={sks}>
-                                            {sks} SKS
-                                        </option>
-                                    ))}
-                                </select>
-                                {errors.sks && (
-                                    <p className="text-red-500 text-xs mt-1">
-                                        <i className="fas fa-exclamation-circle mr-1"></i>
-                                        {errors.sks}
-                                    </p>
-                                )}
                             </div>
 
                             {/* Nama Mata Kuliah */}
-                            <div className="md:col-span-2">
+                            <div>
                                 <label className="block text-sm font-medium text-gray-700 mb-2">
                                     Nama Mata Kuliah <span className="text-red-500">*</span>
                                 </label>
@@ -91,7 +78,7 @@ export default function Edit({ mataKuliah }) {
                                     type="text"
                                     value={data.nama_matkul}
                                     onChange={(e) => setData('nama_matkul', e.target.value)}
-                                    placeholder="Contoh: Algoritma dan Pemrograman"
+                                    placeholder="Nama lengkap mata kuliah"
                                     className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm ${
                                         errors.nama_matkul ? 'border-red-500' : 'border-gray-300'
                                     }`}
@@ -103,38 +90,50 @@ export default function Edit({ mataKuliah }) {
                                         {errors.nama_matkul}
                                     </p>
                                 )}
+                            </div>
+
+                            {/* SKS */}
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-2">
+                                    SKS (Satuan Kredit Semester) <span className="text-red-500">*</span>
+                                </label>
+                                <input
+                                    type="number"
+                                    value={data.sks}
+                                    onChange={(e) => setData('sks', e.target.value)}
+                                    min="1"
+                                    max="6"
+                                    className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm ${
+                                        errors.sks ? 'border-red-500' : 'border-gray-300'
+                                    }`}
+                                />
+                                {errors.sks && (
+                                    <p className="text-red-500 text-xs mt-1">
+                                        <i className="fas fa-exclamation-circle mr-1"></i>
+                                        {errors.sks}
+                                    </p>
+                                )}
                                 <p className="text-xs text-gray-500 mt-1">
-                                    Maksimal 100 karakter
+                                    Minimal 1 SKS, maksimal 6 SKS
                                 </p>
                             </div>
 
                             {/* Semester */}
-                            <div className="md:col-span-2">
+                            <div>
                                 <label className="block text-sm font-medium text-gray-700 mb-2">
                                     Semester <span className="text-red-500">*</span>
                                 </label>
-                                <div className="grid grid-cols-4 sm:grid-cols-8 gap-3">
+                                <select
+                                    value={data.semester}
+                                    onChange={(e) => setData('semester', e.target.value)}
+                                    className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm ${
+                                        errors.semester ? 'border-red-500' : 'border-gray-300'
+                                    }`}
+                                >
                                     {[1, 2, 3, 4, 5, 6, 7, 8].map((sem) => (
-                                        <label
-                                            key={sem}
-                                            className={`flex items-center justify-center px-4 py-3 border-2 rounded-lg cursor-pointer transition-all text-sm font-medium ${
-                                                data.semester === sem
-                                                    ? 'border-blue-500 bg-blue-50 text-blue-700'
-                                                    : 'border-gray-300 hover:border-blue-300 text-gray-700'
-                                            }`}
-                                        >
-                                            <input
-                                                type="radio"
-                                                name="semester"
-                                                value={sem}
-                                                checked={data.semester === sem}
-                                                onChange={(e) => setData('semester', parseInt(e.target.value))}
-                                                className="sr-only"
-                                            />
-                                            <span>{sem}</span>
-                                        </label>
+                                        <option key={sem} value={sem}>Semester {sem}</option>
                                     ))}
-                                </div>
+                                </select>
                                 {errors.semester && (
                                     <p className="text-red-500 text-xs mt-1">
                                         <i className="fas fa-exclamation-circle mr-1"></i>
@@ -143,19 +142,105 @@ export default function Edit({ mataKuliah }) {
                                 )}
                             </div>
 
+                            {/* Kategori */}
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-2">
+                                    Kategori Mata Kuliah <span className="text-red-500">*</span>
+                                </label>
+                                <select
+                                    value={data.kategori}
+                                    onChange={(e) => {
+                                        setData('kategori', e.target.value);
+                                        // Jika kategori umum, reset kode_prodi
+                                        if (e.target.value === 'umum') {
+                                            setData('kode_prodi', '');
+                                        }
+                                    }}
+                                    className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm ${
+                                        errors.kategori ? 'border-red-500' : 'border-gray-300'
+                                    }`}
+                                >
+                                    {kategoriList.map((item) => (
+                                        <option key={item.value} value={item.value}>
+                                            {item.label}
+                                        </option>
+                                    ))}
+                                </select>
+                                {errors.kategori && (
+                                    <p className="text-red-500 text-xs mt-1">
+                                        <i className="fas fa-exclamation-circle mr-1"></i>
+                                        {errors.kategori}
+                                    </p>
+                                )}
+                            </div>
+
+                            {/* Program Studi */}
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-2">
+                                    Program Studi {data.kategori !== 'umum' && <span className="text-red-500">*</span>}
+                                </label>
+                                <select
+                                    value={data.kode_prodi}
+                                    onChange={(e) => setData('kode_prodi', e.target.value)}
+                                    disabled={data.kategori === 'umum'}
+                                    className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm ${
+                                        data.kategori === 'umum' ? 'bg-gray-100 cursor-not-allowed' : ''
+                                    } ${errors.kode_prodi ? 'border-red-500' : 'border-gray-300'}`}
+                                >
+                                    <option value="">
+                                        {data.kategori === 'umum' ? 'Semua Program Studi' : '-- Pilih Program Studi --'}
+                                    </option>
+                                    {prodi.map((item) => (
+                                        <option key={item.kode_prodi} value={item.kode_prodi}>
+                                            {item.nama_prodi} - {item.fakultas?.nama_fakultas}
+                                        </option>
+                                    ))}
+                                </select>
+                                {errors.kode_prodi && (
+                                    <p className="text-red-500 text-xs mt-1">
+                                        <i className="fas fa-exclamation-circle mr-1"></i>
+                                        {errors.kode_prodi}
+                                    </p>
+                                )}
+                                {data.kategori === 'umum' && (
+                                    <p className="text-xs text-gray-500 mt-1">
+                                        Mata kuliah umum bisa diambil oleh semua program studi
+                                    </p>
+                                )}
+                            </div>
+
+                            {/* Status Aktif */}
+                            <div className="md:col-span-2">
+                                <label className="flex items-center cursor-pointer">
+                                    <input
+                                        type="checkbox"
+                                        checked={data.is_active}
+                                        onChange={(e) => setData('is_active', e.target.checked)}
+                                        className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                                    />
+                                    <span className="ml-2 text-sm font-medium text-gray-700">
+                                        Aktifkan mata kuliah ini
+                                    </span>
+                                </label>
+                                <p className="text-xs text-gray-500 mt-1 ml-6">
+                                    Hanya mata kuliah aktif yang bisa diambil mahasiswa saat KRS
+                                </p>
+                            </div>
+
                             {/* Deskripsi */}
                             <div className="md:col-span-2">
                                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                                    Deskripsi
+                                    Deskripsi Mata Kuliah
                                 </label>
                                 <textarea
                                     value={data.deskripsi}
                                     onChange={(e) => setData('deskripsi', e.target.value)}
                                     rows="4"
-                                    placeholder="Deskripsi mata kuliah (opsional)"
+                                    placeholder="Deskripsi singkat tentang mata kuliah (opsional)"
                                     className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm ${
                                         errors.deskripsi ? 'border-red-500' : 'border-gray-300'
                                     }`}
+                                    maxLength="500"
                                 />
                                 {errors.deskripsi && (
                                     <p className="text-red-500 text-xs mt-1">
@@ -163,6 +248,9 @@ export default function Edit({ mataKuliah }) {
                                         {errors.deskripsi}
                                     </p>
                                 )}
+                                <p className="text-xs text-gray-500 mt-1">
+                                    {data.deskripsi.length}/500 karakter
+                                </p>
                             </div>
                         </div>
 
