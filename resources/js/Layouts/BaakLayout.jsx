@@ -7,6 +7,7 @@ export default function BaakLayout({ children, title }) {
     const [masterDataOpen, setMasterDataOpen] = useState(false);
     const [kepegawaianOpen, setKepegawaianOpen] = useState(false);
     const [perkuliahanOpen, setPerkuliahanOpen] = useState(false);
+    const [akademikOpen, setAkademikOpen] = useState(false);
 
     const handleLogout = () => {
         if (window.Swal) {
@@ -305,6 +306,67 @@ export default function BaakLayout({ children, title }) {
                                     >
                                         <i className="fas fa-file-alt w-4"></i>
                                         <span>KRS</span>
+                                    </Link>
+                                </div>
+                            </div>
+
+                            {/* Akademik Dropdown */}
+                            <div>
+                                <button
+                                    onClick={() => setAkademikOpen(!akademikOpen)}
+                                    className={`w-full flex items-center justify-between px-4 py-3 rounded-lg transition-colors ${
+                                        isParentActive([
+                                            "baak.periode-registrasi",
+                                            "baak.jadwal-krs",
+                                            "baak.registrasi",
+                                        ])
+                                            ? "bg-blue-50 text-blue-700"
+                                            : "text-gray-700 hover:bg-blue-50 hover:text-blue-700"
+                                    }`}
+                                >
+                                    <div className="flex items-center space-x-3">
+                                        <i className="fas fa-calendar-check w-5"></i>
+                                        <span className="text-sm font-medium">
+                                            Akademik
+                                        </span>
+                                    </div>
+                                    <i
+                                        className={`fas fa-chevron-down text-xs transition-transform ${
+                                            akademikOpen ? "rotate-180" : ""
+                                        }`}
+                                    ></i>
+                                </button>
+
+                                {/* Submenu */}
+                                <div
+                                    className={`mt-1 space-y-1 overflow-hidden transition-all duration-300 ${
+                                        akademikOpen ? "max-h-48" : "max-h-0"
+                                    }`}
+                                >
+                                    <Link
+                                        href={route("baak.periode-registrasi.index")}
+                                        className={`flex items-center space-x-3 px-4 py-2 ml-6 rounded-lg text-sm transition-colors ${
+                                            isActive("baak.periode-registrasi")
+                                                ? "bg-blue-600 text-white"
+                                                : "text-gray-600 hover:bg-blue-50 hover:text-blue-700"
+                                        }`}
+                                    >
+                                        <i className="fas fa-calendar-plus w-4"></i>
+                                        <span>Periode Registrasi</span>
+                                    </Link>
+                                    <Link
+                                        href="#"
+                                        className="flex items-center space-x-3 px-4 py-2 ml-6 rounded-lg text-sm text-gray-600 hover:bg-blue-50 hover:text-blue-700 transition-colors"
+                                    >
+                                        <i className="fas fa-clock w-4"></i>
+                                        <span>Jadwal KRS</span>
+                                    </Link>
+                                    <Link
+                                        href="#"
+                                        className="flex items-center space-x-3 px-4 py-2 ml-6 rounded-lg text-sm text-gray-600 hover:bg-blue-50 hover:text-blue-700 transition-colors"
+                                    >
+                                        <i className="fas fa-user-check w-4"></i>
+                                        <span>Registrasi Mahasiswa</span>
                                     </Link>
                                 </div>
                             </div>

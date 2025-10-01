@@ -3,6 +3,7 @@
 use App\Http\Controllers\Baak\BaakController;
 use App\Http\Controllers\Baak\FakultasController;
 use App\Http\Controllers\Baak\KelasController;
+use App\Http\Controllers\Baak\PeriodeRegistrasiController;
 use App\Http\Controllers\DosenController;
 use App\Http\Controllers\MahasiswaController;
 use App\Http\Controllers\Baak\MataKuliahController;
@@ -47,6 +48,16 @@ Route::middleware(['auth', 'role:baak'])->prefix('baak')->name('baak.')->group(f
     Route::resource('mata-kuliah', MataKuliahController::class)->parameters([
         'mata-kuliah' => 'kode_matkul'
     ]);
+
+    // Periode Registrasi Routes
+    Route::resource('periode-registrasi', PeriodeRegistrasiController::class)
+        ->parameters(['periode-registrasi' => 'periodeRegistrasi']);
+
+    Route::post(
+        '/periode-registrasi/{periodeRegistrasi}/toggle-status',
+        [PeriodeRegistrasiController::class, 'toggleStatus']
+    )
+        ->name('periode-registrasi.toggle-status');
 });
 
 
@@ -68,7 +79,7 @@ Route::middleware(['auth', 'role:dosen'])->prefix('dosen')->name('dosen.')->grou
     Route::get('/nilai', [DosenController::class, 'nilai'])->name('nilai');
     Route::get('/nilai/input-nilai', [DosenController::class, 'input_nilai'])->name('input_nilai');
     Route::get('/nilai/edit-nilai', [DosenController::class, 'edit_nilai'])->name('edit_nilai');
-    Route::get('/rps', [DosenController::class,'rps'])->name('rps');
+    Route::get('/rps', [DosenController::class, 'rps'])->name('rps');
     Route::get('/rps/tambah-rps', [DosenController::class, 'tambah_rps'])->name('tambah_rps');
     Route::get('/rps/edit-rps', [DosenController::class, 'edit_rps'])->name('edit_rps');
     Route::get('/absensi', [DosenController::class, 'absensi'])->name('absensi');

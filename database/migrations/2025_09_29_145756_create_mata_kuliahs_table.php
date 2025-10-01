@@ -16,7 +16,7 @@ return new class extends Migration {
             $table->integer('sks');
             $table->integer('semester');
             $table->boolean('is_active')->default(1);
-            $table->string('deskripsi');
+            $table->string('deskripsi')->nullable();
             $table->timestamps();
             $table->index(['kode_prodi', 'semester', 'is_active']);
         });
