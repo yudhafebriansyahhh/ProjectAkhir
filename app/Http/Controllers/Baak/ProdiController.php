@@ -22,7 +22,7 @@ class ProdiController extends Controller
             ->withCount('mahasiswa')
             ->when($search, function ($query, $search) {
                 $query->where('kode_prodi', 'like', "%{$search}%")
-                      ->orWhere('nama_prodi', 'like', "%{$search}%");
+                    ->orWhere('nama_prodi', 'like', "%{$search}%");
             })
             ->when($fakultas_filter, function ($query, $fakultas_filter) {
                 $query->where('kode_fakultas', $fakultas_filter);
@@ -78,6 +78,37 @@ class ProdiController extends Controller
         return redirect()
             ->route('baak.prodi.index')
             ->with('success', 'Program Studi berhasil diupdate');
+    }
+
+    public function show($kode_prodi)
+    {
+        $prodi = Prodi::with([
+            'fakultas',
+            'dosen',
+            'mahasiswa' => function ($query) {
+                $query->where('status', 'aktif');
+            }
+        ])->findOrFail($kode_prodi);
+
+        // Statistik
+        $stats = [
+            'total_dosen' => $prodi->dosen()->count(),
+            'total_mahasiswa' => $prodi->mahasiswa()->where('status', 'aktif')->count(),
+            'total_mata_kuliah' => \DB::table('mata_kuliah')
+                ->where('kode_prodi', $kode_prodi)
+                ->where('is_active', 1)
+                ->count(),
+            'mahasiswa_per_status' => $prodi->mahasiswa()
+                ->select('status', \DB::raw('count(*) as total'))
+                ->groupBy('status')
+                ->pluck('total', 'status')
+                ->toArray(),
+        ];
+
+        return Inertia::render('Baak/Prodi/Show', [
+            'prodi' => $prodi,
+            'stats' => $stats,
+        ]);
     }
 
     public function destroy(string $kode_prodi)

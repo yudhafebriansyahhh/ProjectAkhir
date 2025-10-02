@@ -14,7 +14,7 @@ class JadwalPengisianKrs extends Model
 
     protected $fillable = [
         'kode_prodi',
-        'semester',
+        'semester_list',
         'tahun_ajaran',
         'tanggal_mulai',
         'tanggal_selesai',
@@ -23,11 +23,29 @@ class JadwalPengisianKrs extends Model
     protected $casts = [
         'tanggal_mulai' => 'date',
         'tanggal_selesai' => 'date',
+        'semester_list' => 'array', // Cast ke array
     ];
 
     // Relationships
     public function prodi()
     {
         return $this->belongsTo(Prodi::class, 'kode_prodi', 'kode_prodi');
+    }
+
+    // Helper method untuk format semester
+    public function getSemesterDisplayAttribute()
+    {
+        if (empty($this->semester_list)) {
+            return '-';
+        }
+
+        $semesters = $this->semester_list;
+        sort($semesters);
+
+        if (count($semesters) === 1) {
+            return 'Semester ' . $semesters[0];
+        }
+
+        return 'Semester ' . implode(', ', $semesters);
     }
 }

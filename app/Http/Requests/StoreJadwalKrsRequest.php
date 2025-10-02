@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Http\Requests\Baak;
+namespace App\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
 
@@ -15,7 +15,8 @@ class StoreJadwalKrsRequest extends FormRequest
     {
         return [
             'kode_prodi' => 'required|exists:prodi,kode_prodi',
-            'semester' => 'required|integer|min:1|max:14',
+            'semester_list' => 'required|array|min:1',
+            'semester_list.*' => 'integer|min:1|max:14',
             'tahun_ajaran' => 'required|string|regex:/^\d{4}\/\d{4}$/',
             'tanggal_mulai' => 'required|date',
             'tanggal_selesai' => 'required|date|after:tanggal_mulai',
@@ -27,10 +28,12 @@ class StoreJadwalKrsRequest extends FormRequest
         return [
             'kode_prodi.required' => 'Program Studi harus dipilih',
             'kode_prodi.exists' => 'Program Studi tidak valid',
-            'semester.required' => 'Semester harus diisi',
-            'semester.integer' => 'Semester harus berupa angka',
-            'semester.min' => 'Semester minimal 1',
-            'semester.max' => 'Semester maksimal 14',
+            'semester_list.required' => 'Minimal pilih 1 semester',
+            'semester_list.array' => 'Format semester tidak valid',
+            'semester_list.min' => 'Minimal pilih 1 semester',
+            'semester_list.*.integer' => 'Semester harus berupa angka',
+            'semester_list.*.min' => 'Semester minimal 1',
+            'semester_list.*.max' => 'Semester maksimal 14',
             'tahun_ajaran.required' => 'Tahun Ajaran harus diisi',
             'tahun_ajaran.regex' => 'Format Tahun Ajaran harus YYYY/YYYY (contoh: 2024/2025)',
             'tanggal_mulai.required' => 'Tanggal mulai harus diisi',
@@ -44,17 +47,21 @@ class StoreJadwalKrsRequest extends FormRequest
     public function withValidator($validator)
     {
         $validator->after(function ($validator) {
-            $exists = \DB::table('jadwal_pengisian_krs')
-                ->where('kode_prodi', $this->kode_prodi)
-                ->where('semester', $this->semester)
-                ->where('tahun_ajaran', $this->tahun_ajaran)
-                ->exists();
+            // Cek duplikasi jadwal KRS untuk semester yang sama
+            foreach ($this->semester_list as $semester) {
+                $exists = \DB::table('jadwal_pengisian_krs')
+                    ->where('kode_prodi', $this->kode_prodi)
+                    ->where('tahun_ajaran', $this->tahun_ajaran)
+                    ->whereRaw("JSON_CONTAINS(semester_list, '\"$semester\"')")
+                    ->exists();
 
-            if ($exists) {
-                $validator->errors()->add(
-                    'kode_prodi',
-                    'Jadwal KRS untuk prodi, semester, dan tahun ajaran ini sudah ada'
-                );
+                if ($exists) {
+                    $validator->errors()->add(
+                        'semester_list',
+                        "Jadwal KRS untuk semester $semester di prodi dan tahun ajaran ini sudah ada"
+                    );
+                    break;
+                }
             }
         });
     }

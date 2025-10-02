@@ -198,6 +198,13 @@ export default function Index({ prodi, fakultas_list, filters }) {
                                             <td className="px-6 py-4 whitespace-nowrap text-sm text-center">
                                                 <div className="flex items-center justify-center gap-2">
                                                     <Link
+                                                        href={route('baak.prodi.show', item.kode_prodi)}
+                                                        className="bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded text-xs font-medium transition-colors"
+                                                        title="Detail"
+                                                    >
+                                                        <i className="fas fa-eye"></i>
+                                                    </Link>
+                                                    <Link
                                                         href={route('baak.prodi.edit', item.kode_prodi)}
                                                         className="bg-yellow-500 hover:bg-yellow-600 text-white px-3 py-1 rounded text-xs font-medium transition-colors"
                                                         title="Edit"
@@ -285,6 +292,12 @@ export default function Index({ prodi, fakultas_list, filters }) {
                                     </p>
                                 </div>
                                 <div className="flex gap-2 mt-3 pt-3 border-t border-gray-100">
+                                    <Link
+                                        href={route('baak.prodi.show', item.kode_prodi)}
+                                        className="flex-1 bg-blue-500 hover:bg-blue-600 text-white px-3 py-2 rounded text-sm font-medium text-center transition-colors"
+                                    >
+                                        <i className="fas fa-eye mr-1"></i> Edit
+                                    </Link>
                                     <Link
                                         href={route('baak.prodi.edit', item.kode_prodi)}
                                         className="flex-1 bg-yellow-500 hover:bg-yellow-600 text-white px-3 py-2 rounded text-sm font-medium text-center transition-colors"

@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Baak\BaakController;
 use App\Http\Controllers\Baak\FakultasController;
+use App\Http\Controllers\Baak\JadwalKrsController;
 use App\Http\Controllers\Baak\KelasController;
 use App\Http\Controllers\Baak\PeriodeRegistrasiController;
 use App\Http\Controllers\DosenController;
@@ -58,6 +59,11 @@ Route::middleware(['auth', 'role:baak'])->prefix('baak')->name('baak.')->group(f
         [PeriodeRegistrasiController::class, 'toggleStatus']
     )
         ->name('periode-registrasi.toggle-status');
+
+    // Jadwal Pengisian KRS Routes
+    Route::resource('jadwal-krs', JadwalKrsController::class)->parameters([
+        'jadwal-krs' => 'jadwalKrs'
+    ]);
 });
 
 

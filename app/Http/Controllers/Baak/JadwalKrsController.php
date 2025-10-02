@@ -3,8 +3,8 @@
 namespace App\Http\Controllers\Baak;
 
 use App\Http\Controllers\Controller;
-use App\Http\Requests\Baak\StoreJadwalKrsRequest;
-use App\Http\Requests\Baak\UpdateJadwalKrsRequest;
+use App\Http\Requests\StoreJadwalKrsRequest;
+use App\Http\Requests\UpdateJadwalKrsRequest;
 use App\Models\JadwalPengisianKrs;
 use App\Models\Prodi;
 use App\Models\PeriodeRegistrasi;
@@ -27,7 +27,7 @@ class JadwalKrsController extends Controller
 
         if ($request->filled('search')) {
             $search = $request->search;
-            $query->whereHas('prodi', function($q) use ($search) {
+            $query->whereHas('prodi', function ($q) use ($search) {
                 $q->where('nama_prodi', 'like', "%{$search}%");
             });
         }
@@ -38,6 +38,7 @@ class JadwalKrsController extends Controller
             $jadwal->status_label = $this->getStatusLabel($jadwal);
             $jadwal->status_badge = $this->getStatusBadge($jadwal);
             $jadwal->durasi = $jadwal->tanggal_mulai->diffInDays($jadwal->tanggal_selesai) + 1;
+            $jadwal->semester_display = $jadwal->semester_display; // Gunakan accessor
             return $jadwal;
         });
 
@@ -122,7 +123,7 @@ class JadwalKrsController extends Controller
     {
         $status = $this->getStatusLabel($jadwal);
 
-        return match($status) {
+        return match ($status) {
             'Belum Mulai' => 'bg-gray-100 text-gray-700',
             'Sedang Berjalan' => 'bg-blue-100 text-blue-700',
             'Sudah Selesai' => 'bg-green-100 text-green-700',

@@ -31,12 +31,10 @@ export default function BaakLayout({ children, title }) {
         }
     };
 
-    // Helper function untuk cek active route
     const isActive = (routeName) => {
         return route().current(routeName) || route().current(`${routeName}.*`);
     };
 
-    // Check if any child route is active
     const isParentActive = (routeNames) => {
         return routeNames.some((name) => isActive(name));
     };
@@ -65,12 +63,12 @@ export default function BaakLayout({ children, title }) {
 
                 {/* Sidebar */}
                 <aside
-                    className={`fixed lg:block z-50 w-64 bg-white border-r border-gray-200 transform transition-transform duration-300 ease-in-out lg:translate-x-0 h-full overflow-y-auto ${
+                    className={`fixed lg:block z-50 w-64 bg-white border-r border-gray-200 transform transition-transform duration-300 ease-in-out lg:translate-x-0 h-screen flex flex-col ${
                         sidebarOpen ? "translate-x-0" : "-translate-x-full"
                     }`}
                 >
-                    {/* Logo Section */}
-                    <div className="p-6 border-b border-gray-200 bg-gradient-to-r from-blue-600 to-blue-700">
+                    {/* Logo Section - Fixed */}
+                    <div className="flex-shrink-0 p-6 border-b border-gray-200 bg-gradient-to-r from-blue-600 to-blue-700">
                         <div className="flex flex-col items-center">
                             <img
                                 src="/ITBR.jpeg"
@@ -84,8 +82,8 @@ export default function BaakLayout({ children, title }) {
                         </div>
                     </div>
 
-                    {/* User Profile Section */}
-                    <div className="p-4 border-b border-gray-200 bg-gray-50">
+                    {/* User Profile Section - Fixed */}
+                    <div className="flex-shrink-0 p-4 border-b border-gray-200 bg-gray-50">
                         <div className="flex items-center space-x-3">
                             <div className="flex items-center justify-center">
                                 <div className="w-12 h-12 bg-slate-700 rounded-full flex items-center justify-center">
@@ -107,8 +105,8 @@ export default function BaakLayout({ children, title }) {
                         </div>
                     </div>
 
-                    {/* Navigation Menu */}
-                    <nav className="mt-4 pb-20 overflow-y-auto">
+                    {/* Navigation Menu - Scrollable */}
+                    <nav className="flex-1 overflow-y-auto py-4">
                         <div className="px-4 space-y-1">
                             {/* Dashboard */}
                             <Link
@@ -135,7 +133,7 @@ export default function BaakLayout({ children, title }) {
                                         isParentActive([
                                             "baak.fakultas",
                                             "baak.prodi",
-                                            "baak.matakuliah",
+                                            "baak.mata-kuliah",
                                         ])
                                             ? "bg-blue-50 text-blue-700"
                                             : "text-gray-700 hover:bg-blue-50 hover:text-blue-700"
@@ -154,7 +152,6 @@ export default function BaakLayout({ children, title }) {
                                     ></i>
                                 </button>
 
-                                {/* Submenu */}
                                 <div
                                     className={`mt-1 space-y-1 overflow-hidden transition-all duration-300 ${
                                         masterDataOpen ? "max-h-48" : "max-h-0"
@@ -224,7 +221,6 @@ export default function BaakLayout({ children, title }) {
                                     ></i>
                                 </button>
 
-                                {/* Submenu */}
                                 <div
                                     className={`mt-1 space-y-1 overflow-hidden transition-all duration-300 ${
                                         kepegawaianOpen ? "max-h-48" : "max-h-0"
@@ -283,7 +279,6 @@ export default function BaakLayout({ children, title }) {
                                     ></i>
                                 </button>
 
-                                {/* Submenu */}
                                 <div
                                     className={`mt-1 space-y-1 overflow-hidden transition-all duration-300 ${
                                         perkuliahanOpen ? "max-h-48" : "max-h-0"
@@ -337,10 +332,9 @@ export default function BaakLayout({ children, title }) {
                                     ></i>
                                 </button>
 
-                                {/* Submenu */}
                                 <div
                                     className={`mt-1 space-y-1 overflow-hidden transition-all duration-300 ${
-                                        akademikOpen ? "max-h-48" : "max-h-0"
+                                        akademikOpen ? "max-h-60" : "max-h-0"
                                     }`}
                                 >
                                     <Link
@@ -355,8 +349,12 @@ export default function BaakLayout({ children, title }) {
                                         <span>Periode Registrasi</span>
                                     </Link>
                                     <Link
-                                        href="#"
-                                        className="flex items-center space-x-3 px-4 py-2 ml-6 rounded-lg text-sm text-gray-600 hover:bg-blue-50 hover:text-blue-700 transition-colors"
+                                        href={route("baak.jadwal-krs.index")}
+                                        className={`flex items-center space-x-3 px-4 py-2 ml-6 rounded-lg text-sm transition-colors ${
+                                            isActive("baak.jadwal-krs")
+                                                ? "bg-blue-600 text-white"
+                                                : "text-gray-600 hover:bg-blue-50 hover:text-blue-700"
+                                        }`}
                                     >
                                         <i className="fas fa-clock w-4"></i>
                                         <span>Jadwal KRS</span>
@@ -384,8 +382,8 @@ export default function BaakLayout({ children, title }) {
                         </div>
                     </nav>
 
-                    {/* Logout */}
-                    <div className="absolute px-4 bottom-4 left-4 right-4">
+                    {/* Logout Button - Fixed */}
+                    <div className="flex-shrink-0 p-4 border-t border-gray-200 bg-white">
                         <button
                             onClick={handleLogout}
                             className="w-full flex items-center space-x-3 px-4 py-3 text-red-600 hover:bg-red-50 rounded-lg transition-colors border border-red-200"
