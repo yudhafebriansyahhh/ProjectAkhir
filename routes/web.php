@@ -5,6 +5,7 @@ use App\Http\Controllers\Baak\FakultasController;
 use App\Http\Controllers\Baak\JadwalKrsController;
 use App\Http\Controllers\Baak\KelasController;
 use App\Http\Controllers\Baak\PeriodeRegistrasiController;
+use App\Http\Controllers\Baak\RegistrasiSemesterController;
 use App\Http\Controllers\DosenController;
 use App\Http\Controllers\MahasiswaController;
 use App\Http\Controllers\Baak\MataKuliahController;
@@ -64,6 +65,11 @@ Route::middleware(['auth', 'role:baak'])->prefix('baak')->name('baak.')->group(f
     Route::resource('jadwal-krs', JadwalKrsController::class)->parameters([
         'jadwal-krs' => 'jadwalKrs'
     ]);
+
+    // Registrasi Semester Routes
+    Route::resource('registrasi-semester', RegistrasiSemesterController::class);
+    Route::get('/api/search-mahasiswa', [RegistrasiSemesterController::class, 'searchMahasiswa'])
+        ->name('api.search-mahasiswa');
 });
 
 
