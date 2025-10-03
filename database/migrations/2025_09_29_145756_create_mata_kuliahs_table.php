@@ -14,7 +14,6 @@ return new class extends Migration {
             $table->foreign('kode_prodi')->references('kode_prodi')->on('prodi')->nullOnDelete();
             $table->enum('kategori', ['wajib', 'pilihan', 'umum']);
             $table->integer('sks');
-            $table->integer('semester');
             $table->boolean('is_active')->default(1);
             $table->string('deskripsi')->nullable();
             $table->timestamps();

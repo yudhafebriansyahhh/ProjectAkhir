@@ -129,7 +129,7 @@ export default function Show({ mata_kuliah }) {
                                 </div>
                             </div>
 
-                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-4 mt-4 md:mt-6">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 gap-3 md:gap-4 mt-4 md:mt-6">
                                 <div className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-lg p-3 md:p-4 border border-blue-200">
                                     <div className="flex items-center gap-2 mb-2">
                                         <i className="fas fa-book text-blue-600 text-sm"></i>
@@ -137,14 +137,6 @@ export default function Show({ mata_kuliah }) {
                                     </div>
                                     <p className="font-bold text-gray-800 text-xl md:text-2xl">{mata_kuliah.sks} SKS</p>
                                     <p className="text-xs text-gray-600 mt-1">Satuan Kredit</p>
-                                </div>
-                                <div className="bg-gradient-to-br from-purple-50 to-purple-100 rounded-lg p-3 md:p-4 border border-purple-200">
-                                    <div className="flex items-center gap-2 mb-2">
-                                        <i className="fas fa-calendar-alt text-purple-600 text-sm"></i>
-                                        <p className="text-xs md:text-sm text-gray-600 font-medium">Semester</p>
-                                    </div>
-                                    <p className="font-bold text-gray-800 text-xl md:text-2xl">Semester {mata_kuliah.semester}</p>
-                                    <p className="text-xs text-gray-600 mt-1">Periode Mata Kuliah</p>
                                 </div>
                                 <div className="bg-gradient-to-br from-green-50 to-green-100 rounded-lg p-3 md:p-4 border border-green-200 sm:col-span-2 lg:col-span-1">
                                     <div className="flex items-center gap-2 mb-2">
@@ -207,10 +199,6 @@ export default function Show({ mata_kuliah }) {
                                 <div>
                                     <label className="text-xs md:text-sm font-semibold text-gray-600">SKS</label>
                                     <p className="text-gray-800 text-sm md:text-base mt-1">{mata_kuliah.sks || '-'} SKS</p>
-                                </div>
-                                <div>
-                                    <label className="text-xs md:text-sm font-semibold text-gray-600">Semester</label>
-                                    <p className="text-gray-800 text-sm md:text-base mt-1">Semester {mata_kuliah.semester || '-'}</p>
                                 </div>
                                 <div>
                                     <label className="text-xs md:text-sm font-semibold text-gray-600">Program Studi</label>

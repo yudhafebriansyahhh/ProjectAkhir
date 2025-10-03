@@ -15,6 +15,7 @@ class Kelas extends Model
     protected $fillable = [
         'nama_kelas',
         'kode_matkul',
+        'id_mk_periode',
         'id_dosen',
         'ruang_kelas',
         'hari',
@@ -35,6 +36,11 @@ class Kelas extends Model
     public function mataKuliah()
     {
         return $this->belongsTo(MataKuliah::class, 'kode_matkul', 'kode_matkul');
+    }
+
+    public function mataKuliahPeriode()
+    {
+        return $this->belongsTo(MataKuliahPeriode::class, 'id_mk_periode', 'id_mk_periode');
     }
 
     public function dosen()

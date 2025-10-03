@@ -16,12 +16,12 @@ class StoreKelasRequest extends FormRequest
     {
         return [
             'nama_kelas' => 'required|string|max:10',
-            'kode_matkul' => 'required|string|exists:mata_kuliah,kode_matkul',
-            'id_dosen' => 'required|integer|exists:dosen,id_dosen',
+            'id_mk_periode' => 'required|exists:mata_kuliah_periode,id_mk_periode', 
+            'id_dosen' => 'required|exists:dosen,id_dosen',
             'ruang_kelas' => 'required|string|max:20',
-            'hari' => ['required', Rule::in(['Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'])],
-            'jam_mulai' => 'required|date_format:H:i',
-            'jam_selesai' => 'required|date_format:H:i|after:jam_mulai',
+            'hari' => 'required|in:Senin,Selasa,Rabu,Kamis,Jumat,Sabtu',
+            'jam_mulai' => 'required',
+            'jam_selesai' => 'required|after:jam_mulai',
             'kapasitas' => 'required|integer|min:20|max:50',
         ];
     }

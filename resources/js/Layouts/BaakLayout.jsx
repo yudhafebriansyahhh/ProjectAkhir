@@ -22,17 +22,17 @@ export default function BaakLayout({ children, title }) {
         isParentActive(["baak.dosen", "baak.mahasiswa"])
     );
     const [perkuliahanOpen, setPerkuliahanOpen] = useState(
-        isParentActive(["baak.kelas", "baak.krs"])
+        isParentActive(["baak.kelas"])
     );
     const [akademikOpen, setAkademikOpen] = useState(
-        isParentActive(["baak.periode-registrasi", "baak.jadwal-krs", "baak.registrasi-semester"])
+        isParentActive(["baak.periode-registrasi", "baak.jadwal-krs", "baak.registrasi-semester", "baak.pengaturan-krs"])
     );
 
     useEffect(() => {
         setMasterDataOpen(isParentActive(["baak.fakultas", "baak.prodi", "baak.mata-kuliah"]));
         setKepegawaianOpen(isParentActive(["baak.dosen", "baak.mahasiswa"]));
-        setPerkuliahanOpen(isParentActive(["baak.kelas", "baak.krs"]));
-        setAkademikOpen(isParentActive(["baak.periode-registrasi", "baak.jadwal-krs", "baak.registrasi-semester"]));
+        setPerkuliahanOpen(isParentActive(["baak.kelas"]));
+        setAkademikOpen(isParentActive(["baak.periode-registrasi", "baak.jadwal-krs", "baak.registrasi-semester", "baak.pengaturan-krs"]));
     }, [route().current()]);
 
     const handleLogout = () => {
@@ -253,13 +253,6 @@ export default function BaakLayout({ children, title }) {
                                         <i className="fas fa-calendar-alt w-4 text-center"></i>
                                         <span>Kelas</span>
                                     </Link>
-                                    <Link
-                                        href="#"
-                                        className="flex items-center space-x-3 px-4 py-2 ml-6 rounded-lg text-sm text-gray-600 hover:bg-blue-50 hover:text-blue-700 transition-colors"
-                                    >
-                                        <i className="fas fa-file-alt w-4 text-center"></i>
-                                        <span>KRS</span>
-                                    </Link>
                                 </div>
                             </div>
 
@@ -308,6 +301,16 @@ export default function BaakLayout({ children, title }) {
                                         <i className="fas fa-user-check w-4 text-center"></i>
                                         <span>Registrasi Mahasiswa</span>
                                     </Link>
+                                    <Link
+                                        href={route("baak.pengaturan-krs.index")}
+                                        className={`flex items-center space-x-3 px-4 py-2 ml-6 rounded-lg text-sm transition-colors ${
+                                            isActive("baak.pengaturan-krs") ? "bg-blue-600 text-white" : "text-gray-600 hover:bg-blue-50 hover:text-blue-700"
+                                        }`}
+                                    >
+                                        <i className="fas fa-cog w-4 text-center"></i>
+                                        <span>Pengaturan Mata Kuliah KRS</span>
+                                    </Link>
+
                                 </div>
                             </div>
 

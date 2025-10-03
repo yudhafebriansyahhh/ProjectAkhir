@@ -3,8 +3,8 @@
 namespace App\Http\Controllers\Baak;
 
 use App\Http\Controllers\Controller;
-use App\Http\Requests\Baak\StorePeriodeRegistrasiRequest;
-use App\Http\Requests\Baak\UpdatePeriodeRegistrasiRequest;
+use App\Http\Requests\StorePeriodeRegistrasiRequest;
+use App\Http\Requests\UpdatePeriodeRegistrasiRequest;
 use App\Models\PeriodeRegistrasi;
 use Illuminate\Http\Request;
 use Inertia\Inertia;

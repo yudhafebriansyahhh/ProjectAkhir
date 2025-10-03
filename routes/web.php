@@ -4,6 +4,7 @@ use App\Http\Controllers\Baak\BaakController;
 use App\Http\Controllers\Baak\FakultasController;
 use App\Http\Controllers\Baak\JadwalKrsController;
 use App\Http\Controllers\Baak\KelasController;
+use App\Http\Controllers\Baak\PengaturanKrsController;
 use App\Http\Controllers\Baak\PeriodeRegistrasiController;
 use App\Http\Controllers\Baak\RegistrasiSemesterController;
 use App\Http\Controllers\DosenController;
@@ -37,7 +38,10 @@ Route::middleware(['auth', 'role:baak'])->prefix('baak')->name('baak.')->group(f
     Route::post('/mahasiswa/{mahasiswa}/reset-password', [\App\Http\Controllers\Baak\MahasiswaController::class, 'resetPassword'])->name('mahasiswa.reset-password');
     // Dosen Routes
     Route::resource('dosen', \App\Http\Controllers\Baak\DosenController::class);
+
     Route::resource('kelas', KelasController::class);
+    Route::post('/kelas/get-mata-kuliah-by-periode', [KelasController::class, 'getMataKuliahByPeriode'])
+        ->name('kelas.get-mata-kuliah-by-periode');
     // Fakultas Routes
     Route::resource('fakultas', FakultasController::class)->parameters([
         'fakultas' => 'kode_fakultas'
@@ -70,6 +74,14 @@ Route::middleware(['auth', 'role:baak'])->prefix('baak')->name('baak.')->group(f
     Route::resource('registrasi-semester', RegistrasiSemesterController::class);
     Route::get('/api/search-mahasiswa', [RegistrasiSemesterController::class, 'searchMahasiswa'])
         ->name('api.search-mahasiswa');
+
+    // Pengaturan KRS Routes
+    Route::resource('pengaturan-krs', PengaturanKrsController::class)->parameters([
+        'pengaturan-krs' => 'pengaturan_kr'
+    ]);
+    Route::post('/pengaturan-krs/copy', [PengaturanKrsController::class, 'copy'])
+        ->name('pengaturan-krs.copy');
+
 });
 
 

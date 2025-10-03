@@ -1,4 +1,5 @@
 <?php
+// app/Http/Controllers/Baak/KelasController.php
 
 namespace App\Http\Controllers\Baak;
 
@@ -8,6 +9,8 @@ use App\Http\Requests\UpdateKelasRequest;
 use App\Models\Kelas;
 use App\Models\MataKuliah;
 use App\Models\Dosen;
+use App\Models\MataKuliahPeriode;
+use App\Models\PeriodeRegistrasi;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 
@@ -15,7 +18,7 @@ class KelasController extends Controller
 {
     public function index(Request $request)
     {
-        $query = Kelas::with(['mataKuliah', 'dosen.prodi']);
+        $query = Kelas::with(['mataKuliah', 'dosen.prodi', 'mataKuliahPeriode']);
 
         // Filter by Mata Kuliah
         if ($request->filled('mata_kuliah')) {
@@ -35,16 +38,16 @@ class KelasController extends Controller
         // Search
         if ($request->filled('search')) {
             $search = $request->search;
-            $query->where(function($q) use ($search) {
+            $query->where(function ($q) use ($search) {
                 $q->where('nama_kelas', 'like', "%{$search}%")
-                  ->orWhere('ruang_kelas', 'like', "%{$search}%")
-                  ->orWhereHas('mataKuliah', function($q) use ($search) {
-                      $q->where('nama_matkul', 'like', "%{$search}%")
-                        ->orWhere('kode_matkul', 'like', "%{$search}%");
-                  })
-                  ->orWhereHas('dosen', function($q) use ($search) {
-                      $q->where('nama', 'like', "%{$search}%");
-                  });
+                    ->orWhere('ruang_kelas', 'like', "%{$search}%")
+                    ->orWhereHas('mataKuliah', function ($q) use ($search) {
+                        $q->where('nama_matkul', 'like', "%{$search}%")
+                            ->orWhere('kode_matkul', 'like', "%{$search}%");
+                    })
+                    ->orWhereHas('dosen', function ($q) use ($search) {
+                        $q->where('nama', 'like', "%{$search}%");
+                    });
             });
         }
 
@@ -63,25 +66,56 @@ class KelasController extends Controller
 
     public function create()
     {
-        $mata_kuliah = MataKuliah::orderBy('semester')->orderBy('nama_matkul')->get();
-        $dosen = Dosen::with('prodi')->orderBy('nama')->get();
+        // AMBIL SEMUA PERIODE (tidak harus aktif)
+        $periodes = PeriodeRegistrasi::orderBy('tahun_ajaran', 'desc')
+            ->orderBy('jenis_semester', 'desc')
+            ->get();
+
+        if ($periodes->isEmpty()) {
+            return redirect()
+                ->route('baak.kelas.index')
+                ->with('error', 'Belum ada periode registrasi. Silakan buat periode terlebih dahulu.');
+        }
+
+        // Default: periode terbaru
+        $periodeTerbaru = $periodes->first();
 
         return Inertia::render('Baak/Kelas/Create', [
-            'mata_kuliah' => $mata_kuliah,
-            'dosen' => $dosen,
+            'periodes' => $periodes,
+            'periodeTerbaru' => $periodeTerbaru,
+            'dosen' => Dosen::with('prodi')->orderBy('nama')->get(),
         ]);
+    }
+
+    // ENDPOINT BARU: Load mata kuliah berdasarkan periode yang dipilih
+    public function getMataKuliahByPeriode(Request $request)
+    {
+        $request->validate([
+            'tahun_ajaran' => 'required|string',
+            'jenis_semester' => 'required|in:ganjil,genap,pendek',
+        ]);
+
+        $mataKuliahPeriode = MataKuliahPeriode::with('mataKuliah.prodi')
+            ->where('tahun_ajaran', $request->tahun_ajaran)
+            ->where('jenis_semester', $request->jenis_semester)
+            ->where('is_available', true)
+            ->get()
+            ->groupBy('semester_ditawarkan');
+
+        return response()->json($mataKuliahPeriode);
     }
 
     public function store(StoreKelasRequest $request)
     {
-        $validated = $request->validated();
+        // Validasi id_mk_periode ada
+        $mkPeriode = MataKuliahPeriode::findOrFail($request->id_mk_periode);
 
         // Check bentrok jadwal dosen
         $bentrokDosen = $this->checkBentrokDosen(
-            $validated['id_dosen'],
-            $validated['hari'],
-            $validated['jam_mulai'],
-            $validated['jam_selesai']
+            $request->id_dosen,
+            $request->hari,
+            $request->jam_mulai,
+            $request->jam_selesai
         );
 
         if ($bentrokDosen) {
@@ -92,10 +126,10 @@ class KelasController extends Controller
 
         // Check bentrok ruangan
         $bentrokRuangan = $this->checkBentrokRuangan(
-            $validated['ruang_kelas'],
-            $validated['hari'],
-            $validated['jam_mulai'],
-            $validated['jam_selesai']
+            $request->ruang_kelas,
+            $request->hari,
+            $request->jam_mulai,
+            $request->jam_selesai
         );
 
         if ($bentrokRuangan) {
@@ -104,15 +138,28 @@ class KelasController extends Controller
             ])->withInput();
         }
 
-        Kelas::create($validated);
+        Kelas::create([
+            'nama_kelas' => $request->nama_kelas,
+            'kode_matkul' => $mkPeriode->kode_matkul,
+            'id_mk_periode' => $request->id_mk_periode,
+            'id_dosen' => $request->id_dosen,
+            'ruang_kelas' => $request->ruang_kelas,
+            'hari' => $request->hari,
+            'jam_mulai' => $request->jam_mulai,
+            'jam_selesai' => $request->jam_selesai,
+            'kapasitas' => $request->kapasitas,
+        ]);
 
-        return redirect()->route('baak.kelas.index')->with('success', 'Kelas berhasil ditambahkan');
+        return redirect()
+            ->route('baak.kelas.index')
+            ->with('success', 'Kelas berhasil ditambahkan');
     }
 
     public function show($id)
     {
         $kelas = Kelas::with([
             'mataKuliah',
+            'mataKuliahPeriode',
             'dosen.prodi',
             'detailKrs.krs.mahasiswa.prodi',
             'bobotNilai'
@@ -121,11 +168,11 @@ class KelasController extends Controller
         // Get mahasiswa yang mengambil kelas ini
         $mahasiswa = $kelas->detailKrs()
             ->with(['krs.mahasiswa.prodi'])
-            ->whereHas('krs', function($q) {
+            ->whereHas('krs', function ($q) {
                 $q->where('status', 'approved');
             })
             ->get()
-            ->map(function($detail) {
+            ->map(function ($detail) {
                 return $detail->krs->mahasiswa;
             });
 
@@ -137,13 +184,21 @@ class KelasController extends Controller
 
     public function edit($id)
     {
-        $kelas = Kelas::with(['mataKuliah', 'dosen'])->findOrFail($id);
-        $mata_kuliah = MataKuliah::orderBy('semester')->orderBy('nama_matkul')->get();
+        $kelas = Kelas::with(['mataKuliah', 'mataKuliahPeriode', 'dosen'])->findOrFail($id);
+
+        // Load mata kuliah periode untuk periode yang sama dengan kelas ini
+        $mataKuliahPeriode = MataKuliahPeriode::with('mataKuliah.prodi')
+            ->where('tahun_ajaran', $kelas->mataKuliahPeriode->tahun_ajaran)
+            ->where('jenis_semester', $kelas->mataKuliahPeriode->jenis_semester)
+            ->where('is_available', true)
+            ->get()
+            ->groupBy('semester_ditawarkan');
+
         $dosen = Dosen::with('prodi')->orderBy('nama')->get();
 
         return Inertia::render('Baak/Kelas/Edit', [
             'kelas' => $kelas,
-            'mata_kuliah' => $mata_kuliah,
+            'mataKuliahPeriode' => $mataKuliahPeriode,
             'dosen' => $dosen,
         ]);
     }
@@ -151,14 +206,13 @@ class KelasController extends Controller
     public function update(UpdateKelasRequest $request, $id)
     {
         $kelas = Kelas::findOrFail($id);
-        $validated = $request->validated();
 
         // Check bentrok jadwal dosen (exclude kelas ini)
         $bentrokDosen = $this->checkBentrokDosen(
-            $validated['id_dosen'],
-            $validated['hari'],
-            $validated['jam_mulai'],
-            $validated['jam_selesai'],
+            $request->id_dosen,
+            $request->hari,
+            $request->jam_mulai,
+            $request->jam_selesai,
             $id
         );
 
@@ -170,10 +224,10 @@ class KelasController extends Controller
 
         // Check bentrok ruangan (exclude kelas ini)
         $bentrokRuangan = $this->checkBentrokRuangan(
-            $validated['ruang_kelas'],
-            $validated['hari'],
-            $validated['jam_mulai'],
-            $validated['jam_selesai'],
+            $request->ruang_kelas,
+            $request->hari,
+            $request->jam_mulai,
+            $request->jam_selesai,
             $id
         );
 
@@ -183,7 +237,7 @@ class KelasController extends Controller
             ])->withInput();
         }
 
-        $kelas->update($validated);
+        $kelas->update($request->validated());
 
         return redirect()->route('baak.kelas.index')->with('success', 'Kelas berhasil diupdate');
     }
@@ -210,12 +264,9 @@ class KelasController extends Controller
         $query = Kelas::with('mataKuliah')
             ->where('id_dosen', $id_dosen)
             ->where('hari', $hari)
-            ->where(function($q) use ($jam_mulai, $jam_selesai) {
-                // Cek overlap waktu
-                $q->where(function($q) use ($jam_mulai, $jam_selesai) {
-                    $q->where('jam_mulai', '<', $jam_selesai)
-                      ->where('jam_selesai', '>', $jam_mulai);
-                });
+            ->where(function ($q) use ($jam_mulai, $jam_selesai) {
+                $q->where('jam_mulai', '<', $jam_selesai)
+                    ->where('jam_selesai', '>', $jam_mulai);
             });
 
         if ($exclude_id) {
@@ -230,12 +281,9 @@ class KelasController extends Controller
         $query = Kelas::with('mataKuliah')
             ->where('ruang_kelas', $ruang_kelas)
             ->where('hari', $hari)
-            ->where(function($q) use ($jam_mulai, $jam_selesai) {
-                // Cek overlap waktu
-                $q->where(function($q) use ($jam_mulai, $jam_selesai) {
-                    $q->where('jam_mulai', '<', $jam_selesai)
-                      ->where('jam_selesai', '>', $jam_mulai);
-                });
+            ->where(function ($q) use ($jam_mulai, $jam_selesai) {
+                $q->where('jam_mulai', '<', $jam_selesai)
+                    ->where('jam_selesai', '>', $jam_mulai);
             });
 
         if ($exclude_id) {
