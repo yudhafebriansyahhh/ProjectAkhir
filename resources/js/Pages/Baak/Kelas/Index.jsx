@@ -1,3 +1,5 @@
+// resources/js/Pages/Baak/Kelas/Index.jsx
+
 import { useState } from 'react';
 import { Head, Link, router, usePage } from '@inertiajs/react';
 import BaakLayout from '@/Layouts/BaakLayout';
@@ -170,6 +172,7 @@ export default function Index({ kelas, mata_kuliah_list, dosen_list, filters }) 
                             <thead className="bg-gray-50">
                                 <tr className="text-gray-600 font-semibold text-xs">
                                     <th className="px-6 py-4 text-left uppercase tracking-wider">No</th>
+                                    <th className="px-6 py-3 text-left uppercase tracking-wider">Periode</th>
                                     <th className="px-6 py-3 text-left uppercase tracking-wider">Kode MK</th>
                                     <th className="px-6 py-3 text-left uppercase tracking-wider">Mata Kuliah</th>
                                     <th className="px-6 py-3 text-center uppercase tracking-wider">Kelas</th>
@@ -188,13 +191,21 @@ export default function Index({ kelas, mata_kuliah_list, dosen_list, filters }) 
                                             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
                                                 {kelas.from + index}
                                             </td>
+                                            <td className="px-6 py-4 whitespace-nowrap text-xs">
+                                                <div className="text-gray-900 font-medium">
+                                                    {item.mata_kuliah_periode?.tahun_ajaran}
+                                                </div>
+                                                <div className="text-gray-500 capitalize">
+                                                    {item.mata_kuliah_periode?.jenis_semester}
+                                                </div>
+                                            </td>
                                             <td className="px-6 py-4 whitespace-nowrap">
                                                 <span className="px-2 py-1 text-xs font-semibold text-blue-800 bg-blue-100 rounded-lg">
-                                                    {item.mata_kuliah?.kode_matkul || '-'}
+                                                    {item.mata_kuliah_periode?.mata_kuliah?.kode_matkul || '-'}
                                                 </span>
                                             </td>
                                             <td className="px-6 py-4 text-sm text-gray-700 font-medium">
-                                                {item.mata_kuliah?.nama_matkul || '-'}
+                                                {item.mata_kuliah_periode?.mata_kuliah?.nama_matkul || '-'}
                                             </td>
                                             <td className="px-6 py-4 whitespace-nowrap text-center">
                                                 <span className="px-3 py-1 text-xs font-semibold text-purple-800 bg-purple-100 rounded-lg">
@@ -235,7 +246,11 @@ export default function Index({ kelas, mata_kuliah_list, dosen_list, filters }) 
                                                         <i className="fas fa-edit"></i>
                                                     </Link>
                                                     <button
-                                                        onClick={() => handleDelete(item.id_kelas, item.nama_kelas, item.mata_kuliah?.nama_matkul)}
+                                                        onClick={() => handleDelete(
+                                                            item.id_kelas,
+                                                            item.nama_kelas,
+                                                            item.mata_kuliah_periode?.mata_kuliah?.nama_matkul
+                                                        )}
                                                         className="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded text-xs font-medium transition-colors"
                                                         title="Hapus"
                                                     >
@@ -247,7 +262,7 @@ export default function Index({ kelas, mata_kuliah_list, dosen_list, filters }) 
                                     ))
                                 ) : (
                                     <tr>
-                                        <td colSpan="10" className="px-6 py-8 text-center text-gray-500">
+                                        <td colSpan="11" className="px-6 py-8 text-center text-gray-500">
                                             <i className="fas fa-inbox text-4xl mb-2 text-gray-400"></i>
                                             <p>Tidak ada data kelas</p>
                                         </td>
@@ -294,13 +309,18 @@ export default function Index({ kelas, mata_kuliah_list, dosen_list, filters }) 
                                     <div className="flex-1 min-w-0">
                                         <div className="flex items-center gap-2 mb-1 flex-wrap">
                                             <span className="px-2 py-0.5 text-xs font-semibold text-blue-800 bg-blue-100 rounded">
-                                                {item.mata_kuliah?.kode_matkul}
+                                                {item.mata_kuliah_periode?.mata_kuliah?.kode_matkul}
                                             </span>
                                             <span className="px-2 py-0.5 text-xs font-semibold text-purple-800 bg-purple-100 rounded">
                                                 Kelas {item.nama_kelas}
                                             </span>
                                         </div>
-                                        <h3 className="font-semibold text-gray-900 text-sm break-words">{item.mata_kuliah?.nama_matkul}</h3>
+                                        <h3 className="font-semibold text-gray-900 text-sm break-words">
+                                            {item.mata_kuliah_periode?.mata_kuliah?.nama_matkul}
+                                        </h3>
+                                        <p className="text-xs text-gray-500 mt-1">
+                                            {item.mata_kuliah_periode?.tahun_ajaran} - {item.mata_kuliah_periode?.jenis_semester}
+                                        </p>
                                     </div>
                                 </div>
                                 <div className="space-y-1 mb-3 text-sm">
@@ -334,7 +354,11 @@ export default function Index({ kelas, mata_kuliah_list, dosen_list, filters }) 
                                         <i className="fas fa-edit mr-1"></i> Edit
                                     </Link>
                                     <button
-                                        onClick={() => handleDelete(item.id_kelas, item.nama_kelas, item.mata_kuliah?.nama_matkul)}
+                                        onClick={() => handleDelete(
+                                            item.id_kelas,
+                                            item.nama_kelas,
+                                            item.mata_kuliah_periode?.mata_kuliah?.nama_matkul
+                                        )}
                                         className="bg-red-500 hover:bg-red-600 text-white px-3 py-2 rounded text-sm font-medium transition-colors"
                                     >
                                         <i className="fas fa-trash mr-1"></i> Hapus

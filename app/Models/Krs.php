@@ -46,7 +46,8 @@ class Krs extends Model
     {
         return $this->detailKrs()
             ->join('kelas', 'detail_krs.id_kelas', '=', 'kelas.id_kelas')
-            ->join('mata_kuliah', 'kelas.kode_matkul', '=', 'mata_kuliah.kode_matkul')
+            ->join('mata_kuliah_periode', 'kelas.id_mk_periode', '=', 'mata_kuliah_periode.id_mk_periode') // ✅ ADD THIS
+            ->join('mata_kuliah', 'mata_kuliah_periode.kode_matkul', '=', 'mata_kuliah.kode_matkul') // ✅ FIX THIS
             ->sum('mata_kuliah.sks');
     }
 
@@ -55,8 +56,13 @@ class Krs extends Model
         return $this->status === 'approved';
     }
 
-    public function isDraft()
+    public function isPending()
     {
-        return $this->status === 'draft';
+        return $this->status === 'pending';
+    }
+
+    public function isRejected()
+    {
+        return $this->status === 'rejected';
     }
 }

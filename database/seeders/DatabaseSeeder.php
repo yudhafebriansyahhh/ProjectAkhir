@@ -24,6 +24,7 @@ class DatabaseSeeder extends Seeder
             'krs',
             'jadwal_pengisian_krs',
             'kelas',
+            'mata_kuliah_periode',
             'mata_kuliah',
             'registrasi_semester',
             'periode_registrasi',
@@ -92,7 +93,6 @@ class DatabaseSeeder extends Seeder
 
         $dosenIds = [];
         foreach ($dosenData as $dosen) {
-            // Generate email dari 8 digit terakhir NIP untuk menghindari duplikasi
             $emailPrefix = 'dosen' . substr($dosen['nip'], -8);
 
             $userId = DB::table('users')->insertGetId([
@@ -118,12 +118,13 @@ class DatabaseSeeder extends Seeder
         }
 
         // ========================================
-        // 5. MAHASISWA (Semester 5-7)
+        // 5. MAHASISWA (Semester 3-7)
         // ========================================
         $mahasiswaData = [
             // Semester 7 (Angkatan 2021)
             ['nama' => 'Andi Pratama', 'kode_prodi' => '55', 'tahun' => 2021, 'jk' => 'Laki-laki', 'tgl_lahir' => '2003-01-15'],
             ['nama' => 'Dewi Lestari', 'kode_prodi' => '55', 'tahun' => 2021, 'jk' => 'Perempuan', 'tgl_lahir' => '2003-03-20'],
+            ['nama' => 'Rudi Hartono', 'kode_prodi' => '56', 'tahun' => 2021, 'jk' => 'Laki-laki', 'tgl_lahir' => '2003-05-12'],
 
             // Semester 6 (Angkatan 2022)
             ['nama' => 'Riko Saputra', 'kode_prodi' => '56', 'tahun' => 2022, 'jk' => 'Laki-laki', 'tgl_lahir' => '2004-05-10'],
@@ -132,8 +133,18 @@ class DatabaseSeeder extends Seeder
 
             // Semester 5 (Angkatan 2023)
             ['nama' => 'Sari Melati', 'kode_prodi' => '55', 'tahun' => 2023, 'jk' => 'Perempuan', 'tgl_lahir' => '2005-04-18'],
-            ['nama' => 'Budi Hartono', 'kode_prodi' => '56', 'tahun' => 2023, 'jk' => 'Laki-laki', 'tgl_lahir' => '2005-08-22'],
+            ['nama' => 'Budi Hermawan', 'kode_prodi' => '56', 'tahun' => 2023, 'jk' => 'Laki-laki', 'tgl_lahir' => '2005-08-22'],
             ['nama' => 'Fitri Handayani', 'kode_prodi' => '31', 'tahun' => 2023, 'jk' => 'Perempuan', 'tgl_lahir' => '2005-06-30'],
+            ['nama' => 'Yoga Pratama', 'kode_prodi' => '55', 'tahun' => 2023, 'jk' => 'Laki-laki', 'tgl_lahir' => '2005-09-18'],
+
+            // Semester 4 (Angkatan 2024)
+            ['nama' => 'Indah Permata', 'kode_prodi' => '55', 'tahun' => 2024, 'jk' => 'Perempuan', 'tgl_lahir' => '2006-03-22'],
+            ['nama' => 'Arif Budiman', 'kode_prodi' => '56', 'tahun' => 2024, 'jk' => 'Laki-laki', 'tgl_lahir' => '2006-07-15'],
+            ['nama' => 'Maya Sari', 'kode_prodi' => '31', 'tahun' => 2024, 'jk' => 'Perempuan', 'tgl_lahir' => '2006-05-08'],
+
+            // Semester 3 (Angkatan 2024)
+            ['nama' => 'Dian Sastro', 'kode_prodi' => '55', 'tahun' => 2024, 'jk' => 'Perempuan', 'tgl_lahir' => '2006-02-20'],
+            ['nama' => 'Hadi Wijaya', 'kode_prodi' => '56', 'tahun' => 2024, 'jk' => 'Laki-laki', 'tgl_lahir' => '2006-11-11'],
         ];
 
         $mahasiswaIds = [];
@@ -171,44 +182,65 @@ class DatabaseSeeder extends Seeder
         }
 
         // ========================================
-        // 6. MATA KULIAH
+        // 6. MATA KULIAH (Tanpa kolom semester)
         // ========================================
         $mataKuliahData = [
             // Mata Kuliah Umum
-            ['kode' => 'MKU101', 'nama' => 'Pendidikan Pancasila', 'sks' => 2, 'sem' => 1, 'prodi' => null, 'kat' => 'umum'],
-            ['kode' => 'MKU102', 'nama' => 'Bahasa Indonesia', 'sks' => 2, 'sem' => 1, 'prodi' => null, 'kat' => 'umum'],
-            ['kode' => 'MKU201', 'nama' => 'Bahasa Inggris', 'sks' => 2, 'sem' => 2, 'prodi' => null, 'kat' => 'umum'],
+            ['kode' => 'MKU101', 'nama' => 'Pendidikan Pancasila', 'sks' => 2, 'prodi' => null, 'kat' => 'umum'],
+            ['kode' => 'MKU102', 'nama' => 'Bahasa Indonesia', 'sks' => 2, 'prodi' => null, 'kat' => 'umum'],
+            ['kode' => 'MKU201', 'nama' => 'Bahasa Inggris', 'sks' => 2, 'prodi' => null, 'kat' => 'umum'],
+            ['kode' => 'MKU301', 'nama' => 'Kewarganegaraan', 'sks' => 2, 'prodi' => null, 'kat' => 'umum'],
 
             // Teknik Informatika
-            ['kode' => 'IF101', 'nama' => 'Algoritma dan Pemrograman', 'sks' => 3, 'sem' => 1, 'prodi' => '55', 'kat' => 'wajib'],
-            ['kode' => 'IF102', 'nama' => 'Matematika Diskrit', 'sks' => 3, 'sem' => 1, 'prodi' => '55', 'kat' => 'wajib'],
-            ['kode' => 'IF201', 'nama' => 'Struktur Data', 'sks' => 3, 'sem' => 2, 'prodi' => '55', 'kat' => 'wajib'],
-            ['kode' => 'IF202', 'nama' => 'Basis Data', 'sks' => 3, 'sem' => 2, 'prodi' => '55', 'kat' => 'wajib'],
-            ['kode' => 'IF301', 'nama' => 'Pemrograman Web', 'sks' => 3, 'sem' => 3, 'prodi' => '55', 'kat' => 'wajib'],
-            ['kode' => 'IF302', 'nama' => 'Sistem Operasi', 'sks' => 3, 'sem' => 3, 'prodi' => '55', 'kat' => 'wajib'],
-            ['kode' => 'IF401', 'nama' => 'Jaringan Komputer', 'sks' => 3, 'sem' => 4, 'prodi' => '55', 'kat' => 'wajib'],
-            ['kode' => 'IF402', 'nama' => 'Rekayasa Perangkat Lunak', 'sks' => 3, 'sem' => 4, 'prodi' => '55', 'kat' => 'wajib'],
-            ['kode' => 'IF501', 'nama' => 'Kecerdasan Buatan', 'sks' => 3, 'sem' => 5, 'prodi' => '55', 'kat' => 'wajib'],
-            ['kode' => 'IF502', 'nama' => 'Machine Learning', 'sks' => 3, 'sem' => 5, 'prodi' => '55', 'kat' => 'pilihan'],
-            ['kode' => 'IF503', 'nama' => 'Cloud Computing', 'sks' => 3, 'sem' => 5, 'prodi' => '55', 'kat' => 'pilihan'],
-            ['kode' => 'IF601', 'nama' => 'Keamanan Informasi', 'sks' => 3, 'sem' => 6, 'prodi' => '55', 'kat' => 'wajib'],
-            ['kode' => 'IF602', 'nama' => 'Data Mining', 'sks' => 3, 'sem' => 6, 'prodi' => '55', 'kat' => 'pilihan'],
-            ['kode' => 'IF701', 'nama' => 'Metodologi Penelitian', 'sks' => 2, 'sem' => 7, 'prodi' => '55', 'kat' => 'wajib'],
-            ['kode' => 'IF702', 'nama' => 'Manajemen Proyek TI', 'sks' => 3, 'sem' => 7, 'prodi' => '55', 'kat' => 'wajib'],
+            ['kode' => 'IF101', 'nama' => 'Algoritma dan Pemrograman', 'sks' => 3, 'prodi' => '55', 'kat' => 'wajib'],
+            ['kode' => 'IF102', 'nama' => 'Matematika Diskrit', 'sks' => 3, 'prodi' => '55', 'kat' => 'wajib'],
+            ['kode' => 'IF103', 'nama' => 'Logika Informatika', 'sks' => 3, 'prodi' => '55', 'kat' => 'wajib'],
+            ['kode' => 'IF201', 'nama' => 'Struktur Data', 'sks' => 3, 'prodi' => '55', 'kat' => 'wajib'],
+            ['kode' => 'IF202', 'nama' => 'Basis Data', 'sks' => 3, 'prodi' => '55', 'kat' => 'wajib'],
+            ['kode' => 'IF203', 'nama' => 'Pemrograman Berorientasi Objek', 'sks' => 3, 'prodi' => '55', 'kat' => 'wajib'],
+            ['kode' => 'IF301', 'nama' => 'Pemrograman Web', 'sks' => 3, 'prodi' => '55', 'kat' => 'wajib'],
+            ['kode' => 'IF302', 'nama' => 'Sistem Operasi', 'sks' => 3, 'prodi' => '55', 'kat' => 'wajib'],
+            ['kode' => 'IF303', 'nama' => 'Analisis dan Desain Algoritma', 'sks' => 3, 'prodi' => '55', 'kat' => 'wajib'],
+            ['kode' => 'IF401', 'nama' => 'Jaringan Komputer', 'sks' => 3, 'prodi' => '55', 'kat' => 'wajib'],
+            ['kode' => 'IF402', 'nama' => 'Rekayasa Perangkat Lunak', 'sks' => 3, 'prodi' => '55', 'kat' => 'wajib'],
+            ['kode' => 'IF403', 'nama' => 'Basis Data Lanjut', 'sks' => 3, 'prodi' => '55', 'kat' => 'wajib'],
+            ['kode' => 'IF501', 'nama' => 'Kecerdasan Buatan', 'sks' => 3, 'prodi' => '55', 'kat' => 'wajib'],
+            ['kode' => 'IF502', 'nama' => 'Machine Learning', 'sks' => 3, 'prodi' => '55', 'kat' => 'pilihan'],
+            ['kode' => 'IF503', 'nama' => 'Cloud Computing', 'sks' => 3, 'prodi' => '55', 'kat' => 'pilihan'],
+            ['kode' => 'IF504', 'nama' => 'Pemrograman Mobile', 'sks' => 3, 'prodi' => '55', 'kat' => 'pilihan'],
+            ['kode' => 'IF601', 'nama' => 'Keamanan Informasi', 'sks' => 3, 'prodi' => '55', 'kat' => 'wajib'],
+            ['kode' => 'IF602', 'nama' => 'Data Mining', 'sks' => 3, 'prodi' => '55', 'kat' => 'pilihan'],
+            ['kode' => 'IF603', 'nama' => 'Komputasi Paralel', 'sks' => 3, 'prodi' => '55', 'kat' => 'pilihan'],
+            ['kode' => 'IF701', 'nama' => 'Metodologi Penelitian', 'sks' => 2, 'prodi' => '55', 'kat' => 'wajib'],
+            ['kode' => 'IF702', 'nama' => 'Manajemen Proyek TI', 'sks' => 3, 'prodi' => '55', 'kat' => 'wajib'],
+            ['kode' => 'IF703', 'nama' => 'Etika Profesi', 'sks' => 2, 'prodi' => '55', 'kat' => 'wajib'],
 
             // Sistem Informasi
-            ['kode' => 'SI101', 'nama' => 'Pengantar Sistem Informasi', 'sks' => 3, 'sem' => 1, 'prodi' => '56', 'kat' => 'wajib'],
-            ['kode' => 'SI201', 'nama' => 'Analisis dan Perancangan SI', 'sks' => 3, 'sem' => 2, 'prodi' => '56', 'kat' => 'wajib'],
-            ['kode' => 'SI301', 'nama' => 'Sistem Informasi Manajemen', 'sks' => 3, 'sem' => 3, 'prodi' => '56', 'kat' => 'wajib'],
-            ['kode' => 'SI401', 'nama' => 'E-Business', 'sks' => 3, 'sem' => 4, 'prodi' => '56', 'kat' => 'wajib'],
-            ['kode' => 'SI501', 'nama' => 'Audit Sistem Informasi', 'sks' => 3, 'sem' => 5, 'prodi' => '56', 'kat' => 'wajib'],
-            ['kode' => 'SI502', 'nama' => 'Business Intelligence', 'sks' => 3, 'sem' => 5, 'prodi' => '56', 'kat' => 'pilihan'],
-            ['kode' => 'SI601', 'nama' => 'Tata Kelola TI', 'sks' => 3, 'sem' => 6, 'prodi' => '56', 'kat' => 'wajib'],
-            ['kode' => 'SI701', 'nama' => 'Manajemen Strategi SI', 'sks' => 3, 'sem' => 7, 'prodi' => '56', 'kat' => 'wajib'],
+            ['kode' => 'SI101', 'nama' => 'Pengantar Sistem Informasi', 'sks' => 3, 'prodi' => '56', 'kat' => 'wajib'],
+            ['kode' => 'SI102', 'nama' => 'Pengantar Teknologi Informasi', 'sks' => 3, 'prodi' => '56', 'kat' => 'wajib'],
+            ['kode' => 'SI201', 'nama' => 'Analisis dan Perancangan SI', 'sks' => 3, 'prodi' => '56', 'kat' => 'wajib'],
+            ['kode' => 'SI202', 'nama' => 'Manajemen Basis Data', 'sks' => 3, 'prodi' => '56', 'kat' => 'wajib'],
+            ['kode' => 'SI301', 'nama' => 'Sistem Informasi Manajemen', 'sks' => 3, 'prodi' => '56', 'kat' => 'wajib'],
+            ['kode' => 'SI302', 'nama' => 'Pemrograman Web SI', 'sks' => 3, 'prodi' => '56', 'kat' => 'wajib'],
+            ['kode' => 'SI401', 'nama' => 'E-Business', 'sks' => 3, 'prodi' => '56', 'kat' => 'wajib'],
+            ['kode' => 'SI402', 'nama' => 'Sistem Enterprise', 'sks' => 3, 'prodi' => '56', 'kat' => 'wajib'],
+            ['kode' => 'SI501', 'nama' => 'Audit Sistem Informasi', 'sks' => 3, 'prodi' => '56', 'kat' => 'wajib'],
+            ['kode' => 'SI502', 'nama' => 'Business Intelligence', 'sks' => 3, 'prodi' => '56', 'kat' => 'pilihan'],
+            ['kode' => 'SI503', 'nama' => 'Manajemen Proyek SI', 'sks' => 3, 'prodi' => '56', 'kat' => 'pilihan'],
+            ['kode' => 'SI601', 'nama' => 'Tata Kelola TI', 'sks' => 3, 'prodi' => '56', 'kat' => 'wajib'],
+            ['kode' => 'SI602', 'nama' => 'Sistem Informasi Geografis', 'sks' => 3, 'prodi' => '56', 'kat' => 'pilihan'],
+            ['kode' => 'SI701', 'nama' => 'Manajemen Strategi SI', 'sks' => 3, 'prodi' => '56', 'kat' => 'wajib'],
+            ['kode' => 'SI702', 'nama' => 'Kewirausahaan TI', 'sks' => 2, 'prodi' => '56', 'kat' => 'wajib'],
 
             // Manajemen
-            ['kode' => 'MN101', 'nama' => 'Pengantar Manajemen', 'sks' => 3, 'sem' => 1, 'prodi' => '31', 'kat' => 'wajib'],
-            ['kode' => 'MN501', 'nama' => 'Manajemen Strategis', 'sks' => 3, 'sem' => 5, 'prodi' => '31', 'kat' => 'wajib'],
+            ['kode' => 'MN101', 'nama' => 'Pengantar Manajemen', 'sks' => 3, 'prodi' => '31', 'kat' => 'wajib'],
+            ['kode' => 'MN102', 'nama' => 'Pengantar Ekonomi', 'sks' => 3, 'prodi' => '31', 'kat' => 'wajib'],
+            ['kode' => 'MN201', 'nama' => 'Manajemen Keuangan', 'sks' => 3, 'prodi' => '31', 'kat' => 'wajib'],
+            ['kode' => 'MN301', 'nama' => 'Manajemen Pemasaran', 'sks' => 3, 'prodi' => '31', 'kat' => 'wajib'],
+            ['kode' => 'MN401', 'nama' => 'Manajemen Operasional', 'sks' => 3, 'prodi' => '31', 'kat' => 'wajib'],
+            ['kode' => 'MN501', 'nama' => 'Manajemen Strategis', 'sks' => 3, 'prodi' => '31', 'kat' => 'wajib'],
+            ['kode' => 'MN601', 'nama' => 'Manajemen SDM', 'sks' => 3, 'prodi' => '31', 'kat' => 'wajib'],
+            ['kode' => 'MN701', 'nama' => 'Etika Bisnis', 'sks' => 2, 'prodi' => '31', 'kat' => 'wajib'],
         ];
 
         foreach ($mataKuliahData as $mk) {
@@ -216,7 +248,6 @@ class DatabaseSeeder extends Seeder
                 'kode_matkul' => $mk['kode'],
                 'nama_matkul' => $mk['nama'],
                 'sks' => $mk['sks'],
-                'semester' => $mk['sem'],
                 'kode_prodi' => $mk['prodi'],
                 'kategori' => $mk['kat'],
                 'is_active' => 1,
@@ -252,18 +283,66 @@ class DatabaseSeeder extends Seeder
         }
 
         // ========================================
-        // 8. REGISTRASI SEMESTER & KRS
+        // 8. MATA KULIAH PERIODE
+        // ========================================
+        $this->createMataKuliahPeriode();
+
+        // ========================================
+        // 9. JADWAL PENGISIAN KRS (dengan semester_list JSON)
+        // ========================================
+        $jadwalKrsData = [
+            ['kode_prodi' => '55', 'semesters' => [1], 'ta' => '2021/2022', 'mulai' => '2021-08-10', 'selesai' => '2021-08-25'],
+            ['kode_prodi' => '56', 'semesters' => [1], 'ta' => '2021/2022', 'mulai' => '2021-08-10', 'selesai' => '2021-08-25'],
+            ['kode_prodi' => '31', 'semesters' => [1], 'ta' => '2021/2022', 'mulai' => '2021-08-10', 'selesai' => '2021-08-25'],
+
+            ['kode_prodi' => '55', 'semesters' => [2], 'ta' => '2021/2022', 'mulai' => '2022-02-10', 'selesai' => '2022-02-25'],
+            ['kode_prodi' => '56', 'semesters' => [2], 'ta' => '2021/2022', 'mulai' => '2022-02-10', 'selesai' => '2022-02-25'],
+            ['kode_prodi' => '31', 'semesters' => [2], 'ta' => '2021/2022', 'mulai' => '2022-02-10', 'selesai' => '2022-02-25'],
+
+            ['kode_prodi' => '55', 'semesters' => [3], 'ta' => '2022/2023', 'mulai' => '2022-08-10', 'selesai' => '2022-08-25'],
+            ['kode_prodi' => '56', 'semesters' => [3], 'ta' => '2022/2023', 'mulai' => '2022-08-10', 'selesai' => '2022-08-25'],
+            ['kode_prodi' => '31', 'semesters' => [3], 'ta' => '2022/2023', 'mulai' => '2022-08-10', 'selesai' => '2022-08-25'],
+
+            ['kode_prodi' => '55', 'semesters' => [4], 'ta' => '2022/2023', 'mulai' => '2023-02-10', 'selesai' => '2023-02-25'],
+            ['kode_prodi' => '56', 'semesters' => [4], 'ta' => '2022/2023', 'mulai' => '2023-02-10', 'selesai' => '2023-02-25'],
+            ['kode_prodi' => '31', 'semesters' => [4], 'ta' => '2022/2023', 'mulai' => '2023-02-10', 'selesai' => '2023-02-25'],
+
+            ['kode_prodi' => '55', 'semesters' => [5], 'ta' => '2023/2024', 'mulai' => '2023-08-10', 'selesai' => '2023-08-25'],
+            ['kode_prodi' => '56', 'semesters' => [5], 'ta' => '2023/2024', 'mulai' => '2023-08-10', 'selesai' => '2023-08-25'],
+            ['kode_prodi' => '31', 'semesters' => [5], 'ta' => '2023/2024', 'mulai' => '2023-08-10', 'selesai' => '2023-08-25'],
+
+            ['kode_prodi' => '55', 'semesters' => [6], 'ta' => '2023/2024', 'mulai' => '2024-02-10', 'selesai' => '2024-02-25'],
+            ['kode_prodi' => '56', 'semesters' => [6], 'ta' => '2023/2024', 'mulai' => '2024-02-10', 'selesai' => '2024-02-25'],
+            ['kode_prodi' => '31', 'semesters' => [6], 'ta' => '2023/2024', 'mulai' => '2024-02-10', 'selesai' => '2024-02-25'],
+
+            ['kode_prodi' => '55', 'semesters' => [7], 'ta' => '2024/2025', 'mulai' => '2024-08-10', 'selesai' => '2024-08-25'],
+            ['kode_prodi' => '56', 'semesters' => [7], 'ta' => '2024/2025', 'mulai' => '2024-08-10', 'selesai' => '2024-08-25'],
+            ['kode_prodi' => '31', 'semesters' => [7], 'ta' => '2024/2025', 'mulai' => '2024-08-10', 'selesai' => '2024-08-25'],
+        ];
+
+        foreach ($jadwalKrsData as $jadwal) {
+            DB::table('jadwal_pengisian_krs')->insert([
+                'kode_prodi' => $jadwal['kode_prodi'],
+                'semester_list' => json_encode($jadwal['semesters']),
+                'tahun_ajaran' => $jadwal['ta'],
+                'tanggal_mulai' => $jadwal['mulai'],
+                'tanggal_selesai' => $jadwal['selesai'],
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
+        }
+
+        // ========================================
+        // 10. REGISTRASI SEMESTER & KRS
         // ========================================
         foreach ($mahasiswaIds as $mhs) {
             $currentSemester = $this->getCurrentSemester($mhs['tahun']);
 
-            // Registrasi semester 1 sampai semester saat ini
             for ($sem = 1; $sem <= $currentSemester; $sem++) {
                 $tahunAjaran = $this->getTahunAjaran($mhs['tahun'], $sem);
                 $jenisSemester = $sem % 2 == 1 ? 'ganjil' : 'genap';
                 $tanggalReg = $this->getTanggalRegistrasi($mhs['tahun'], $sem);
 
-                // Insert Registrasi Semester
                 DB::table('registrasi_semester')->insert([
                     'id_mahasiswa' => $mhs['id'],
                     'tahun_ajaran' => $tahunAjaran,
@@ -275,63 +354,8 @@ class DatabaseSeeder extends Seeder
                     'updated_at' => now(),
                 ]);
 
-                // Insert KRS untuk semester tersebut
                 $this->createKRSForSemester($mhs, $sem, $tahunAjaran, $jenisSemester, $dosenIds);
             }
-        }
-
-        // Tambahkan kode ini di dalam method run() DatabaseSeeder, setelah insert periode_registrasi
-
-        // ========================================
-// 9. JADWAL PENGISIAN KRS
-// ========================================
-        $jadwalKrsData = [
-            // Semester Ganjil 2021/2022
-            ['kode_prodi' => '55', 'semester' => 1, 'ta' => '2021/2022', 'mulai' => '2021-08-10', 'selesai' => '2021-08-25'],
-            ['kode_prodi' => '56', 'semester' => 1, 'ta' => '2021/2022', 'mulai' => '2021-08-10', 'selesai' => '2021-08-25'],
-            ['kode_prodi' => '31', 'semester' => 1, 'ta' => '2021/2022', 'mulai' => '2021-08-10', 'selesai' => '2021-08-25'],
-
-            // Semester Genap 2021/2022
-            ['kode_prodi' => '55', 'semester' => 2, 'ta' => '2021/2022', 'mulai' => '2022-02-10', 'selesai' => '2022-02-25'],
-            ['kode_prodi' => '56', 'semester' => 2, 'ta' => '2021/2022', 'mulai' => '2022-02-10', 'selesai' => '2022-02-25'],
-            ['kode_prodi' => '31', 'semester' => 2, 'ta' => '2021/2022', 'mulai' => '2022-02-10', 'selesai' => '2022-02-25'],
-
-            // Semester Ganjil 2022/2023
-            ['kode_prodi' => '55', 'semester' => 3, 'ta' => '2022/2023', 'mulai' => '2022-08-10', 'selesai' => '2022-08-25'],
-            ['kode_prodi' => '56', 'semester' => 3, 'ta' => '2022/2023', 'mulai' => '2022-08-10', 'selesai' => '2022-08-25'],
-            ['kode_prodi' => '31', 'semester' => 3, 'ta' => '2022/2023', 'mulai' => '2022-08-10', 'selesai' => '2022-08-25'],
-
-            // Semester Genap 2022/2023
-            ['kode_prodi' => '55', 'semester' => 4, 'ta' => '2022/2023', 'mulai' => '2023-02-10', 'selesai' => '2023-02-25'],
-            ['kode_prodi' => '56', 'semester' => 4, 'ta' => '2022/2023', 'mulai' => '2023-02-10', 'selesai' => '2023-02-25'],
-            ['kode_prodi' => '31', 'semester' => 4, 'ta' => '2022/2023', 'mulai' => '2023-02-10', 'selesai' => '2023-02-25'],
-
-            // Semester Ganjil 2023/2024
-            ['kode_prodi' => '55', 'semester' => 5, 'ta' => '2023/2024', 'mulai' => '2023-08-10', 'selesai' => '2023-08-25'],
-            ['kode_prodi' => '56', 'semester' => 5, 'ta' => '2023/2024', 'mulai' => '2023-08-10', 'selesai' => '2023-08-25'],
-            ['kode_prodi' => '31', 'semester' => 5, 'ta' => '2023/2024', 'mulai' => '2023-08-10', 'selesai' => '2023-08-25'],
-
-            // Semester Genap 2023/2024
-            ['kode_prodi' => '55', 'semester' => 6, 'ta' => '2023/2024', 'mulai' => '2024-02-10', 'selesai' => '2024-02-25'],
-            ['kode_prodi' => '56', 'semester' => 6, 'ta' => '2023/2024', 'mulai' => '2024-02-10', 'selesai' => '2024-02-25'],
-            ['kode_prodi' => '31', 'semester' => 6, 'ta' => '2023/2024', 'mulai' => '2024-02-10', 'selesai' => '2024-02-25'],
-
-            // Semester Ganjil 2024/2025 (Aktif)
-            ['kode_prodi' => '55', 'semester' => 7, 'ta' => '2024/2025', 'mulai' => '2024-08-10', 'selesai' => '2024-08-25'],
-            ['kode_prodi' => '56', 'semester' => 7, 'ta' => '2024/2025', 'mulai' => '2024-08-10', 'selesai' => '2024-08-25'],
-            ['kode_prodi' => '31', 'semester' => 7, 'ta' => '2024/2025', 'mulai' => '2024-08-10', 'selesai' => '2024-08-25'],
-        ];
-
-        foreach ($jadwalKrsData as $jadwal) {
-            DB::table('jadwal_pengisian_krs')->insert([
-                'kode_prodi' => $jadwal['kode_prodi'],
-                'semester' => $jadwal['semester'],
-                'tahun_ajaran' => $jadwal['ta'],
-                'tanggal_mulai' => $jadwal['mulai'],
-                'tanggal_selesai' => $jadwal['selesai'],
-                'created_at' => now(),
-                'updated_at' => now(),
-            ]);
         }
 
         echo "\n✅ Seeder berhasil dijalankan!\n";
@@ -347,25 +371,108 @@ class DatabaseSeeder extends Seeder
         echo "   Mahasiswa: NIM / NIM\n\n";
     }
 
+    private function createMataKuliahPeriode()
+    {
+        $mkPeriodeMapping = [
+            // Semester 1
+            ['kode' => 'MKU101', 'prodi' => ['55', '56', '31'], 'sem' => 1, 'ta' => ['2021/2022', '2022/2023', '2023/2024', '2024/2025']],
+            ['kode' => 'MKU102', 'prodi' => ['55', '56', '31'], 'sem' => 1, 'ta' => ['2021/2022', '2022/2023', '2023/2024', '2024/2025']],
+            ['kode' => 'IF101', 'prodi' => ['55'], 'sem' => 1, 'ta' => ['2021/2022', '2022/2023', '2023/2024', '2024/2025']],
+            ['kode' => 'IF102', 'prodi' => ['55'], 'sem' => 1, 'ta' => ['2021/2022', '2022/2023', '2023/2024', '2024/2025']],
+            ['kode' => 'IF103', 'prodi' => ['55'], 'sem' => 1, 'ta' => ['2021/2022', '2022/2023', '2023/2024', '2024/2025']],
+            ['kode' => 'SI101', 'prodi' => ['56'], 'sem' => 1, 'ta' => ['2021/2022', '2022/2023', '2023/2024', '2024/2025']],
+            ['kode' => 'SI102', 'prodi' => ['56'], 'sem' => 1, 'ta' => ['2021/2022', '2022/2023', '2023/2024', '2024/2025']],
+            ['kode' => 'MN101', 'prodi' => ['31'], 'sem' => 1, 'ta' => ['2021/2022', '2022/2023', '2023/2024', '2024/2025']],
+            ['kode' => 'MN102', 'prodi' => ['31'], 'sem' => 1, 'ta' => ['2021/2022', '2022/2023', '2023/2024', '2024/2025']],
+
+            // Semester 2
+            ['kode' => 'MKU201', 'prodi' => ['55', '56', '31'], 'sem' => 2, 'ta' => ['2021/2022', '2022/2023', '2023/2024', '2024/2025']],
+            ['kode' => 'IF201', 'prodi' => ['55'], 'sem' => 2, 'ta' => ['2021/2022', '2022/2023', '2023/2024', '2024/2025']],
+            ['kode' => 'IF202', 'prodi' => ['55'], 'sem' => 2, 'ta' => ['2021/2022', '2022/2023', '2023/2024', '2024/2025']],
+            ['kode' => 'IF203', 'prodi' => ['55'], 'sem' => 2, 'ta' => ['2021/2022', '2022/2023', '2023/2024', '2024/2025']],
+            ['kode' => 'SI201', 'prodi' => ['56'], 'sem' => 2, 'ta' => ['2021/2022', '2022/2023', '2023/2024', '2024/2025']],
+            ['kode' => 'SI202', 'prodi' => ['56'], 'sem' => 2, 'ta' => ['2021/2022', '2022/2023', '2023/2024', '2024/2025']],
+            ['kode' => 'MN201', 'prodi' => ['31'], 'sem' => 2, 'ta' => ['2021/2022', '2022/2023', '2023/2024', '2024/2025']],
+
+            // Semester 3
+            ['kode' => 'MKU301', 'prodi' => ['55', '56', '31'], 'sem' => 3, 'ta' => ['2022/2023', '2023/2024', '2024/2025']],
+            ['kode' => 'IF301', 'prodi' => ['55'], 'sem' => 3, 'ta' => ['2022/2023', '2023/2024', '2024/2025']],
+            ['kode' => 'IF302', 'prodi' => ['55'], 'sem' => 3, 'ta' => ['2022/2023', '2023/2024', '2024/2025']],
+            ['kode' => 'IF303', 'prodi' => ['55'], 'sem' => 3, 'ta' => ['2022/2023', '2023/2024', '2024/2025']],
+            ['kode' => 'SI301', 'prodi' => ['56'], 'sem' => 3, 'ta' => ['2022/2023', '2023/2024', '2024/2025']],
+            ['kode' => 'SI302', 'prodi' => ['56'], 'sem' => 3, 'ta' => ['2022/2023', '2023/2024', '2024/2025']],
+            ['kode' => 'MN301', 'prodi' => ['31'], 'sem' => 3, 'ta' => ['2022/2023', '2023/2024', '2024/2025']],
+
+            // Semester 4
+            ['kode' => 'IF401', 'prodi' => ['55'], 'sem' => 4, 'ta' => ['2022/2023', '2023/2024', '2024/2025']],
+            ['kode' => 'IF402', 'prodi' => ['55'], 'sem' => 4, 'ta' => ['2022/2023', '2023/2024', '2024/2025']],
+            ['kode' => 'IF403', 'prodi' => ['55'], 'sem' => 4, 'ta' => ['2022/2023', '2023/2024', '2024/2025']],
+            ['kode' => 'SI401', 'prodi' => ['56'], 'sem' => 4, 'ta' => ['2022/2023', '2023/2024', '2024/2025']],
+            ['kode' => 'SI402', 'prodi' => ['56'], 'sem' => 4, 'ta' => ['2022/2023', '2023/2024', '2024/2025']],
+            ['kode' => 'MN401', 'prodi' => ['31'], 'sem' => 4, 'ta' => ['2022/2023', '2023/2024', '2024/2025']],
+
+            // Semester 5
+            ['kode' => 'IF501', 'prodi' => ['55'], 'sem' => 5, 'ta' => ['2023/2024', '2024/2025']],
+            ['kode' => 'IF502', 'prodi' => ['55'], 'sem' => 5, 'ta' => ['2023/2024', '2024/2025']],
+            ['kode' => 'IF503', 'prodi' => ['55'], 'sem' => 5, 'ta' => ['2023/2024', '2024/2025']],
+            ['kode' => 'IF504', 'prodi' => ['55'], 'sem' => 5, 'ta' => ['2023/2024', '2024/2025']],
+            ['kode' => 'SI501', 'prodi' => ['56'], 'sem' => 5, 'ta' => ['2023/2024', '2024/2025']],
+            ['kode' => 'SI502', 'prodi' => ['56'], 'sem' => 5, 'ta' => ['2023/2024', '2024/2025']],
+            ['kode' => 'SI503', 'prodi' => ['56'], 'sem' => 5, 'ta' => ['2023/2024', '2024/2025']],
+            ['kode' => 'MN501', 'prodi' => ['31'], 'sem' => 5, 'ta' => ['2023/2024', '2024/2025']],
+
+            // Semester 6
+            ['kode' => 'IF601', 'prodi' => ['55'], 'sem' => 6, 'ta' => ['2023/2024', '2024/2025']],
+            ['kode' => 'IF602', 'prodi' => ['55'], 'sem' => 6, 'ta' => ['2023/2024', '2024/2025']],
+            ['kode' => 'IF603', 'prodi' => ['55'], 'sem' => 6, 'ta' => ['2023/2024', '2024/2025']],
+            ['kode' => 'SI601', 'prodi' => ['56'], 'sem' => 6, 'ta' => ['2023/2024', '2024/2025']],
+            ['kode' => 'SI602', 'prodi' => ['56'], 'sem' => 6, 'ta' => ['2023/2024', '2024/2025']],
+            ['kode' => 'MN601', 'prodi' => ['31'], 'sem' => 6, 'ta' => ['2023/2024', '2024/2025']],
+
+            // Semester 7
+            ['kode' => 'IF701', 'prodi' => ['55'], 'sem' => 7, 'ta' => ['2024/2025']],
+            ['kode' => 'IF702', 'prodi' => ['55'], 'sem' => 7, 'ta' => ['2024/2025']],
+            ['kode' => 'IF703', 'prodi' => ['55'], 'sem' => 7, 'ta' => ['2024/2025']],
+            ['kode' => 'SI701', 'prodi' => ['56'], 'sem' => 7, 'ta' => ['2024/2025']],
+            ['kode' => 'SI702', 'prodi' => ['56'], 'sem' => 7, 'ta' => ['2024/2025']],
+            ['kode' => 'MN701', 'prodi' => ['31'], 'sem' => 7, 'ta' => ['2024/2025']],
+        ];
+
+        foreach ($mkPeriodeMapping as $mapping) {
+            foreach ($mapping['prodi'] as $prodi) {
+                foreach ($mapping['ta'] as $ta) {
+                    $jenisSemester = $mapping['sem'] % 2 == 1 ? 'ganjil' : 'genap';
+
+                    DB::table('mata_kuliah_periode')->insert([
+                        'kode_matkul' => $mapping['kode'],
+                        'kode_prodi' => $prodi,
+                        'tahun_ajaran' => $ta,
+                        'jenis_semester' => $jenisSemester,
+                        'semester_ditawarkan' => $mapping['sem'],
+                        'created_at' => now(),
+                        'updated_at' => now(),
+                    ]);
+                }
+            }
+        }
+    }
+
     private function generateNim($kodeProdi, $tahun, $urutan)
     {
-        $tahunMasuk = substr($tahun, 2, 2); // 21, 22, 23
-        $kodeFakultas = $kodeProdi == '31' ? '302' : '301';
-        $kodeFakultasShort = $kodeFakultas == '301' ? '55' : '56';
+        $tahunMasuk = substr($tahun, 2, 2);
         $urut = str_pad($urutan, 3, '0', STR_PAD_LEFT);
-
-        return $tahunMasuk . $kodeProdi . $kodeFakultasShort . $urut;
+        return $tahunMasuk . $kodeProdi . '55' . $urut;
     }
 
     private function getCurrentSemester($tahunMasuk)
     {
         $yearDiff = 2024 - $tahunMasuk;
-        $currentMonth = 10; // Oktober 2025
+        $currentMonth = 10;
 
         if ($currentMonth >= 8) {
-            return ($yearDiff * 2) + 1; // Semester ganjil
+            return ($yearDiff * 2) + 1;
         } else {
-            return ($yearDiff * 2); // Semester genap
+            return ($yearDiff * 2);
         }
     }
 
@@ -385,38 +492,38 @@ class DatabaseSeeder extends Seeder
 
     private function createKRSForSemester($mhs, $semester, $tahunAjaran, $jenisSemester, $dosenIds)
     {
-        // Ambil mata kuliah sesuai semester dan prodi
-        $mataKuliah = DB::table('mata_kuliah')
-            ->where('semester', $semester)
+        $mkPeriodeList = DB::table('mata_kuliah_periode')
+            ->join('mata_kuliah', 'mata_kuliah_periode.kode_matkul', '=', 'mata_kuliah.kode_matkul')
+            ->where('mata_kuliah_periode.semester_ditawarkan', $semester)
+            ->where('mata_kuliah_periode.tahun_ajaran', $tahunAjaran)
+            ->where('mata_kuliah_periode.jenis_semester', $jenisSemester)
             ->where(function ($q) use ($mhs) {
-                $q->where('kode_prodi', $mhs['kode_prodi'])
-                    ->orWhereNull('kode_prodi');
+                $q->where('mata_kuliah_periode.kode_prodi', $mhs['kode_prodi'])
+                    ->orWhere('mata_kuliah.kode_prodi', null);
             })
-            ->where('is_active', 1)
+            ->where('mata_kuliah.is_active', 1)
+            ->select('mata_kuliah_periode.*', 'mata_kuliah.sks', 'mata_kuliah.kategori')
             ->get();
 
-        if ($mataKuliah->isEmpty()) {
+        if ($mkPeriodeList->isEmpty()) {
             return;
         }
 
-        // Target SKS: 20-24
         $targetSks = rand(20, 24);
         $currentSks = 0;
-        $selectedMataKuliah = [];
+        $selectedMkPeriode = [];
 
-        // Ambil mata kuliah wajib dulu
-        foreach ($mataKuliah as $mk) {
-            if ($mk->kategori == 'wajib' && $currentSks + $mk->sks <= $targetSks) {
-                $selectedMataKuliah[] = $mk;
-                $currentSks += $mk->sks;
+        foreach ($mkPeriodeList as $mkp) {
+            if ($mkp->kategori == 'wajib' && $currentSks + $mkp->sks <= $targetSks) {
+                $selectedMkPeriode[] = $mkp;
+                $currentSks += $mkp->sks;
             }
         }
 
-        // Tambahkan mata kuliah pilihan jika masih kurang
-        foreach ($mataKuliah as $mk) {
-            if ($mk->kategori != 'wajib' && $currentSks + $mk->sks <= $targetSks) {
-                $selectedMataKuliah[] = $mk;
-                $currentSks += $mk->sks;
+        foreach ($mkPeriodeList as $mkp) {
+            if ($mkp->kategori != 'wajib' && $currentSks + $mkp->sks <= $targetSks) {
+                $selectedMkPeriode[] = $mkp;
+                $currentSks += $mkp->sks;
 
                 if ($currentSks >= 20) {
                     break;
@@ -424,11 +531,10 @@ class DatabaseSeeder extends Seeder
             }
         }
 
-        if (empty($selectedMataKuliah)) {
+        if (empty($selectedMkPeriode)) {
             return;
         }
 
-        // Insert KRS
         $krsId = DB::table('krs')->insertGetId([
             'id_mahasiswa' => $mhs['id'],
             'semester' => $semester,
@@ -439,18 +545,15 @@ class DatabaseSeeder extends Seeder
             'updated_at' => now(),
         ]);
 
-        // Insert Kelas dan Detail KRS
-        foreach ($selectedMataKuliah as $mk) {
-            // Cek apakah kelas sudah ada
+        foreach ($selectedMkPeriode as $mkp) {
             $kelas = DB::table('kelas')
-                ->where('kode_matkul', $mk->kode_matkul)
+                ->where('id_mk_periode', $mkp->id_mk_periode)
                 ->first();
 
             if (!$kelas) {
-                // Buat kelas baru
                 $kelasId = DB::table('kelas')->insertGetId([
                     'nama_kelas' => 'A',
-                    'kode_matkul' => $mk->kode_matkul,
+                    'id_mk_periode' => $mkp->id_mk_periode,
                     'id_dosen' => $dosenIds[array_rand($dosenIds)],
                     'ruang_kelas' => 'R' . rand(101, 510),
                     'hari' => ['Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat'][array_rand(['Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat'])],
@@ -461,7 +564,6 @@ class DatabaseSeeder extends Seeder
                     'updated_at' => now(),
                 ]);
 
-                // Insert Bobot Nilai
                 DB::table('bobot_nilai')->insert([
                     'id_kelas' => $kelasId,
                     'bobot_tugas' => 30,
@@ -474,7 +576,6 @@ class DatabaseSeeder extends Seeder
                 $kelasId = $kelas->id_kelas;
             }
 
-            // Insert Detail KRS
             DB::table('detail_krs')->insert([
                 'id_krs' => $krsId,
                 'id_kelas' => $kelasId,
@@ -482,7 +583,6 @@ class DatabaseSeeder extends Seeder
                 'updated_at' => now(),
             ]);
 
-            // Insert Nilai (untuk semester yang sudah lewat)
             if ($semester < $this->getCurrentSemester($mhs['tahun'])) {
                 $nilaiTugas = rand(70, 95);
                 $nilaiUts = rand(70, 95);
@@ -503,7 +603,6 @@ class DatabaseSeeder extends Seeder
             }
         }
 
-        // Hitung dan insert riwayat akademik untuk semester yang sudah selesai
         if ($semester < $this->getCurrentSemester($mhs['tahun'])) {
             $this->insertRiwayatAkademik($mhs['id'], $semester, $tahunAjaran, $currentSks);
         }
@@ -511,10 +610,10 @@ class DatabaseSeeder extends Seeder
 
     private function insertRiwayatAkademik($mahasiswaId, $semester, $tahunAjaran, $sksSemester)
     {
-        // Ambil semua nilai mahasiswa sampai semester ini
         $nilaiList = DB::table('nilai_mahasiswa')
             ->join('kelas', 'nilai_mahasiswa.id_kelas', '=', 'kelas.id_kelas')
-            ->join('mata_kuliah', 'kelas.kode_matkul', '=', 'mata_kuliah.kode_matkul')
+            ->join('mata_kuliah_periode', 'kelas.id_mk_periode', '=', 'mata_kuliah_periode.id_mk_periode')
+            ->join('mata_kuliah', 'mata_kuliah_periode.kode_matkul', '=', 'mata_kuliah.kode_matkul')
             ->join('detail_krs', 'kelas.id_kelas', '=', 'detail_krs.id_kelas')
             ->join('krs', 'detail_krs.id_krs', '=', 'krs.id_krs')
             ->where('nilai_mahasiswa.id_mahasiswa', $mahasiswaId)
@@ -526,7 +625,6 @@ class DatabaseSeeder extends Seeder
             return;
         }
 
-        // Hitung IPS
         $totalNilai = 0;
         $totalSks = 0;
         foreach ($nilaiList as $nilai) {
@@ -536,10 +634,10 @@ class DatabaseSeeder extends Seeder
         }
         $ips = $totalSks > 0 ? $totalNilai / $totalSks : 0;
 
-        // Hitung IPK (semua semester sampai sekarang)
         $allNilai = DB::table('nilai_mahasiswa')
             ->join('kelas', 'nilai_mahasiswa.id_kelas', '=', 'kelas.id_kelas')
-            ->join('mata_kuliah', 'kelas.kode_matkul', '=', 'mata_kuliah.kode_matkul')
+            ->join('mata_kuliah_periode', 'kelas.id_mk_periode', '=', 'mata_kuliah_periode.id_mk_periode')
+            ->join('mata_kuliah', 'mata_kuliah_periode.kode_matkul', '=', 'mata_kuliah.kode_matkul')
             ->join('detail_krs', 'kelas.id_kelas', '=', 'detail_krs.id_kelas')
             ->join('krs', 'detail_krs.id_krs', '=', 'krs.id_krs')
             ->where('nilai_mahasiswa.id_mahasiswa', $mahasiswaId)
@@ -556,7 +654,6 @@ class DatabaseSeeder extends Seeder
         }
         $ipk = $totalSksKumulatif > 0 ? $totalNilaiKumulatif / $totalSksKumulatif : 0;
 
-        // Insert riwayat akademik
         DB::table('riwayat_akademik')->insert([
             'id_mahasiswa' => $mahasiswaId,
             'semester' => $semester,
@@ -572,43 +669,27 @@ class DatabaseSeeder extends Seeder
 
     private function getBobotNilai($nilaiAkhir)
     {
-        if ($nilaiAkhir >= 85)
-            return 4.00;
-        if ($nilaiAkhir >= 80)
-            return 3.70;
-        if ($nilaiAkhir >= 75)
-            return 3.30;
-        if ($nilaiAkhir >= 70)
-            return 3.00;
-        if ($nilaiAkhir >= 65)
-            return 2.70;
-        if ($nilaiAkhir >= 60)
-            return 2.30;
-        if ($nilaiAkhir >= 55)
-            return 2.00;
-        if ($nilaiAkhir >= 50)
-            return 1.70;
+        if ($nilaiAkhir >= 85) return 4.00;
+        if ($nilaiAkhir >= 80) return 3.70;
+        if ($nilaiAkhir >= 75) return 3.30;
+        if ($nilaiAkhir >= 70) return 3.00;
+        if ($nilaiAkhir >= 65) return 2.70;
+        if ($nilaiAkhir >= 60) return 2.30;
+        if ($nilaiAkhir >= 55) return 2.00;
+        if ($nilaiAkhir >= 50) return 1.70;
         return 0.00;
     }
 
     private function getNilaiHuruf($nilaiAkhir)
     {
-        if ($nilaiAkhir >= 85)
-            return 'A';
-        if ($nilaiAkhir >= 80)
-            return 'A-';
-        if ($nilaiAkhir >= 75)
-            return 'B+';
-        if ($nilaiAkhir >= 70)
-            return 'B';
-        if ($nilaiAkhir >= 65)
-            return 'B-';
-        if ($nilaiAkhir >= 60)
-            return 'C+';
-        if ($nilaiAkhir >= 55)
-            return 'C';
-        if ($nilaiAkhir >= 50)
-            return 'D';
+        if ($nilaiAkhir >= 85) return 'A';
+        if ($nilaiAkhir >= 80) return 'A-';
+        if ($nilaiAkhir >= 75) return 'B+';
+        if ($nilaiAkhir >= 70) return 'B';
+        if ($nilaiAkhir >= 65) return 'B-';
+        if ($nilaiAkhir >= 60) return 'C+';
+        if ($nilaiAkhir >= 55) return 'C';
+        if ($nilaiAkhir >= 50) return 'D';
         return 'E';
     }
 }

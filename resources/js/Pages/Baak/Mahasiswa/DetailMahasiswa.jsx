@@ -2,9 +2,18 @@ import { Head, Link, router } from '@inertiajs/react';
 import BaakLayout from '@/Layouts/BaakLayout';
 import { useState } from 'react';
 
-export default function DetailMahasiswa({ mahasiswa, krsData, statistik }) {
+export default function DetailMahasiswa({
+    mahasiswa,
+    rencanaStudiData,
+    hasilStudiData,
+    transkripData,
+    statistik,
+    prestasiAkademik,
+    keteranganNilai,
+    statistikNilai
+}) {
     const [activeTab, setActiveTab] = useState('biodata');
-    const [selectedSemester, setSelectedSemester] = useState(krsData && krsData.length > 0 ? krsData.length : null);
+    const [selectedSemester, setSelectedSemester] = useState('');
 
     const handleResetPassword = () => {
         if (window.Swal) {
@@ -38,8 +47,9 @@ export default function DetailMahasiswa({ mahasiswa, krsData, statistik }) {
         return 'Cukup';
     };
 
-    const getSemesterData = (semesterNumber) => {
-        return krsData?.find(semester => semester.semester_ke === semesterNumber);
+    const getSelectedSemesterData = () => {
+        if (!selectedSemester) return null;
+        return hasilStudiData?.find(item => `${item.no}` === selectedSemester);
     };
 
     return (
@@ -177,36 +187,50 @@ export default function DetailMahasiswa({ mahasiswa, krsData, statistik }) {
                                 <span>Biodata</span>
                             </button>
                             <button
-                                onClick={() => setActiveTab('akademik')}
+                                onClick={() => setActiveTab('resume-perkuliahan')}
                                 className={`flex-1 sm:flex-none px-4 md:px-6 py-3 text-xs md:text-sm font-medium whitespace-nowrap transition-colors ${
-                                    activeTab === 'akademik'
+                                    activeTab === 'resume-perkuliahan'
                                         ? 'text-blue-600 border-b-2 border-blue-600 bg-white'
                                         : 'text-gray-600 hover:text-gray-800 hover:bg-gray-100'
                                 }`}
                             >
                                 <i className="fas fa-book mr-1 md:mr-2"></i>
-                                <span>Akademik</span>
+                                <span>Resume Perkuliahan</span>
                             </button>
                             <button
-                                onClick={() => setActiveTab('krs')}
+                                onClick={() => setActiveTab('rencana-studi')}
                                 className={`flex-1 sm:flex-none px-4 md:px-6 py-3 text-xs md:text-sm font-medium whitespace-nowrap transition-colors ${
-                                    activeTab === 'krs'
+                                    activeTab === 'rencana-studi'
+                                        ? 'text-blue-600 border-b-2 border-blue-600 bg-white'
+                                        : 'text-gray-600 hover:text-gray-800 hover:bg-gray-100'
+                                }`}
+                            >
+                                <i className="fas fa-clipboard-list mr-1 md:mr-2"></i>
+                                <span>Rencana Studi</span>
+                            </button>
+                            <button
+                                onClick={() => {
+                                    setActiveTab('hasil-studi');
+                                    setSelectedSemester('');
+                                }}
+                                className={`flex-1 sm:flex-none px-4 md:px-6 py-3 text-xs md:text-sm font-medium whitespace-nowrap transition-colors ${
+                                    activeTab === 'hasil-studi'
+                                        ? 'text-blue-600 border-b-2 border-blue-600 bg-white'
+                                        : 'text-gray-600 hover:text-gray-800 hover:bg-gray-100'
+                                }`}
+                            >
+                                <i className="fas fa-chart-line mr-1 md:mr-2"></i>
+                                <span>Hasil Studi</span>
+                            </button>
+                            <button
+                                onClick={() => setActiveTab('transkrip')}
+                                className={`flex-1 sm:flex-none px-4 md:px-6 py-3 text-xs md:text-sm font-medium whitespace-nowrap transition-colors ${
+                                    activeTab === 'transkrip'
                                         ? 'text-blue-600 border-b-2 border-blue-600 bg-white'
                                         : 'text-gray-600 hover:text-gray-800 hover:bg-gray-100'
                                 }`}
                             >
                                 <i className="fas fa-file-alt mr-1 md:mr-2"></i>
-                                <span>Riwayat KRS</span>
-                            </button>
-                            <button
-                                onClick={() => setActiveTab('nilai')}
-                                className={`flex-1 sm:flex-none px-4 md:px-6 py-3 text-xs md:text-sm font-medium whitespace-nowrap transition-colors ${
-                                    activeTab === 'nilai'
-                                        ? 'text-blue-600 border-b-2 border-blue-600 bg-white'
-                                        : 'text-gray-600 hover:text-gray-800 hover:bg-gray-100'
-                                }`}
-                            >
-                                <i className="fas fa-chart-bar mr-1 md:mr-2"></i>
                                 <span>Transkrip</span>
                             </button>
                         </div>
@@ -214,7 +238,7 @@ export default function DetailMahasiswa({ mahasiswa, krsData, statistik }) {
 
                     {/* Tab Content */}
                     <div className="p-4 md:p-6">
-                        {/* Biodata Tab */}
+                        {/* Tab Biodata */}
                         {activeTab === 'biodata' && (
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
                                 <div>
@@ -265,167 +289,257 @@ export default function DetailMahasiswa({ mahasiswa, krsData, statistik }) {
                             </div>
                         )}
 
-                        {/* Akademik Tab */}
-                        {activeTab === 'akademik' && (
-                            <div className="space-y-6">
-                                <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
-                                    <div className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-lg p-3 md:p-4 border border-blue-200">
-                                        <div className="flex items-center justify-between mb-2">
-                                            <p className="text-xs md:text-sm text-gray-600 font-medium">Total SKS</p>
-                                            <i className="fas fa-book text-blue-600 text-sm"></i>
-                                        </div>
-                                        <p className="text-2xl md:text-3xl font-bold text-gray-800">{statistik?.total_sks || 0}</p>
-                                        <p className="text-xs text-gray-600 mt-1">SKS Diambil</p>
-                                    </div>
-                                    <div className="bg-gradient-to-br from-green-50 to-green-100 rounded-lg p-3 md:p-4 border border-green-200">
-                                        <div className="flex items-center justify-between mb-2">
-                                            <p className="text-xs md:text-sm text-gray-600 font-medium">SKS Lulus</p>
-                                            <i className="fas fa-check-circle text-green-600 text-sm"></i>
-                                        </div>
-                                        <p className="text-2xl md:text-3xl font-bold text-green-700">{statistik?.sks_lulus || 0}</p>
-                                        <p className="text-xs text-gray-600 mt-1">SKS Berhasil</p>
-                                    </div>
-                                    <div className="bg-gradient-to-br from-purple-50 to-purple-100 rounded-lg p-3 md:p-4 border border-purple-200">
-                                        <div className="flex items-center justify-between mb-2">
-                                            <p className="text-xs md:text-sm text-gray-600 font-medium">IPK</p>
-                                            <i className="fas fa-chart-line text-purple-600 text-sm"></i>
-                                        </div>
-                                        <p className="text-2xl md:text-3xl font-bold text-purple-700">{statistik?.ipk || '0.00'}</p>
-                                        <p className="text-xs text-gray-600 mt-1">Indeks Prestasi</p>
-                                    </div>
-                                    <div className="bg-gradient-to-br from-yellow-50 to-yellow-100 rounded-lg p-3 md:p-4 border border-yellow-200 col-span-2 lg:col-span-1">
-                                        <div className="flex items-center justify-between mb-2">
-                                            <p className="text-xs md:text-sm text-gray-600 font-medium">Predikat</p>
-                                            <i className="fas fa-trophy text-yellow-600 text-sm"></i>
-                                        </div>
-                                        <p className="text-base md:text-lg font-bold text-yellow-700">
-                                            {getPredikat(statistik?.ipk || 0)}
-                                        </p>
-                                        <p className="text-xs text-gray-600 mt-1">Prestasi</p>
-                                    </div>
+                        {/* Tab Resume Perkuliahan */}
+                        {activeTab === 'resume-perkuliahan' && (
+                            <div className="space-y-4">
+                                {/* Table Desktop */}
+                                <div className="hidden md:block overflow-x-auto border border-gray-200 rounded-lg">
+                                    <table className="w-full">
+                                        <thead className="bg-gray-50">
+                                            <tr>
+                                                <th rowSpan="2" className="px-4 py-3 text-center text-xs font-semibold text-gray-700 uppercase border-r">NO</th>
+                                                <th rowSpan="2" className="px-4 py-3 text-center text-xs font-semibold text-gray-700 uppercase border-r">PERIODE</th>
+                                                <th rowSpan="2" className="px-4 py-3 text-center text-xs font-semibold text-gray-700 uppercase border-r">SMT</th>
+                                                <th colSpan="2" className="px-4 py-3 text-center text-xs font-semibold text-gray-700 uppercase border-r border-b">IP SEMESTER</th>
+                                                <th colSpan="2" className="px-4 py-3 text-center text-xs font-semibold text-gray-700 uppercase border-r border-b">IP KUMULATIF</th>
+                                                <th colSpan="5" className="px-4 py-3 text-center text-xs font-semibold text-gray-700 uppercase border-b">DISTRIBUSI NILAI</th>
+                                            </tr>
+                                            <tr className="bg-gray-50">
+                                                <th className="px-4 py-2 text-center text-xs font-semibold text-gray-700 uppercase border-r">SKS</th>
+                                                <th className="px-4 py-2 text-center text-xs font-semibold text-gray-700 uppercase border-r">IP</th>
+                                                <th className="px-4 py-2 text-center text-xs font-semibold text-gray-700 uppercase border-r">SKS</th>
+                                                <th className="px-4 py-2 text-center text-xs font-semibold text-gray-700 uppercase border-r">IPK</th>
+                                                <th className="px-4 py-2 text-center text-xs font-semibold text-gray-700 uppercase">A</th>
+                                                <th className="px-4 py-2 text-center text-xs font-semibold text-gray-700 uppercase">B</th>
+                                                <th className="px-4 py-2 text-center text-xs font-semibold text-gray-700 uppercase">C</th>
+                                                <th className="px-4 py-2 text-center text-xs font-semibold text-gray-700 uppercase">D</th>
+                                                <th className="px-4 py-2 text-center text-xs font-semibold text-gray-700 uppercase">E</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody className="divide-y divide-gray-200 bg-white">
+                                            {hasilStudiData?.map((item, idx) => (
+                                                <tr key={idx} className="hover:bg-gray-50">
+                                                    <td className="px-4 py-3 text-sm text-center">{item.no}</td>
+                                                    <td className="px-4 py-3 text-sm text-center">{item.periode}</td>
+                                                    <td className="px-4 py-3 text-sm text-center">{item.semester}</td>
+                                                    <td className="px-4 py-3 text-sm text-center">{item.sks_semester}</td>
+                                                    <td className="px-4 py-3 text-sm text-center text-blue-600 font-medium">{item.ips}</td>
+                                                    <td className="px-4 py-3 text-sm text-center">{item.sks_kumulatif}</td>
+                                                    <td className="px-4 py-3 text-sm text-center text-blue-600 font-medium">{item.ipk}</td>
+                                                    <td className="px-4 py-3 text-sm text-center">{item.distribusi_nilai?.A || 0}</td>
+                                                    <td className="px-4 py-3 text-sm text-center">{item.distribusi_nilai?.B || 0}</td>
+                                                    <td className="px-4 py-3 text-sm text-center">{item.distribusi_nilai?.C || 0}</td>
+                                                    <td className="px-4 py-3 text-sm text-center">{item.distribusi_nilai?.D || 0}</td>
+                                                    <td className="px-4 py-3 text-sm text-center">{item.distribusi_nilai?.E || 0}</td>
+                                                </tr>
+                                            ))}
+                                        </tbody>
+                                    </table>
                                 </div>
 
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
-                                    <div>
-                                        <label className="text-xs md:text-sm font-semibold text-gray-600">Program Studi</label>
-                                        <p className="text-gray-800 text-sm mt-1 break-words">{mahasiswa.prodi?.nama_prodi || '-'}</p>
-                                    </div>
-                                    <div>
-                                        <label className="text-xs md:text-sm font-semibold text-gray-600">Fakultas</label>
-                                        <p className="text-gray-800 text-sm mt-1 break-words">{mahasiswa.prodi?.fakultas?.nama_fakultas || '-'}</p>
-                                    </div>
-                                    <div>
-                                        <label className="text-xs md:text-sm font-semibold text-gray-600">Jenjang</label>
-                                        <p className="text-gray-800 text-sm mt-1">{mahasiswa.prodi?.jenjang || '-'}</p>
-                                    </div>
-                                    <div>
-                                        <label className="text-xs md:text-sm font-semibold text-gray-600">Angkatan</label>
-                                        <p className="text-gray-800 text-sm mt-1">20{mahasiswa.nim?.substring(0, 2) || '-'}</p>
-                                    </div>
-                                    <div>
-                                        <label className="text-xs md:text-sm font-semibold text-gray-600">Semester Ke</label>
-                                        <p className="text-gray-800 text-sm mt-1">Semester {mahasiswa.semester_ke || '-'}</p>
-                                    </div>
-                                    <div>
-                                        <label className="text-xs md:text-sm font-semibold text-gray-600">Status Akademik</label>
-                                        <p className="text-gray-800 text-sm mt-1">
-                                            <span className={`px-3 py-1 rounded-full text-xs font-medium ${
-                                                mahasiswa.status === 'aktif' ? 'bg-green-100 text-green-700' :
-                                                mahasiswa.status === 'lulus' ? 'bg-blue-100 text-blue-700' :
-                                                mahasiswa.status === 'keluar' ? 'bg-yellow-100 text-yellow-700' :
-                                                'bg-red-100 text-red-700'
-                                            }`}>
-                                                {mahasiswa.status?.toUpperCase()}
+                                {/* Cards Mobile */}
+                                <div className="md:hidden space-y-4">
+                                    {hasilStudiData?.map((item, idx) => (
+                                        <div key={idx} className="bg-white border border-gray-200 rounded-lg p-4">
+                                            <div className="flex justify-between items-start mb-3">
+                                                <div>
+                                                    <span className="text-xs text-gray-500">Semester {item.no}</span>
+                                                    <h4 className="font-semibold text-sm text-gray-800 mt-1">
+                                                        {item.periode} - {item.semester}
+                                                    </h4>
+                                                </div>
+                                            </div>
+
+                                            <div className="grid grid-cols-2 gap-3 mb-3">
+                                                <div className="bg-blue-50 rounded-lg p-3">
+                                                    <p className="text-xs text-gray-600 mb-1">IPS</p>
+                                                    <p className="text-lg font-bold text-blue-600">{item.ips}</p>
+                                                    <p className="text-xs text-gray-600 mt-1">{item.sks_semester} SKS</p>
+                                                </div>
+                                                <div className="bg-green-50 rounded-lg p-3">
+                                                    <p className="text-xs text-gray-600 mb-1">IPK</p>
+                                                    <p className="text-lg font-bold text-green-600">{item.ipk}</p>
+                                                    <p className="text-xs text-gray-600 mt-1">{item.sks_kumulatif} SKS</p>
+                                                </div>
+                                            </div>
+
+                                            <div className="border-t pt-3">
+                                                <p className="text-xs font-semibold text-gray-700 mb-2">Distribusi Nilai:</p>
+                                                <div className="flex justify-between text-xs">
+                                                    <span>A: <strong>{item.distribusi_nilai?.A || 0}</strong></span>
+                                                    <span>B: <strong>{item.distribusi_nilai?.B || 0}</strong></span>
+                                                    <span>C: <strong>{item.distribusi_nilai?.C || 0}</strong></span>
+                                                    <span>D: <strong>{item.distribusi_nilai?.D || 0}</strong></span>
+                                                    <span>E: <strong>{item.distribusi_nilai?.E || 0}</strong></span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Tab Rencana Studi */}
+                        {activeTab === 'rencana-studi' && (
+                            <div className="space-y-4">
+                                {/* Semester Selector */}
+                                <div className="bg-blue-50 rounded-lg p-4 border border-blue-200">
+                                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                                        <i className="fas fa-filter mr-2"></i>
+                                        Pilih Semester:
+                                    </label>
+                                    <select
+                                        value={selectedSemester}
+                                        onChange={(e) => setSelectedSemester(e.target.value)}
+                                        className="w-full md:w-64 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                    >
+                                        <option value="">Semua Semester</option>
+                                        {rencanaStudiData?.map((item) => (
+                                            <option key={item.semester} value={item.semester}>
+                                                Semester {item.semester} - {item.jenis_semester} {item.tahun_ajaran}
+                                            </option>
+                                        ))}
+                                    </select>
+                                </div>
+
+                                {/* Table Desktop */}
+                                <div className="hidden md:block overflow-x-auto border border-gray-200 rounded-lg">
+                                    <table className="w-full">
+                                        <thead className="bg-blue-50">
+                                            <tr>
+                                                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase">No</th>
+                                                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase">Kode</th>
+                                                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase">Mata Kuliah</th>
+                                                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase">Nama Kelas</th>
+                                                <th className="px-4 py-3 text-center text-xs font-semibold text-gray-700 uppercase">SKS</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody className="divide-y divide-gray-200 bg-white">
+                                            {rencanaStudiData
+                                                ?.filter(item => !selectedSemester || `${item.semester}` === selectedSemester)
+                                                .map((semester, semIdx) =>
+                                                    semester.mata_kuliah.map((mk, mkIdx) => (
+                                                        <tr key={`${semIdx}-${mkIdx}`} className="hover:bg-gray-50">
+                                                            <td className="px-4 py-3 text-sm">{mkIdx + 1}</td>
+                                                            <td className="px-4 py-3 text-sm font-medium">{mk.kode_mk}</td>
+                                                            <td className="px-4 py-3 text-sm">{mk.nama_mk}</td>
+                                                            <td className="px-4 py-3 text-sm">Kelas {mk.nama_kelas}</td>
+                                                            <td className="px-4 py-3 text-sm text-center">{mk.sks}</td>
+                                                        </tr>
+                                                    ))
+                                                )}
+                                        </tbody>
+                                        <tfoot className="bg-gray-50">
+                                            <tr>
+                                                <td colSpan="4" className="px-4 py-3 text-right font-bold text-sm">Total SKS</td>
+                                                <td className="px-4 py-3 text-center font-bold text-sm">
+                                                    {rencanaStudiData
+                                                        ?.filter(item => !selectedSemester || `${item.semester}` === selectedSemester)
+                                                        .reduce((sum, semester) => sum + semester.total_sks, 0) || 0}
+                                                </td>
+                                            </tr>
+                                        </tfoot>
+                                    </table>
+                                </div>
+
+                                {/* Cards Mobile */}
+                                <div className="md:hidden space-y-3">
+                                    {rencanaStudiData
+                                        ?.filter(item => !selectedSemester || `${item.semester}` === selectedSemester)
+                                        .map((semester, semIdx) =>
+                                            semester.mata_kuliah.map((mk, mkIdx) => (
+                                                <div key={`${semIdx}-${mkIdx}`} className="bg-white border border-gray-200 rounded-lg p-4">
+                                                    <div className="flex justify-between items-start mb-2">
+                                                        <div className="flex-1">
+                                                            <span className="text-xs text-gray-500">#{mkIdx + 1}</span>
+                                                            <h4 className="font-semibold text-sm text-gray-800 mt-1">{mk.nama_mk}</h4>
+                                                            <p className="text-xs text-gray-600 mt-1">{mk.kode_mk}</p>
+                                                        </div>
+                                                        <span className="bg-blue-100 text-blue-700 px-3 py-1 rounded-full text-xs font-medium ml-2">
+                                                            {mk.sks} SKS
+                                                        </span>
+                                                    </div>
+                                                    <div className="pt-2 border-t border-gray-100">
+                                                        <p className="text-xs text-gray-500">Kelas</p>
+                                                        <p className="text-sm font-medium">Kelas {mk.nama_kelas}</p>
+                                                    </div>
+                                                </div>
+                                            ))
+                                        )}
+
+                                    {/* Total SKS */}
+                                    <div className="bg-blue-50 rounded-lg p-4 border border-blue-200">
+                                        <div className="flex justify-between items-center">
+                                            <span className="text-sm font-semibold text-gray-700">Total SKS:</span>
+                                            <span className="text-lg font-bold text-blue-600">
+                                                {rencanaStudiData
+                                                    ?.filter(item => !selectedSemester || `${item.semester}` === selectedSemester)
+                                                    .reduce((sum, semester) => sum + semester.total_sks, 0) || 0}
                                             </span>
-                                        </p>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
                         )}
 
-                        {/* KRS Tab dengan Tombol Semester */}
-                        {activeTab === 'krs' && (
+                        {/* Tab Hasil Studi */}
+                        {activeTab === 'hasil-studi' && (
                             <div className="space-y-4">
-                                {/* Semester Buttons */}
-                                {krsData && krsData.length > 0 && (
-                                    <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
-                                        <p className="text-sm font-semibold text-gray-700 mb-3">
-                                            <i className="fas fa-calendar mr-2"></i>
-                                            Pilih Semester:
-                                        </p>
-                                        <div className="flex flex-wrap gap-2">
-                                            {Array.from({ length: mahasiswa.semester_ke || krsData.length }, (_, i) => i + 1).map((sem) => {
-                                                const semesterData = getSemesterData(sem);
-                                                return (
-                                                    <button
-                                                        key={sem}
-                                                        onClick={() => setSelectedSemester(sem)}
-                                                        className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
-                                                            selectedSemester === sem
-                                                                ? 'bg-blue-600 text-white shadow-md'
-                                                                : semesterData
-                                                                ? 'bg-white text-gray-700 border border-gray-300 hover:border-blue-400 hover:text-blue-600'
-                                                                : 'bg-gray-200 text-gray-400 cursor-not-allowed'
-                                                        }`}
-                                                        disabled={!semesterData}
-                                                    >
-                                                        Semester {sem}
-                                                    </button>
-                                                );
-                                            })}
-                                        </div>
-                                    </div>
-                                )}
+                                {/* Semester Selector */}
+                                <div className="bg-blue-50 rounded-lg p-4 border border-blue-200">
+                                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                                        <i className="fas fa-filter mr-2"></i>
+                                        Pilih Semester:
+                                    </label>
+                                    <select
+                                        value={selectedSemester}
+                                        onChange={(e) => setSelectedSemester(e.target.value)}
+                                        className="w-full md:w-64 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                    >
+                                        <option value="">-- Pilih Semester --</option>
+                                        {hasilStudiData?.map((item) => (
+                                            <option key={item.no} value={item.no}>
+                                                Semester {item.no} - {item.semester} {item.periode}
+                                            </option>
+                                        ))}
+                                    </select>
+                                </div>
 
-                                {/* Display Selected Semester */}
-                                {selectedSemester && getSemesterData(selectedSemester) ? (
-                                    <div className="border border-gray-200 rounded-lg overflow-hidden">
-                                        <div className="bg-white px-4 md:px-6 py-3 md:py-4 border-b border-gray-200">
-                                            <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2">
-                                                <div className="min-w-0">
-                                                    <h3 className="font-bold text-gray-800 text-base md:text-lg break-words">
-                                                        <i className="fas fa-calendar-check mr-2 text-blue-600"></i>
-                                                        {getSemesterData(selectedSemester).tahun_ajaran} - Semester {selectedSemester}
-                                                    </h3>
-                                                    <p className="text-xs md:text-sm text-gray-600 mt-1">
-                                                        Total: {getSemesterData(selectedSemester).mata_kuliah.length} Mata Kuliah
-                                                    </p>
-                                                </div>
-                                                <div className="bg-blue-50 px-3 md:px-4 py-2 rounded-lg border border-blue-200 w-fit flex-shrink-0">
-                                                    <span className="text-xs md:text-sm text-gray-600">IPS: </span>
-                                                    <span className="font-bold text-blue-600 text-base md:text-lg">{getSemesterData(selectedSemester).ips || '0.00'}</span>
-                                                </div>
-                                            </div>
-                                        </div>
-
+                                {/* Show detail only when semester is selected */}
+                                {selectedSemester && getSelectedSemesterData() ? (
+                                    <div>
                                         {/* Table Desktop */}
-                                        <div className="hidden md:block overflow-x-auto">
+                                        <div className="hidden md:block overflow-x-auto border border-gray-200 rounded-lg">
                                             <table className="w-full">
                                                 <thead className="bg-gray-50">
-                                                    <tr className="text-gray-600 font-semibold text-xs">
-                                                        <th className="px-4 py-3 text-left uppercase tracking-wider">No</th>
-                                                        <th className="px-4 py-3 text-left uppercase tracking-wider">Kode MK</th>
-                                                        <th className="px-4 py-3 text-left uppercase tracking-wider">Mata Kuliah</th>
-                                                        <th className="px-4 py-3 text-center uppercase tracking-wider">SKS</th>
-                                                        <th className="px-4 py-3 text-center uppercase tracking-wider">Nilai</th>
+                                                    <tr>
+                                                        <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase">No</th>
+                                                        <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase">Kode</th>
+                                                        <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase">Mata Kuliah</th>
+                                                        <th className="px-4 py-3 text-center text-xs font-semibold text-gray-700 uppercase">SKS</th>
+                                                        <th className="px-4 py-3 text-center text-xs font-semibold text-gray-700 uppercase">Bobot</th>
+                                                        <th className="px-4 py-3 text-center text-xs font-semibold text-gray-700 uppercase">Nilai</th>
                                                     </tr>
                                                 </thead>
                                                 <tbody className="divide-y divide-gray-200 bg-white">
-                                                    {getSemesterData(selectedSemester).mata_kuliah.map((mk, mkIndex) => (
-                                                        <tr key={mkIndex} className="hover:bg-gray-50 transition-colors">
-                                                            <td className="px-4 py-3 text-sm text-gray-700">{mkIndex + 1}</td>
-                                                            <td className="px-4 py-3 text-sm font-medium text-gray-700">{mk.kode_mk}</td>
-                                                            <td className="px-4 py-3 text-sm text-gray-700">{mk.nama_mk}</td>
-                                                            <td className="px-4 py-3 text-sm text-center text-gray-700">{mk.sks}</td>
+                                                    {getSelectedSemesterData()?.mata_kuliah?.map((mk, idx) => (
+                                                        <tr key={idx} className="hover:bg-gray-50">
+                                                            <td className="px-4 py-3 text-sm">{idx + 1}</td>
+                                                            <td className="px-4 py-3 text-sm font-medium">{mk.kode_mk}</td>
+                                                            <td className="px-4 py-3 text-sm">{mk.nama_mk}</td>
+                                                            <td className="px-4 py-3 text-sm text-center">{mk.sks}</td>
+                                                            <td className="px-4 py-3 text-sm text-center">
+                                                                {typeof mk.bobot === 'number' ? mk.bobot.toFixed(2) : mk.bobot}
+                                                            </td>
                                                             <td className="px-4 py-3 text-center">
-                                                                <span className={`px-3 py-1 rounded-full text-xs font-bold ${
-                                                                    mk.nilai === 'A' || mk.nilai === 'A-' ? 'bg-green-100 text-green-700' :
-                                                                    mk.nilai === 'B+' || mk.nilai === 'B' || mk.nilai === 'B-' ? 'bg-blue-100 text-blue-700' :
-                                                                    mk.nilai === 'C+' || mk.nilai === 'C' ? 'bg-yellow-100 text-yellow-700' :
-                                                                    mk.nilai === 'D' || mk.nilai === 'E' ? 'bg-red-100 text-red-700' :
+                                                                <span className={`px-3 py-1.5 rounded-full text-xs font-bold ${
+                                                                    ['A', 'A-'].includes(mk.nilai) ? 'bg-green-100 text-green-700' :
+                                                                    ['B+', 'B', 'B-'].includes(mk.nilai) ? 'bg-blue-100 text-blue-700' :
+                                                                    ['C+', 'C'].includes(mk.nilai) ? 'bg-yellow-100 text-yellow-700' :
+                                                                    ['D', 'E'].includes(mk.nilai) ? 'bg-red-100 text-red-700' :
                                                                     'bg-gray-100 text-gray-700'
                                                                 }`}>
-                                                                    {mk.nilai || '-'}
+                                                                    {mk.nilai}
                                                                 </span>
                                                             </td>
                                                         </tr>
@@ -433,204 +547,274 @@ export default function DetailMahasiswa({ mahasiswa, krsData, statistik }) {
                                                 </tbody>
                                                 <tfoot className="bg-gray-50">
                                                     <tr>
-                                                        <td colSpan="3" className="px-4 py-3 text-right font-semibold text-gray-700 text-sm">Total SKS:</td>
-                                                        <td className="px-4 py-3 text-center font-bold text-gray-800 text-sm">
-                                                            {getSemesterData(selectedSemester).mata_kuliah.reduce((sum, mk) => sum + mk.sks, 0)}
+                                                        <td colSpan="6" className="px-4 py-4">
+                                                            <div className="space-y-2 text-sm">
+                                                                <div className="flex justify-between font-semibold">
+                                                                    <span>Total SKS</span>
+                                                                    <span>{getSelectedSemesterData()?.sks_semester}</span>
+                                                                </div>
+                                                                <div className="flex justify-between font-semibold">
+                                                                    <span>Indeks Prestasi Semester</span>
+                                                                    <span className="text-blue-600">{getSelectedSemesterData()?.ips}</span>
+                                                                </div>
+                                                                <div className="flex justify-between font-semibold">
+                                                                    <span>Indeks Prestasi Kumulatif</span>
+                                                                    <span className="text-green-600">{getSelectedSemesterData()?.ipk}</span>
+                                                                </div>
+                                                            </div>
                                                         </td>
-                                                        <td></td>
                                                     </tr>
                                                 </tfoot>
                                             </table>
                                         </div>
 
                                         {/* Cards Mobile */}
-                                        <div className="md:hidden p-4 space-y-3">
-                                            {getSemesterData(selectedSemester).mata_kuliah.map((mk, mkIndex) => (
-                                                <div key={mkIndex} className="bg-gray-50 border border-gray-200 rounded-lg p-3">
+                                        <div className="md:hidden space-y-3">
+                                            {getSelectedSemesterData()?.mata_kuliah?.map((mk, idx) => (
+                                                <div key={idx} className="bg-white border border-gray-200 rounded-lg p-4">
                                                     <div className="flex justify-between items-start mb-2">
-                                                        <div className="flex-1 min-w-0">
-                                                            <p className="text-xs text-gray-500 mb-1">#{mkIndex + 1}</p>
-                                                            <h4 className="font-semibold text-gray-800 text-sm break-words">{mk.nama_mk}</h4>
+                                                        <div className="flex-1">
+                                                            <span className="text-xs text-gray-500">#{idx + 1}</span>
+                                                            <h4 className="font-semibold text-sm text-gray-800 mt-1">{mk.nama_mk}</h4>
                                                             <p className="text-xs text-gray-600 mt-1">{mk.kode_mk}</p>
                                                         </div>
-                                                        <span className={`px-3 py-1 rounded-full text-xs font-bold ml-2 flex-shrink-0 ${
-                                                            mk.nilai === 'A' || mk.nilai === 'A-' ? 'bg-green-100 text-green-700' :
-                                                            mk.nilai === 'B+' || mk.nilai === 'B' || mk.nilai === 'B-' ? 'bg-blue-100 text-blue-700' :
-                                                            mk.nilai === 'C+' || mk.nilai === 'C' ? 'bg-yellow-100 text-yellow-700' :
-                                                            mk.nilai === 'D' || mk.nilai === 'E' ? 'bg-red-100 text-red-700' :
+                                                        <span className={`px-3 py-1.5 rounded-full text-sm font-bold ml-2 ${
+                                                            ['A', 'A-'].includes(mk.nilai) ? 'bg-green-100 text-green-700' :
+                                                            ['B+', 'B', 'B-'].includes(mk.nilai) ? 'bg-blue-100 text-blue-700' :
+                                                            ['C+', 'C'].includes(mk.nilai) ? 'bg-yellow-100 text-yellow-700' :
+                                                            ['D', 'E'].includes(mk.nilai) ? 'bg-red-100 text-red-700' :
                                                             'bg-gray-100 text-gray-700'
                                                         }`}>
-                                                            {mk.nilai || '-'}
+                                                            {mk.nilai}
                                                         </span>
                                                     </div>
-                                                    <p className="text-sm text-gray-600">
-                                                        <span className="font-medium">SKS:</span> {mk.sks}
-                                                    </p>
+                                                    <div className="grid grid-cols-2 gap-3 pt-3 border-t border-gray-100">
+                                                        <div>
+                                                            <p className="text-xs text-gray-500">SKS</p>
+                                                            <p className="text-sm font-semibold">{mk.sks}</p>
+                                                        </div>
+                                                        <div>
+                                                            <p className="text-xs text-gray-500">Bobot</p>
+                                                            <p className="text-sm font-semibold">
+                                                                {typeof mk.bobot === 'number' ? mk.bobot.toFixed(2) : mk.bobot}
+                                                            </p>
+                                                        </div>
+                                                    </div>
                                                 </div>
                                             ))}
-                                            <div className="bg-blue-50 rounded-lg p-3 border border-blue-200">
-                                                <div className="flex justify-between items-center">
-                                                    <span className="text-sm font-semibold text-gray-700">Total SKS:</span>
-                                                    <span className="text-lg font-bold text-blue-600">
-                                                        {getSemesterData(selectedSemester).mata_kuliah.reduce((sum, mk) => sum + mk.sks, 0)}
-                                                    </span>
+
+                                            {/* Summary */}
+                                            <div className="bg-blue-50 rounded-lg p-4 border border-blue-200">
+                                                <div className="space-y-2 text-sm">
+                                                    <div className="flex justify-between font-semibold">
+                                                        <span>Total SKS</span>
+                                                        <span>{getSelectedSemesterData()?.sks_semester}</span>
+                                                    </div>
+                                                    <div className="flex justify-between font-semibold">
+                                                        <span>IPS</span>
+                                                        <span className="text-blue-600">{getSelectedSemesterData()?.ips}</span>
+                                                    </div>
+                                                    <div className="flex justify-between font-semibold">
+                                                        <span>IPK</span>
+                                                        <span className="text-green-600">{getSelectedSemesterData()?.ipk}</span>
+                                                    </div>
                                                 </div>
                                             </div>
                                         </div>
                                     </div>
                                 ) : (
                                     <div className="text-center py-12 text-gray-500 bg-gray-50 rounded-lg border-2 border-dashed border-gray-300">
-                                        <i className="fas fa-inbox text-4xl mb-2 text-gray-400"></i>
-                                        <p className="font-medium">
-                                            {selectedSemester ? `Tidak ada data KRS untuk Semester ${selectedSemester}` : 'Belum ada data KRS'}
-                                        </p>
-                                        <p className="text-xs mt-1">Data KRS mahasiswa akan muncul di sini</p>
+                                        <i className="fas fa-filter text-4xl mb-3 text-gray-400"></i>
+                                        <p className="font-medium">Pilih semester untuk melihat detail nilai</p>
+                                        <p className="text-xs mt-1">Gunakan dropdown di atas untuk memilih semester</p>
                                     </div>
                                 )}
                             </div>
                         )}
 
-                        {/* Nilai Tab - Transkrip */}
-                        {activeTab === 'nilai' && (
-                            <div>
-                                <div className="mb-6 bg-gradient-to-r from-blue-50 via-purple-50 to-blue-50 rounded-lg p-4 md:p-6 border border-blue-200">
-                                    <h3 className="text-base md:text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
-                                        <i className="fas fa-chart-pie text-blue-600"></i>
-                                        Ringkasan Akademik
-                                    </h3>
-                                    <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
-                                        <div className="bg-white rounded-lg p-3 md:p-4 shadow-sm">
-                                            <p className="text-xs md:text-sm text-gray-600 mb-1">Total SKS</p>
-                                            <p className="text-xl md:text-2xl font-bold text-gray-800">{statistik?.total_sks || 0}</p>
-                                        </div>
-                                        <div className="bg-white rounded-lg p-3 md:p-4 shadow-sm">
-                                            <p className="text-xs md:text-sm text-gray-600 mb-1">SKS Lulus</p>
-                                            <p className="text-xl md:text-2xl font-bold text-gray-800">{statistik?.sks_lulus || 0}</p>
-                                        </div>
-                                        <div className="bg-white rounded-lg p-3 md:p-4 shadow-sm">
-                                            <p className="text-xs md:text-sm text-gray-600 mb-1">IPK</p>
-                                            <p className="text-xl md:text-2xl font-bold text-gray-800">{statistik?.ipk || '0.00'}</p>
-                                        </div>
-                                        <div className="bg-white rounded-lg p-3 md:p-4 shadow-sm col-span-2 lg:col-span-1">
-                                            <p className="text-xs md:text-sm text-gray-600 mb-1">Predikat</p>
-                                            <p className="text-base md:text-lg font-bold text-gray-800">
-                                                {getPredikat(statistik?.ipk || 0)}
-                                            </p>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                {/* Desktop Table View */}
-                                <div className="hidden md:block overflow-x-auto rounded-lg border border-gray-200">
+                        {/* Tab Transkrip */}
+                        {activeTab === 'transkrip' && (
+                            <div className="space-y-6">
+                                {/* Transkrip Table Desktop */}
+                                <div className="hidden md:block overflow-x-auto border border-gray-200 rounded-lg">
                                     <table className="w-full">
                                         <thead className="bg-gray-50">
-                                            <tr className="text-gray-600 font-semibold text-xs">
-                                                <th className="px-4 py-3 text-left uppercase tracking-wider">No</th>
-                                                <th className="px-4 py-3 text-left uppercase tracking-wider">Kode MK</th>
-                                                <th className="px-4 py-3 text-left uppercase tracking-wider">Mata Kuliah</th>
-                                                <th className="px-4 py-3 text-center uppercase tracking-wider">SKS</th>
-                                                <th className="px-4 py-3 text-center uppercase tracking-wider">Nilai</th>
-                                                <th className="px-4 py-3 text-center uppercase tracking-wider">Mutu</th>
-                                                <th className="px-4 py-3 text-center uppercase tracking-wider">Semester</th>
+                                            <tr>
+                                                <th rowSpan="2" className="px-4 py-3 text-center text-xs font-semibold text-gray-700 uppercase border-r">NO</th>
+                                                <th colSpan="2" className="px-4 py-3 text-center text-xs font-semibold text-gray-700 uppercase border-r border-b">MATAKULIAH</th>
+                                                <th rowSpan="2" className="px-4 py-3 text-center text-xs font-semibold text-gray-700 uppercase border-r">TOTAL<br/>SKS</th>
+                                                <th rowSpan="2" className="px-4 py-3 text-center text-xs font-semibold text-gray-700 uppercase border-r">JENIS</th>
+                                                <th rowSpan="2" className="px-4 py-3 text-center text-xs font-semibold text-gray-700 uppercase border-r">SEMESTER<br/>PENGAMBILAN</th>
+                                                <th colSpan="2" className="px-4 py-3 text-center text-xs font-semibold text-gray-700 uppercase border-b">NILAI</th>
+                                            </tr>
+                                            <tr className="bg-gray-50">
+                                                <th className="px-4 py-2 text-left text-xs font-semibold text-gray-700 uppercase border-r">KODE</th>
+                                                <th className="px-4 py-2 text-left text-xs font-semibold text-gray-700 uppercase border-r">NAMA</th>
+                                                <th className="px-4 py-2 text-center text-xs font-semibold text-gray-700 uppercase border-r">BOBOT</th>
+                                                <th className="px-4 py-2 text-center text-xs font-semibold text-gray-700 uppercase">KODE</th>
                                             </tr>
                                         </thead>
-                                        <tbody className="bg-white divide-y divide-gray-200">
-                                            {krsData && krsData.length > 0 ? (
-                                                krsData.map((semester, semIndex) => (
-                                                    semester.mata_kuliah.map((mk, mkIndex) => (
-                                                        <tr key={`${semIndex}-${mkIndex}`} className="hover:bg-blue-50 transition-colors">
-                                                            <td className="px-4 py-3 text-sm text-gray-700">
-                                                                {krsData.slice(0, semIndex).reduce((sum, s) => sum + s.mata_kuliah.length, 0) + mkIndex + 1}
-                                                            </td>
-                                                            <td className="px-4 py-3 text-sm font-medium text-gray-700">{mk.kode_mk}</td>
-                                                            <td className="px-4 py-3 text-sm text-gray-700">{mk.nama_mk}</td>
-                                                            <td className="px-4 py-3 text-sm text-center text-gray-700 font-medium">{mk.sks}</td>
-                                                            <td className="px-4 py-3 text-center">
-                                                                <span className={`px-3 py-1 rounded-full text-xs font-bold ${
-                                                                    mk.nilai === 'A' || mk.nilai === 'A-' ? 'bg-green-100 text-green-700' :
-                                                                    mk.nilai === 'B+' || mk.nilai === 'B' || mk.nilai === 'B-' ? 'bg-blue-100 text-blue-700' :
-                                                                    mk.nilai === 'C+' || mk.nilai === 'C' ? 'bg-yellow-100 text-yellow-700' :
-                                                                    mk.nilai === 'D' || mk.nilai === 'E' ? 'bg-red-100 text-red-700' :
-                                                                    'bg-gray-100 text-gray-700'
-                                                                }`}>
-                                                                    {mk.nilai || '-'}
-                                                                </span>
-                                                            </td>
-                                                            <td className="px-4 py-3 text-sm text-center font-medium text-gray-700">
-                                                                {mk.bobot !== '-' ? Number(mk.bobot).toFixed(2) : '-'}
-                                                            </td>
-                                                            <td className="px-4 py-3 text-sm text-center text-gray-600">
-                                                                {semester.semester_ke}
-                                                            </td>
-                                                        </tr>
-                                                    ))
-                                                ))
-                                            ) : (
-                                                <tr>
-                                                    <td colSpan="7" className="px-4 py-12 text-center">
-                                                        <div className="text-gray-400">
-                                                            <i className="fas fa-clipboard-list text-5xl mb-3"></i>
-                                                            <p className="text-lg font-medium text-gray-500">Belum ada data nilai</p>
-                                                            <p className="text-sm mt-1">Transkrip nilai akan muncul setelah mahasiswa mengambil mata kuliah</p>
-                                                        </div>
+                                        <tbody className="divide-y divide-gray-200 bg-white">
+                                            {transkripData?.map((item, idx) => (
+                                                <tr key={idx} className="hover:bg-gray-50">
+                                                    <td className="px-4 py-3 text-sm text-center">{idx + 1}</td>
+                                                    <td className="px-4 py-3 text-sm font-medium">{item.kode_mk}</td>
+                                                    <td className="px-4 py-3 text-sm">{item.nama_mk}</td>
+                                                    <td className="px-4 py-3 text-sm text-center">{item.total_sks}</td>
+                                                    <td className="px-4 py-3 text-sm text-center">
+                                                        <span className={`px-2 py-1 rounded text-xs font-medium ${
+                                                            item.jenis === 'Umum' ? 'bg-green-100 text-green-700' :
+                                                            item.jenis === 'Wajib' ? 'bg-blue-100 text-blue-700' :
+                                                            'bg-purple-100 text-purple-700'
+                                                        }`}>
+                                                            {item.jenis}
+                                                        </span>
+                                                    </td>
+                                                    <td className="px-4 py-3 text-sm text-center">{item.semester_pengambilan}</td>
+                                                    <td className="px-4 py-3 text-sm text-center">
+                                                        {typeof item.bobot === 'number' ? item.bobot.toFixed(2) : item.bobot}
+                                                    </td>
+                                                    <td className="px-4 py-3 text-center">
+                                                        <span className={`px-3 py-1 rounded-full text-xs font-bold ${
+                                                            ['A', 'A-'].includes(item.nilai) ? 'bg-green-100 text-green-700' :
+                                                            ['B+', 'B', 'B-'].includes(item.nilai) ? 'bg-blue-100 text-blue-700' :
+                                                            ['C+', 'C'].includes(item.nilai) ? 'bg-yellow-100 text-yellow-700' :
+                                                            ['D', 'E'].includes(item.nilai) ? 'bg-red-100 text-red-700' :
+                                                            'bg-gray-100 text-gray-700'
+                                                        }`}>
+                                                            {item.nilai}
+                                                        </span>
                                                     </td>
                                                 </tr>
-                                            )}
+                                            ))}
                                         </tbody>
                                     </table>
                                 </div>
 
-                                {/* Mobile Card View */}
+                                {/* Transkrip Cards Mobile */}
                                 <div className="md:hidden space-y-3">
-                                    {krsData && krsData.length > 0 ? (
-                                        krsData.map((semester, semIndex) => (
-                                            semester.mata_kuliah.map((mk, mkIndex) => (
-                                                <div key={`${semIndex}-${mkIndex}`} className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm">
-                                                    <div className="flex justify-between items-start mb-3">
-                                                        <div className="flex-1 min-w-0">
-                                                            <div className="flex items-center gap-2 mb-1 flex-wrap">
-                                                                <span className="text-xs font-semibold text-gray-500">
-                                                                    #{krsData.slice(0, semIndex).reduce((sum, s) => sum + s.mata_kuliah.length, 0) + mkIndex + 1}
-                                                                </span>
-                                                                <span className="text-xs px-2 py-0.5 bg-gray-100 text-gray-600 rounded">
-                                                                    Sem {semester.semester_ke}
-                                                                </span>
-                                                            </div>
-                                                            <h4 className="font-semibold text-gray-800 text-sm mb-1 break-words">{mk.nama_mk}</h4>
-                                                            <p className="text-xs text-gray-500">{mk.kode_mk}</p>
-                                                        </div>
-                                                        <span className={`px-3 py-1.5 rounded-full text-sm font-bold ml-2 flex-shrink-0 ${
-                                                            mk.nilai === 'A' || mk.nilai === 'A-' ? 'bg-green-100 text-green-700' :
-                                                            mk.nilai === 'B+' || mk.nilai === 'B' || mk.nilai === 'B-' ? 'bg-blue-100 text-blue-700' :
-                                                            mk.nilai === 'C+' || mk.nilai === 'C' ? 'bg-yellow-100 text-yellow-700' :
-                                                            mk.nilai === 'D' || mk.nilai === 'E' ? 'bg-red-100 text-red-700' :
-                                                            'bg-gray-100 text-gray-700'
-                                                        }`}>
-                                                            {mk.nilai || '-'}
-                                                        </span>
-                                                    </div>
-                                                    <div className="grid grid-cols-2 gap-3 pt-3 border-t border-gray-100">
-                                                        <div>
-                                                            <p className="text-xs text-gray-500 mb-1">SKS</p>
-                                                            <p className="text-sm font-semibold text-gray-800">{mk.sks}</p>
-                                                        </div>
-                                                        <div>
-                                                            <p className="text-xs text-gray-500 mb-1">Mutu</p>
-                                                            <p className="text-sm font-semibold text-gray-800">
-                                                                {mk.bobot !== '-' ? Number(mk.bobot).toFixed(2) : '-'}
-                                                            </p>
+                                    {transkripData?.map((item, idx) => (
+                                        <div key={idx} className="bg-white border border-gray-200 rounded-lg p-4">
+                                            <div className="flex justify-between items-start mb-3">
+                                                <div className="flex-1">
+                                                    <span className="text-xs text-gray-500">#{idx + 1}</span>
+                                                    <h4 className="font-semibold text-sm text-gray-800 mt-1">{item.nama_mk}</h4>
+                                                    <p className="text-xs text-gray-600 mt-1">{item.kode_mk}</p>
+                                                </div>
+                                                <span className={`px-3 py-1.5 rounded-full text-sm font-bold ml-2 ${
+                                                    ['A', 'A-'].includes(item.nilai) ? 'bg-green-100 text-green-700' :
+                                                    ['B+', 'B', 'B-'].includes(item.nilai) ? 'bg-blue-100 text-blue-700' :
+                                                    ['C+', 'C'].includes(item.nilai) ? 'bg-yellow-100 text-yellow-700' :
+                                                    ['D', 'E'].includes(item.nilai) ? 'bg-red-100 text-red-700' :
+                                                    'bg-gray-100 text-gray-700'
+                                                }`}>
+                                                    {item.nilai}
+                                                </span>
+                                            </div>
+                                            <div className="grid grid-cols-2 gap-3 text-xs">
+                                                <div>
+                                                    <p className="text-gray-500">SKS</p>
+                                                    <p className="font-semibold">{item.total_sks}</p>
+                                                </div>
+                                                <div>
+                                                    <p className="text-gray-500">Bobot</p>
+                                                    <p className="font-semibold">
+                                                        {typeof item.bobot === 'number' ? item.bobot.toFixed(2) : item.bobot}
+                                                    </p>
+                                                </div>
+                                                <div>
+                                                    <p className="text-gray-500">Jenis</p>
+                                                    <span className={`inline-block px-2 py-1 rounded text-xs font-medium ${
+                                                        item.jenis === 'Umum' ? 'bg-green-100 text-green-700' :
+                                                        item.jenis === 'Wajib' ? 'bg-blue-100 text-blue-700' :
+                                                        'bg-purple-100 text-purple-700'
+                                                    }`}>
+                                                        {item.jenis}
+                                                    </span>
+                                                </div>
+                                                <div>
+                                                    <p className="text-gray-500">Semester</p>
+                                                    <p className="font-semibold">{item.semester_pengambilan}</p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+
+                                {/* Summary Cards - Placed Below */}
+                                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-8">
+                                    {/* Prestasi Akademik */}
+                                    <div className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-lg p-5 border border-blue-200 shadow-sm">
+                                        <div className="flex items-center gap-2 mb-4">
+                                            <i className="fas fa-trophy text-blue-600 text-lg"></i>
+                                            <h4 className="text-sm font-bold text-gray-800">Prestasi Akademik</h4>
+                                        </div>
+                                        <div className="space-y-3 text-sm">
+                                            <div className="bg-white bg-opacity-60 rounded-lg p-3">
+                                                <p className="text-xs text-gray-600 mb-1">Jumlah SKS</p>
+                                                <div className="flex justify-between items-center">
+                                                    <span className="text-xs">Wajib:</span>
+                                                    <span className="font-bold">{prestasiAkademik?.jumlah_sks_matakuliah?.wajib || 0}</span>
+                                                </div>
+                                                <div className="flex justify-between items-center mt-1">
+                                                    <span className="text-xs">Pilihan:</span>
+                                                    <span className="font-bold">{prestasiAkademik?.jumlah_sks_matakuliah?.pilihan || 0}</span>
+                                                </div>
+                                                <div className="flex justify-between items-center mt-2 pt-2 border-t border-gray-300">
+                                                    <span className="text-xs font-bold">Total:</span>
+                                                    <span className="font-bold text-blue-600">{prestasiAkademik?.jumlah_sks_matakuliah?.total || 0}</span>
+                                                </div>
+                                            </div>
+                                            <div className="flex justify-between">
+                                                <span className="text-gray-700">Total SKS × Bobot:</span>
+                                                <span className="font-bold">{prestasiAkademik?.total_sks_bobot?.toFixed(2) || '0.00'}</span>
+                                            </div>
+                                            <div className="bg-white bg-opacity-60 rounded-lg p-3 text-center">
+                                                <p className="text-xs text-gray-600 mb-1">IP Kumulatif</p>
+                                                <p className="text-2xl font-bold text-blue-600">{prestasiAkademik?.ipk || '0.00'}</p>
+                                                <p className="text-xs font-semibold text-gray-700 mt-2">
+                                                    Predikat: <span className="text-blue-700">{prestasiAkademik?.predikat || '-'}</span>
+                                                </p>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {/* Keterangan Nilai */}
+                                    <div className="bg-gradient-to-br from-green-50 to-green-100 rounded-lg p-5 border border-green-200 shadow-sm">
+                                        <div className="flex items-center gap-2 mb-4">
+                                            <i className="fas fa-info-circle text-green-600 text-lg"></i>
+                                            <h4 className="text-sm font-bold text-gray-800">Keterangan Nilai</h4>
+                                        </div>
+                                        <div className="grid grid-cols-2 gap-2 text-xs">
+                                            {Object.entries(keteranganNilai || {}).map(([huruf, bobot]) => (
+                                                <div key={huruf} className="bg-white bg-opacity-60 rounded px-3 py-2 flex justify-between items-center">
+                                                    <span className="font-semibold text-gray-700">{huruf}</span>
+                                                    <span className="font-bold text-green-700">{bobot}</span>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+
+                                    {/* Statistik Nilai */}
+                                    <div className="bg-gradient-to-br from-purple-50 to-purple-100 rounded-lg p-5 border border-purple-200 shadow-sm">
+                                        <div className="flex items-center gap-2 mb-4">
+                                            <i className="fas fa-chart-bar text-purple-600 text-lg"></i>
+                                            <h4 className="text-sm font-bold text-gray-800">Statistik Nilai</h4>
+                                        </div>
+                                        <div className="space-y-2 text-xs">
+                                            {statistikNilai?.map((stat) => (
+                                                <div key={stat.nilai} className="bg-white bg-opacity-60 rounded px-3 py-2">
+                                                    <div className="flex justify-between items-center">
+                                                        <span className="font-semibold text-gray-700">{stat.nilai}:</span>
+                                                        <div className="text-right">
+                                                            <span className="font-bold text-purple-700">{stat.sks} SKS</span>
+                                                            <span className="text-gray-600 ml-2">({parseFloat(stat.persentase).toFixed(2)}%)</span>
                                                         </div>
                                                     </div>
                                                 </div>
-                                            ))
-                                        ))
-                                    ) : (
-                                        <div className="text-center py-12 text-gray-500 bg-gray-50 rounded-lg border-2 border-dashed border-gray-300">
-                                            <i className="fas fa-clipboard-list text-5xl mb-4 text-gray-400"></i>
-                                            <p className="text-base font-medium text-gray-500">Belum ada data nilai</p>
-                                            <p className="text-xs mt-1">Transkrip nilai akan muncul setelah mahasiswa mengambil mata kuliah</p>
+                                            ))}
                                         </div>
-                                    )}
+                                    </div>
                                 </div>
                             </div>
                         )}

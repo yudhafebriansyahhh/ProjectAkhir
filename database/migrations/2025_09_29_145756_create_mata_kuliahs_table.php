@@ -17,7 +17,7 @@ return new class extends Migration {
             $table->boolean('is_active')->default(1);
             $table->string('deskripsi')->nullable();
             $table->timestamps();
-            $table->index(['kode_prodi', 'semester', 'is_active']);
+            $table->index(['kode_prodi', 'is_active']);
         });
     }
 
@@ -25,7 +25,7 @@ return new class extends Migration {
     {
         Schema::table('mata_kuliah', function (Blueprint $table) {
             $table->dropForeign(['kode_prodi']);
-            $table->dropIndex(['kode_prodi', 'semester', 'is_active']);
+            $table->dropIndex(['kode_prodi', 'is_active']);
             $table->dropColumn(['kode_prodi', 'kategori', 'is_active']);
         });
     }

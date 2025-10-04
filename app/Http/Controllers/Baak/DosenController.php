@@ -98,7 +98,7 @@ class DosenController extends Controller
         $dosen->load([
             'prodi.fakultas',
             'user',
-            'kelas.mataKuliah',
+            'kelas.mataKuliahPeriode.mataKuliah', // ✅ FIX: Load via mataKuliahPeriode
             'mahasiswaBimbingan'
         ]);
 

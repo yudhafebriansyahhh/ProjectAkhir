@@ -1,38 +1,52 @@
 // resources/js/Pages/Baak/PengaturanKrs/Index.jsx
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Head, Link, router, usePage } from '@inertiajs/react';
 import BaakLayout from '@/Layouts/BaakLayout';
 
-export default function Index({ pengaturan, filters, periodes, prodis }) {
+export default function Index({ pengaturan, filters, prodis, periodes }) {
     const { flash } = usePage().props;
-    const [search, setSearch] = useState(filters.search || '');
+
     const [selectedFilters, setSelectedFilters] = useState({
-        periode: filters.periode || '',
-        prodi: filters.prodi || '',
+        tahun_ajaran: filters.tahun_ajaran || '',
+        jenis_semester: filters.jenis_semester || '',
+        kode_prodi: filters.kode_prodi || '',
+        semester: filters.semester || '',
     });
 
-    const handleFilter = () => {
-        router.get(route('baak.pengaturan-krs.index'), {
-            ...selectedFilters,
-            search,
-        }, {
-            preserveState: true,
-            preserveScroll: true,
-        });
+    // Auto-filter saat filter berubah
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            router.get(route('baak.pengaturan-krs.index'), selectedFilters, {
+                preserveState: true,
+                preserveScroll: true,
+            });
+        }, 300);
+
+        return () => clearTimeout(timer);
+    }, [selectedFilters]);
+
+    const handleFilterChange = (key, value) => {
+        setSelectedFilters(prev => ({
+            ...prev,
+            [key]: value
+        }));
     };
 
     const handleReset = () => {
-        setSearch('');
-        setSelectedFilters({ periode: '', prodi: '' });
-        router.get(route('baak.pengaturan-krs.index'));
+        setSelectedFilters({
+            tahun_ajaran: '',
+            jenis_semester: '',
+            kode_prodi: '',
+            semester: '',
+        });
     };
 
-    const handleDelete = (id, kodeMk, namaMk) => {
+    const handleDelete = (id, namaMk) => {
         if (window.Swal) {
             window.Swal.fire({
                 title: 'Hapus Pengaturan?',
-                text: `Hapus pengaturan mata kuliah "${namaMk} (${kodeMk})"?`,
+                text: `Hapus pengaturan "${namaMk}"?`,
                 icon: 'warning',
                 showCancelButton: true,
                 confirmButtonColor: '#dc2626',
@@ -49,10 +63,26 @@ export default function Index({ pengaturan, filters, periodes, prodis }) {
         }
     };
 
-    const toggleAvailability = (id) => {
-        router.post(route('baak.pengaturan-krs.toggle', id), {}, {
-            preserveScroll: true,
-        });
+    // Group by semester
+    const groupedBySemester = pengaturan.reduce((acc, item) => {
+        const sem = item.semester_ditawarkan;
+        if (!acc[sem]) {
+            acc[sem] = [];
+        }
+        acc[sem].push(item);
+        return acc;
+    }, {});
+
+    const sortedSemesters = Object.keys(groupedBySemester).sort((a, b) => a - b);
+
+    // Get semester options
+    const getSemesterOptions = () => {
+        if (selectedFilters.jenis_semester === 'ganjil') {
+            return [1, 3, 5, 7];
+        } else if (selectedFilters.jenis_semester === 'genap') {
+            return [2, 4, 6, 8];
+        }
+        return [1, 2, 3, 4, 5, 6, 7, 8];
     };
 
     return (
@@ -66,7 +96,7 @@ export default function Index({ pengaturan, filters, periodes, prodis }) {
                         Pengaturan Mata Kuliah KRS
                     </h1>
                     <p className="text-gray-600">
-                        Atur mata kuliah yang ditawarkan per periode dan semester
+                        Kelola mata kuliah yang ditawarkan per periode dan semester
                     </p>
                 </div>
 
@@ -85,55 +115,52 @@ export default function Index({ pengaturan, filters, periodes, prodis }) {
                     </div>
                 )}
 
-                {/* Info Box */}
-                <div className="mb-6 bg-blue-50 border border-blue-200 rounded-lg p-4">
-                    <h3 className="text-sm font-semibold text-blue-900 mb-2 flex items-center">
-                        <i className="fas fa-info-circle mr-2"></i>
-                        Tentang Pengaturan Mata Kuliah KRS
-                    </h3>
-                    <ul className="text-sm text-blue-800 space-y-1 ml-6 list-disc">
-                        <li>Set mata kuliah mana yang ditawarkan di periode tertentu</li>
-                        <li>Tentukan di semester berapa mata kuliah ditawarkan (bisa berbeda dari kurikulum)</li>
-                        <li>Atur kuota mahasiswa per mata kuliah</li>
-                        <li>Aktifkan/nonaktifkan mata kuliah sesuai kebutuhan</li>
-                    </ul>
-                </div>
-
-                {/* Filter & Actions */}
+                {/* Filters */}
                 <div className="mb-6 bg-white rounded-lg border border-gray-200 p-4">
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-                        {/* Search */}
-                        <div>
-                            <input
-                                type="text"
-                                value={search}
-                                onChange={(e) => setSearch(e.target.value)}
-                                placeholder="Cari kode atau nama mata kuliah..."
-                                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
-                            />
-                        </div>
+                    <div className="flex items-center justify-between mb-4">
+                        <h3 className="text-sm font-semibold text-gray-700">Filter</h3>
+                        {(selectedFilters.tahun_ajaran || selectedFilters.jenis_semester || selectedFilters.kode_prodi || selectedFilters.semester) && (
+                            <button
+                                onClick={handleReset}
+                                className="text-xs text-blue-600 hover:text-blue-800 font-medium"
+                            >
+                                <i className="fas fa-redo mr-1"></i>
+                                Reset Filter
+                            </button>
+                        )}
+                    </div>
 
-                        {/* Periode Filter */}
+                    <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
+                        {/* Tahun Ajaran */}
                         <select
-                            value={selectedFilters.periode}
-                            onChange={(e) => setSelectedFilters({...selectedFilters, periode: e.target.value})}
+                            value={selectedFilters.tahun_ajaran}
+                            onChange={(e) => handleFilterChange('tahun_ajaran', e.target.value)}
                             className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
                         >
-                            <option value="">Semua Periode</option>
+                            <option value="">Semua Tahun Ajaran</option>
                             {periodes.map((periode) => (
-                                <option
-                                    key={periode.id_periode}
-                                    value={`${periode.tahun_ajaran}-${periode.jenis_semester}`}
-                                >
-                                    {periode.tahun_ajaran} - {periode.jenis_semester.charAt(0).toUpperCase() + periode.jenis_semester.slice(1)}
+                                <option key={periode.tahun_ajaran} value={periode.tahun_ajaran}>
+                                    {periode.tahun_ajaran}
                                 </option>
                             ))}
                         </select>
 
-                        {/* Prodi Filter */}
+                        {/* Jenis Semester */}
                         <select
-                            value={selectedFilters.prodi}
-                            onChange={(e) => setSelectedFilters({...selectedFilters, prodi: e.target.value})}
+                            value={selectedFilters.jenis_semester}
+                            onChange={(e) => handleFilterChange('jenis_semester', e.target.value)}
+                            className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                        >
+                            <option value="">Semua Jenis Semester</option>
+                            <option value="ganjil">Ganjil</option>
+                            <option value="genap">Genap</option>
+                            <option value="pendek">Pendek</option>
+                        </select>
+
+                        {/* Prodi */}
+                        <select
+                            value={selectedFilters.kode_prodi}
+                            onChange={(e) => handleFilterChange('kode_prodi', e.target.value)}
                             className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
                         >
                             <option value="">Semua Prodi</option>
@@ -143,246 +170,158 @@ export default function Index({ pengaturan, filters, periodes, prodis }) {
                                 </option>
                             ))}
                         </select>
-                    </div>
 
-                    {/* Action Buttons */}
-                    <div className="flex flex-wrap gap-2 mt-3">
-                        <button
-                            onClick={handleFilter}
-                            className="flex-1 md:flex-none bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium flex items-center justify-center gap-2 transition-colors"
+                        {/* Semester */}
+                        <select
+                            value={selectedFilters.semester}
+                            onChange={(e) => handleFilterChange('semester', e.target.value)}
+                            className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
                         >
-                            <i className="fas fa-filter"></i>
-                            <span>Filter</span>
-                        </button>
-                        {(search || selectedFilters.periode || selectedFilters.prodi) && (
-                            <button
-                                onClick={handleReset}
-                                className="flex-1 md:flex-none bg-gray-100 hover:bg-gray-200 px-4 py-2 rounded-lg text-sm font-medium text-gray-700 flex items-center justify-center gap-2 transition-colors"
-                            >
-                                <i className="fas fa-redo"></i>
-                                <span>Reset</span>
-                            </button>
-                        )}
+                            <option value="">Semua Semester</option>
+                            {getSemesterOptions().map((sem) => (
+                                <option key={sem} value={sem}>
+                                    Semester {sem}
+                                </option>
+                            ))}
+                        </select>
+                    </div>
+                </div>
+
+                {/* Action Button */}
+                <div className="mb-6 flex justify-end">
+                    <Link
+                        href={route('baak.pengaturan-krs.create')}
+                        className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm font-medium flex items-center gap-2 transition-colors"
+                    >
+                        <i className="fas fa-plus"></i>
+                        <span>Set Mata Kuliah KRS</span>
+                    </Link>
+                </div>
+
+                {/* Content */}
+                {pengaturan.length > 0 ? (
+                    <div className="space-y-6">
+                        {sortedSemesters.map((semester) => (
+                            <div key={semester} className="bg-white rounded-lg border border-gray-200 overflow-hidden">
+                                {/* Semester Header */}
+                                <div className="bg-gradient-to-r from-blue-600 to-blue-700 px-6 py-3 flex items-center justify-between">
+                                    <h2 className="text-lg font-bold text-white flex items-center gap-2">
+                                        <i className="fas fa-book"></i>
+                                        Semester {semester}
+                                    </h2>
+                                    <span className="text-blue-100 text-sm">
+                                        {groupedBySemester[semester].length} Mata Kuliah
+                                    </span>
+                                </div>
+
+                                {/* Table */}
+                                <div className="overflow-x-auto">
+                                    <table className="w-full">
+                                        <thead className="bg-gray-50">
+                                            <tr className="text-xs text-gray-600 uppercase">
+                                                <th className="px-6 py-3 text-left">Kode</th>
+                                                <th className="px-6 py-3 text-left">Mata Kuliah</th>
+                                                <th className="px-6 py-3 text-left">Prodi</th>
+                                                <th className="px-6 py-3 text-center">Kategori</th>
+                                                <th className="px-6 py-3 text-center">SKS</th>
+                                                <th className="px-6 py-3 text-center">Periode</th>
+                                                <th className="px-6 py-3 text-center">Kelas</th>
+                                                <th className="px-6 py-3 text-center">Aksi</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody className="divide-y divide-gray-200">
+                                            {groupedBySemester[semester].map((item) => (
+                                                <tr key={item.id_mk_periode} className="hover:bg-gray-50">
+                                                    <td className="px-6 py-4">
+                                                        <span className="px-2 py-1 text-xs font-semibold text-blue-800 bg-blue-100 rounded">
+                                                            {item.mata_kuliah?.kode_matkul}
+                                                        </span>
+                                                    </td>
+                                                    <td className="px-6 py-4">
+                                                        <div>
+                                                            <p className="text-sm font-medium text-gray-900">
+                                                                {item.mata_kuliah?.nama_matkul}
+                                                            </p>
+                                                            {item.catatan && (
+                                                                <p className="text-xs text-gray-500 italic mt-1">
+                                                                    <i className="fas fa-info-circle mr-1"></i>
+                                                                    {item.catatan}
+                                                                </p>
+                                                            )}
+                                                        </div>
+                                                    </td>
+                                                    <td className="px-6 py-4 text-sm text-gray-700">
+                                                        {item.prodi?.nama_prodi}
+                                                    </td>
+                                                    <td className="px-6 py-4 text-center">
+                                                        <span className={`px-2 py-1 text-xs font-medium rounded capitalize ${
+                                                            item.mata_kuliah?.kategori === 'wajib' ? 'bg-red-100 text-red-700' :
+                                                            item.mata_kuliah?.kategori === 'pilihan' ? 'bg-blue-100 text-blue-700' :
+                                                            'bg-green-100 text-green-700'
+                                                        }`}>
+                                                            {item.mata_kuliah?.kategori}
+                                                        </span>
+                                                    </td>
+                                                    <td className="px-6 py-4 text-sm text-center text-gray-700">
+                                                        {item.mata_kuliah?.sks}
+                                                    </td>
+                                                    <td className="px-6 py-4 text-sm text-center text-gray-700 capitalize">
+                                                        {item.tahun_ajaran}<br/>
+                                                        <span className="text-xs text-gray-500">{item.jenis_semester}</span>
+                                                    </td>
+                                                    <td className="px-6 py-4 text-center">
+                                                        {item.kelas && item.kelas.length > 0 ? (
+                                                            <span className="px-2 py-1 text-xs bg-gray-100 text-gray-700 rounded">
+                                                                {item.kelas.length} Kelas
+                                                            </span>
+                                                        ) : (
+                                                            <span className="text-xs text-gray-400">-</span>
+                                                        )}
+                                                    </td>
+                                                    <td className="px-6 py-4">
+                                                        <div className="flex items-center justify-center gap-2">
+                                                            <Link
+                                                                href={route('baak.pengaturan-krs.edit', item.id_mk_periode)}
+                                                                className="bg-yellow-500 hover:bg-yellow-600 text-white px-3 py-1 rounded text-xs font-medium transition-colors"
+                                                            >
+                                                                <i className="fas fa-edit"></i>
+                                                            </Link>
+                                                            <button
+                                                                onClick={() => handleDelete(item.id_mk_periode, item.mata_kuliah?.nama_matkul)}
+                                                                className="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded text-xs font-medium transition-colors"
+                                                            >
+                                                                <i className="fas fa-trash"></i>
+                                                            </button>
+                                                        </div>
+                                                    </td>
+                                                </tr>
+                                            ))}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                ) : (
+                    <div className="bg-white rounded-lg border border-gray-200 p-12 text-center">
+                        <i className="fas fa-inbox text-5xl text-gray-400 mb-4"></i>
+                        <h3 className="text-lg font-semibold text-gray-700 mb-2">
+                            Belum Ada Data
+                        </h3>
+                        <p className="text-gray-500 mb-4">
+                            {(selectedFilters.tahun_ajaran || selectedFilters.jenis_semester || selectedFilters.kode_prodi || selectedFilters.semester)
+                                ? 'Tidak ada data dengan filter yang dipilih'
+                                : 'Belum ada pengaturan mata kuliah KRS'}
+                        </p>
                         <Link
                             href={route('baak.pengaturan-krs.create')}
-                            className="flex-1 md:flex-none bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm font-medium flex items-center justify-center gap-2 transition-colors"
+                            className="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg text-sm font-medium transition-colors"
                         >
                             <i className="fas fa-plus"></i>
                             <span>Set Mata Kuliah KRS</span>
                         </Link>
                     </div>
-                </div>
-
-                {/* Table - Desktop */}
-                <div className="hidden md:block bg-white rounded-lg overflow-hidden border border-gray-200">
-                    <div className="overflow-x-auto">
-                        <table className="w-full">
-                            <thead className="bg-gray-50">
-                                <tr className="text-gray-600 font-semibold text-xs">
-                                    <th className="px-6 py-4 text-left uppercase tracking-wider">No</th>
-                                    <th className="px-6 py-3 text-left uppercase tracking-wider">Kode MK</th>
-                                    <th className="px-6 py-3 text-left uppercase tracking-wider">Mata Kuliah</th>
-                                    <th className="px-6 py-3 text-left uppercase tracking-wider">Prodi</th>
-                                    <th className="px-6 py-3 text-center uppercase tracking-wider">Periode</th>
-                                    <th className="px-6 py-3 text-center uppercase tracking-wider">Semester</th>
-                                    <th className="px-6 py-3 text-center uppercase tracking-wider">Kuota</th>
-                                    <th className="px-6 py-3 text-center uppercase tracking-wider">Status</th>
-                                    <th className="px-6 py-3 text-center uppercase tracking-wider">Aksi</th>
-                                </tr>
-                            </thead>
-                            <tbody className="bg-white divide-y divide-gray-200">
-                                {pengaturan.data.length > 0 ? (
-                                    pengaturan.data.map((item, index) => (
-                                        <tr key={item.id_mk_periode} className="hover:bg-gray-50">
-                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
-                                                {pengaturan.from + index}
-                                            </td>
-                                            <td className="px-6 py-4 whitespace-nowrap">
-                                                <span className="px-2 py-1 text-xs font-semibold text-blue-800 bg-blue-100 rounded-lg">
-                                                    {item.mata_kuliah?.kode_matkul}
-                                                </span>
-                                            </td>
-                                            <td className="px-6 py-4 text-sm text-gray-700 font-medium">
-                                                {item.mata_kuliah?.nama_matkul}
-                                            </td>
-                                            <td className="px-6 py-4 text-sm text-gray-700">
-                                                {item.mata_kuliah?.prodi?.nama_prodi || 'Umum'}
-                                            </td>
-                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700 text-center">
-                                                {item.tahun_ajaran} {item.jenis_semester.charAt(0).toUpperCase() + item.jenis_semester.slice(1)}
-                                            </td>
-                                            <td className="px-6 py-4 whitespace-nowrap text-center">
-                                                <span className="px-3 py-1 text-xs font-semibold text-purple-800 bg-purple-100 rounded-lg">
-                                                    Semester {item.semester_ditawarkan}
-                                                </span>
-                                            </td>
-                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700 text-center">
-                                                {item.kuota}
-                                            </td>
-                                            <td className="px-6 py-4 whitespace-nowrap text-center">
-                                                <button
-                                                    onClick={() => toggleAvailability(item.id_mk_periode)}
-                                                    className={`px-3 py-1 text-xs font-medium rounded-lg transition-colors ${
-                                                        item.is_available
-                                                            ? 'bg-green-100 text-green-800 hover:bg-green-200'
-                                                            : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                                                    }`}
-                                                >
-                                                    {item.is_available ? 'Tersedia' : 'Nonaktif'}
-                                                </button>
-                                            </td>
-                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-center">
-                                                <div className="flex items-center justify-center gap-2">
-                                                    <Link
-                                                        href={route('baak.pengaturan-krs.edit', item.id_mk_periode)}
-                                                        className="bg-yellow-500 hover:bg-yellow-600 text-white px-3 py-1 rounded text-xs font-medium transition-colors"
-                                                        title="Edit"
-                                                    >
-                                                        <i className="fas fa-edit"></i>
-                                                    </Link>
-                                                    <button
-                                                        onClick={() => handleDelete(item.id_mk_periode, item.mata_kuliah?.kode_matkul, item.mata_kuliah?.nama_matkul)}
-                                                        className="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded text-xs font-medium transition-colors"
-                                                        title="Hapus"
-                                                    >
-                                                        <i className="fas fa-trash"></i>
-                                                    </button>
-                                                </div>
-                                            </td>
-                                        </tr>
-                                    ))
-                                ) : (
-                                    <tr>
-                                        <td colSpan="9" className="px-6 py-8 text-center text-gray-500">
-                                            <i className="fas fa-inbox text-4xl mb-2 text-gray-400"></i>
-                                            <p>Belum ada pengaturan mata kuliah KRS</p>
-                                            <p className="text-sm">Klik tombol "Set Mata Kuliah KRS" untuk menambah</p>
-                                        </td>
-                                    </tr>
-                                )}
-                            </tbody>
-                        </table>
-                    </div>
-
-                    {/* Pagination Desktop */}
-                    {pengaturan.last_page > 1 && (
-                        <div className="bg-gray-50 px-6 py-4 border-t border-gray-200 flex items-center justify-between">
-                            <div className="text-sm text-gray-600">
-                                Menampilkan {pengaturan.from} - {pengaturan.to} dari {pengaturan.total} data
-                            </div>
-                            <div className="flex gap-2">
-                                {pengaturan.links.map((link, index) => (
-                                    <Link
-                                        key={index}
-                                        href={link.url || '#'}
-                                        preserveState
-                                        preserveScroll
-                                        className={`px-3 py-1 text-sm rounded ${
-                                            link.active
-                                                ? 'bg-blue-600 text-white'
-                                                : link.url
-                                                ? 'bg-white text-gray-700 hover:bg-gray-50 border border-gray-300'
-                                                : 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                                        }`}
-                                        dangerouslySetInnerHTML={{ __html: link.label }}
-                                    />
-                                ))}
-                            </div>
-                        </div>
-                    )}
-                </div>
-
-                {/* Cards - Mobile */}
-                <div className="block md:hidden space-y-4">
-                    {pengaturan.data.length > 0 ? (
-                        pengaturan.data.map((item) => (
-                            <div key={item.id_mk_periode} className="bg-white rounded-lg border border-gray-200 p-4">
-                                <div className="flex justify-between items-start mb-3">
-                                    <div className="flex-1 min-w-0">
-                                        <div className="flex items-center gap-2 mb-1 flex-wrap">
-                                            <span className="px-2 py-0.5 text-xs font-semibold text-blue-800 bg-blue-100 rounded">
-                                                {item.mata_kuliah?.kode_matkul}
-                                            </span>
-                                            <span className="px-2 py-0.5 text-xs font-semibold text-purple-800 bg-purple-100 rounded">
-                                                Sem {item.semester_ditawarkan}
-                                            </span>
-                                        </div>
-                                        <h3 className="font-semibold text-gray-900 text-sm break-words">
-                                            {item.mata_kuliah?.nama_matkul}
-                                        </h3>
-                                    </div>
-                                </div>
-                                <div className="space-y-1 mb-3 text-sm">
-                                    <p className="text-gray-600">
-                                        <span className="font-medium">Prodi:</span> {item.mata_kuliah?.prodi?.nama_prodi || 'Umum'}
-                                    </p>
-                                    <p className="text-gray-600">
-                                        <span className="font-medium">Periode:</span> {item.tahun_ajaran} {item.jenis_semester.charAt(0).toUpperCase() + item.jenis_semester.slice(1)}
-                                    </p>
-                                    <p className="text-gray-600">
-                                        <span className="font-medium">Kuota:</span> {item.kuota} mahasiswa
-                                    </p>
-                                    <p className="text-gray-600">
-                                        <span className="font-medium">Status:</span>{' '}
-                                        <span className={`px-2 py-0.5 text-xs font-medium rounded ${
-                                            item.is_available
-                                                ? 'bg-green-100 text-green-800'
-                                                : 'bg-gray-100 text-gray-600'
-                                        }`}>
-                                            {item.is_available ? 'Tersedia' : 'Nonaktif'}
-                                        </span>
-                                    </p>
-                                </div>
-                                <div className="grid grid-cols-2 gap-2 mt-3 pt-3 border-t border-gray-100">
-                                    <Link
-                                        href={route('baak.pengaturan-krs.edit', item.id_mk_periode)}
-                                        className="bg-yellow-500 hover:bg-yellow-600 text-white px-3 py-2 rounded text-sm font-medium text-center transition-colors"
-                                    >
-                                        <i className="fas fa-edit mr-1"></i> Edit
-                                    </Link>
-                                    <button
-                                        onClick={() => handleDelete(item.id_mk_periode, item.mata_kuliah?.kode_matkul, item.mata_kuliah?.nama_matkul)}
-                                        className="bg-red-500 hover:bg-red-600 text-white px-3 py-2 rounded text-sm font-medium transition-colors"
-                                    >
-                                        <i className="fas fa-trash mr-1"></i> Hapus
-                                    </button>
-                                </div>
-                            </div>
-                        ))
-                    ) : (
-                        <div className="bg-white rounded-lg border border-gray-200 p-8 text-center">
-                            <i className="fas fa-inbox text-4xl mb-2 text-gray-400"></i>
-                            <p className="text-gray-500">Belum ada pengaturan mata kuliah KRS</p>
-                        </div>
-                    )}
-
-                    {/* Pagination Mobile */}
-                    {pengaturan.last_page > 1 && (
-                        <div className="bg-white rounded-lg border border-gray-200 p-4">
-                            <div className="text-sm text-gray-600 mb-3 text-center">
-                                Menampilkan {pengaturan.from} - {pengaturan.to} dari {pengaturan.total} data
-                            </div>
-                            <div className="flex flex-wrap gap-2 justify-center">
-                                {pengaturan.links.map((link, index) => (
-                                    <Link
-                                        key={index}
-                                        href={link.url || '#'}
-                                        preserveState
-                                        preserveScroll
-                                        className={`px-3 py-1 text-sm rounded ${
-                                            link.active
-                                                ? 'bg-blue-600 text-white'
-                                                : link.url
-                                                ? 'bg-white text-gray-700 hover:bg-gray-50 border border-gray-300'
-                                                : 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                                        }`}
-                                        dangerouslySetInnerHTML={{ __html: link.label }}
-                                    />
-                                ))}
-                            </div>
-                        </div>
-                    )}
-                </div>
+                )}
             </div>
         </BaakLayout>
     );

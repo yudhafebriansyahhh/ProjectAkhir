@@ -4,6 +4,7 @@ use App\Http\Controllers\Baak\BaakController;
 use App\Http\Controllers\Baak\FakultasController;
 use App\Http\Controllers\Baak\JadwalKrsController;
 use App\Http\Controllers\Baak\KelasController;
+use App\Http\Controllers\Baak\KrsController;
 use App\Http\Controllers\Baak\PengaturanKrsController;
 use App\Http\Controllers\Baak\PeriodeRegistrasiController;
 use App\Http\Controllers\Baak\RegistrasiSemesterController;
@@ -40,7 +41,7 @@ Route::middleware(['auth', 'role:baak'])->prefix('baak')->name('baak.')->group(f
     Route::resource('dosen', \App\Http\Controllers\Baak\DosenController::class);
 
     Route::resource('kelas', KelasController::class);
-    Route::post('/kelas/get-mata-kuliah-by-periode', [KelasController::class, 'getMataKuliahByPeriode'])
+     Route::post('/kelas/get-mata-kuliah-by-periode', [KelasController::class, 'getMataKuliahByPeriode'])
         ->name('kelas.get-mata-kuliah-by-periode');
     // Fakultas Routes
     Route::resource('fakultas', FakultasController::class)->parameters([
@@ -50,6 +51,10 @@ Route::middleware(['auth', 'role:baak'])->prefix('baak')->name('baak.')->group(f
     Route::resource('prodi', ProdiController::class)->parameters([
         'prodi' => 'kode_prodi'
     ]);
+    Route::prefix('krs')->name('krs.')->group(function () {
+        Route::get('/', [KrsController::class, 'index'])->name('index');
+        Route::get('/{krs}', [KrsController::class, 'show'])->name('show');
+    });
     // Mata Kuliah Routes
     Route::resource('mata-kuliah', MataKuliahController::class)->parameters([
         'mata-kuliah' => 'kode_matkul'

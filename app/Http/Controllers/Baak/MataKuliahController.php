@@ -1,4 +1,5 @@
 <?php
+// app/Http/Controllers/Baak/MataKuliahController.php
 
 namespace App\Http\Controllers\Baak;
 
@@ -7,6 +8,7 @@ use App\Http\Requests\StoreMataKuliahRequest;
 use App\Http\Requests\UpdateMataKuliahRequest;
 use App\Models\MataKuliah;
 use App\Models\Prodi;
+use App\Models\Kelas;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 
@@ -49,7 +51,15 @@ class MataKuliahController extends Controller
             });
         }
 
-        $mataKuliah = $query->withCount('kelas')->latest()->paginate(10)->withQueryString();
+        $mataKuliah = $query->latest()->paginate(10)->withQueryString();
+
+        // Manually count kelas via mata_kuliah_periode
+        $mataKuliah->getCollection()->transform(function ($mk) {
+            $mk->kelas_count = Kelas::whereHas('mataKuliahPeriode', function($q) use ($mk) {
+                $q->where('kode_matkul', $mk->kode_matkul);
+            })->count();
+            return $mk;
+        });
 
         $prodi_list = Prodi::with('fakultas')->orderBy('nama_prodi')->get();
 
@@ -85,13 +95,18 @@ class MataKuliahController extends Controller
 
     public function show($kode_matkul)
     {
-        $mataKuliah = MataKuliah::with([
-            'prodi.fakultas',
-            'kelas.dosen'
-        ])->findOrFail($kode_matkul);
+        $mataKuliah = MataKuliah::with('prodi.fakultas')->findOrFail($kode_matkul);
+
+        // Load kelas via mata_kuliah_periode
+        $kelas = Kelas::with(['mataKuliahPeriode', 'dosen'])
+            ->whereHas('mataKuliahPeriode', function($q) use ($kode_matkul) {
+                $q->where('kode_matkul', $kode_matkul);
+            })
+            ->get();
 
         return Inertia::render('Baak/MataKuliah/Show', [
             'mata_kuliah' => $mataKuliah,
+            'kelas' => $kelas, // Kirim terpisah
         ]);
     }
 
@@ -125,15 +140,21 @@ class MataKuliahController extends Controller
     {
         $mataKuliah = MataKuliah::findOrFail($kode_matkul);
 
-        // Cek apakah ada kelas yang menggunakan mata kuliah ini
-        $jumlahKelas = $mataKuliah->kelas()->count();
+        // Cek kelas via mata_kuliah_periode
+        $jumlahKelas = Kelas::whereHas('mataKuliahPeriode', function($q) use ($kode_matkul) {
+            $q->where('kode_matkul', $kode_matkul);
+        })->count();
 
         if ($jumlahKelas > 0) {
             return back()->with('error', 'Tidak dapat menghapus mata kuliah. Ada ' . $jumlahKelas . ' kelas yang menggunakan mata kuliah ini.');
         }
 
-        // Cek apakah ada mahasiswa yang sudah mengambil mata kuliah ini
-        $jumlahMahasiswa = $mataKuliah->detailKrs()->count();
+        // Cek detail KRS via mata_kuliah_periode
+        $jumlahMahasiswa = \DB::table('detail_krs')
+            ->join('kelas', 'detail_krs.id_kelas', '=', 'kelas.id_kelas')
+            ->join('mata_kuliah_periode', 'kelas.id_mk_periode', '=', 'mata_kuliah_periode.id_mk_periode')
+            ->where('mata_kuliah_periode.kode_matkul', $kode_matkul)
+            ->count();
 
         if ($jumlahMahasiswa > 0) {
             return back()->with('error', 'Tidak dapat menghapus mata kuliah. Ada mahasiswa yang sudah mengambil mata kuliah ini.');

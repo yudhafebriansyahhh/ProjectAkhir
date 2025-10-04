@@ -1,4 +1,4 @@
-// resources/js/Layouts/BaakLayout.jsx
+// resources/js/Layouts/BaakLayout.jsx - COMPLETE STANDARDIZED VERSION
 
 import { useState, useEffect } from "react";
 import { Head, Link, usePage, router } from "@inertiajs/react";
@@ -7,34 +7,57 @@ export default function BaakLayout({ children, title }) {
     const { auth } = usePage().props;
     const [sidebarOpen, setSidebarOpen] = useState(false);
 
+    // Helper function untuk cek route aktif
     const isActive = (routeName) => {
         return route().current(routeName) || route().current(`${routeName}.*`);
     };
 
+    // Helper function untuk cek parent aktif
     const isParentActive = (routeNames) => {
         return routeNames.some((name) => isActive(name));
     };
 
+    // State untuk dropdown menus
     const [masterDataOpen, setMasterDataOpen] = useState(
         isParentActive(["baak.fakultas", "baak.prodi", "baak.mata-kuliah"])
     );
-    const [kepegawaianOpen, setKepegawaianOpen] = useState(
+    const [civitasOpen, setCivitasOpen] = useState(
         isParentActive(["baak.dosen", "baak.mahasiswa"])
     );
     const [perkuliahanOpen, setPerkuliahanOpen] = useState(
-        isParentActive(["baak.kelas"])
+        isParentActive(["baak.kelas", "baak.krs"])
     );
     const [akademikOpen, setAkademikOpen] = useState(
-        isParentActive(["baak.periode-registrasi", "baak.jadwal-krs", "baak.registrasi-semester", "baak.pengaturan-krs"])
+        isParentActive([
+            "baak.periode-registrasi",
+            "baak.jadwal-krs",
+            "baak.registrasi-semester",
+            "baak.pengaturan-krs"
+        ])
     );
 
+    // Update dropdown state saat route berubah
     useEffect(() => {
-        setMasterDataOpen(isParentActive(["baak.fakultas", "baak.prodi", "baak.mata-kuliah"]));
-        setKepegawaianOpen(isParentActive(["baak.dosen", "baak.mahasiswa"]));
-        setPerkuliahanOpen(isParentActive(["baak.kelas"]));
-        setAkademikOpen(isParentActive(["baak.periode-registrasi", "baak.jadwal-krs", "baak.registrasi-semester", "baak.pengaturan-krs"]));
+        setMasterDataOpen(
+            isParentActive(["baak.fakultas", "baak.prodi", "baak.mata-kuliah"])
+        );
+        setCivitasOpen(
+            isParentActive(["baak.dosen", "baak.mahasiswa"])
+        );
+        setPerkuliahanOpen(
+            isParentActive(["baak.kelas", "baak.krs"])
+        );
+        setAkademikOpen(
+            isParentActive([
+                "baak.periode-registrasi",
+                "baak.jadwal-krs",
+                "baak.registrasi-semester",
+                "baak.pengaturan-krs"
+            ])
+        );
     }, [route().current()]);
 
+    // Handle logout dengan konfirmasi
     const handleLogout = () => {
         if (window.Swal) {
             window.Swal.fire({
@@ -45,6 +68,7 @@ export default function BaakLayout({ children, title }) {
                 confirmButtonText: "Ya, logout",
                 cancelButtonText: "Batal",
                 confirmButtonColor: "#dc2626",
+                cancelButtonColor: "#6b7280",
             }).then((result) => {
                 if (result.isConfirmed) {
                     router.post(route("logout"));
@@ -71,7 +95,7 @@ export default function BaakLayout({ children, title }) {
             </Head>
 
             <div className="flex min-h-screen bg-gray-100">
-                {/* Overlay for mobile */}
+                {/* Overlay untuk mobile */}
                 {sidebarOpen && (
                     <div
                         className="fixed inset-0 bg-black bg-opacity-50 z-40 lg:hidden"
@@ -126,7 +150,10 @@ export default function BaakLayout({ children, title }) {
                     {/* Navigation Menu - Scrollable */}
                     <nav className="flex-1 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100 hover:scrollbar-thumb-gray-400">
                         <div className="py-4 px-3 space-y-1">
-                            {/* Dashboard */}
+
+                            {/* ================================ */}
+                            {/* DASHBOARD */}
+                            {/* ================================ */}
                             <Link
                                 href={route("baak.dashboard")}
                                 className={`flex items-center space-x-3 px-4 py-3 rounded-lg transition-colors ${
@@ -139,7 +166,9 @@ export default function BaakLayout({ children, title }) {
                                 <span className="text-sm font-medium">Dashboard</span>
                             </Link>
 
-                            {/* Master Data Dropdown */}
+                            {/* ================================ */}
+                            {/* MASTER DATA DROPDOWN */}
+                            {/* ================================ */}
                             <div>
                                 <button
                                     onClick={() => setMasterDataOpen(!masterDataOpen)}
@@ -187,10 +216,12 @@ export default function BaakLayout({ children, title }) {
                                 </div>
                             </div>
 
-                            {/* Civitas Akademika Dropdown */}
+                            {/* ================================ */}
+                            {/* CIVITAS AKADEMIKA DROPDOWN */}
+                            {/* ================================ */}
                             <div>
                                 <button
-                                    onClick={() => setKepegawaianOpen(!kepegawaianOpen)}
+                                    onClick={() => setCivitasOpen(!civitasOpen)}
                                     className={`w-full flex items-center justify-between px-4 py-3 rounded-lg transition-colors ${
                                         isParentActive(["baak.dosen", "baak.mahasiswa"])
                                             ? "bg-blue-50 text-blue-700"
@@ -201,10 +232,10 @@ export default function BaakLayout({ children, title }) {
                                         <i className="fas fa-users w-5 text-center"></i>
                                         <span className="text-sm font-medium">Civitas Akademika</span>
                                     </div>
-                                    <i className={`fas fa-chevron-down text-xs transition-transform duration-200 ${kepegawaianOpen ? "rotate-180" : ""}`}></i>
+                                    <i className={`fas fa-chevron-down text-xs transition-transform duration-200 ${civitasOpen ? "rotate-180" : ""}`}></i>
                                 </button>
 
-                                <div className={`mt-1 space-y-1 overflow-hidden transition-all duration-300 ${kepegawaianOpen ? "max-h-48" : "max-h-0"}`}>
+                                <div className={`mt-1 space-y-1 overflow-hidden transition-all duration-300 ${civitasOpen ? "max-h-48" : "max-h-0"}`}>
                                     <Link
                                         href={route("baak.dosen.index")}
                                         className={`flex items-center space-x-3 px-4 py-2 ml-6 rounded-lg text-sm transition-colors ${
@@ -226,7 +257,9 @@ export default function BaakLayout({ children, title }) {
                                 </div>
                             </div>
 
-                            {/* Perkuliahan Dropdown */}
+                            {/* ================================ */}
+                            {/* PERKULIAHAN DROPDOWN */}
+                            {/* ================================ */}
                             <div>
                                 <button
                                     onClick={() => setPerkuliahanOpen(!perkuliahanOpen)}
@@ -250,18 +283,34 @@ export default function BaakLayout({ children, title }) {
                                             isActive("baak.kelas") ? "bg-blue-600 text-white" : "text-gray-600 hover:bg-blue-50 hover:text-blue-700"
                                         }`}
                                     >
-                                        <i className="fas fa-calendar-alt w-4 text-center"></i>
+                                        <i className="fas fa-door-open w-4 text-center"></i>
                                         <span>Kelas</span>
+                                    </Link>
+                                    <Link
+                                        href={route("baak.krs.index")}
+                                        className={`flex items-center space-x-3 px-4 py-2 ml-6 rounded-lg text-sm transition-colors ${
+                                            isActive("baak.krs") ? "bg-blue-600 text-white" : "text-gray-600 hover:bg-blue-50 hover:text-blue-700"
+                                        }`}
+                                    >
+                                        <i className="fas fa-clipboard-list w-4 text-center"></i>
+                                        <span>Monitoring KRS</span>
                                     </Link>
                                 </div>
                             </div>
 
-                            {/* Akademik Dropdown */}
+                            {/* ================================ */}
+                            {/* AKADEMIK DROPDOWN */}
+                            {/* ================================ */}
                             <div>
                                 <button
                                     onClick={() => setAkademikOpen(!akademikOpen)}
                                     className={`w-full flex items-center justify-between px-4 py-3 rounded-lg transition-colors ${
-                                        isParentActive(["baak.periode-registrasi", "baak.jadwal-krs", "baak.registrasi-semester"])
+                                        isParentActive([
+                                            "baak.periode-registrasi",
+                                            "baak.jadwal-krs",
+                                            "baak.registrasi-semester",
+                                            "baak.pengaturan-krs"
+                                        ])
                                             ? "bg-blue-50 text-blue-700"
                                             : "text-gray-700 hover:bg-blue-50 hover:text-blue-700"
                                     }`}
@@ -273,7 +322,7 @@ export default function BaakLayout({ children, title }) {
                                     <i className={`fas fa-chevron-down text-xs transition-transform duration-200 ${akademikOpen ? "rotate-180" : ""}`}></i>
                                 </button>
 
-                                <div className={`mt-1 space-y-1 overflow-hidden transition-all duration-300 ${akademikOpen ? "max-h-60" : "max-h-0"}`}>
+                                <div className={`mt-1 space-y-1 overflow-hidden transition-all duration-300 ${akademikOpen ? "max-h-72" : "max-h-0"}`}>
                                     <Link
                                         href={route("baak.periode-registrasi.index")}
                                         className={`flex items-center space-x-3 px-4 py-2 ml-6 rounded-lg text-sm transition-colors ${
@@ -308,13 +357,14 @@ export default function BaakLayout({ children, title }) {
                                         }`}
                                     >
                                         <i className="fas fa-cog w-4 text-center"></i>
-                                        <span>Pengaturan Mata Kuliah KRS</span>
+                                        <span>Pengaturan MK KRS</span>
                                     </Link>
-
                                 </div>
                             </div>
 
-                            {/* Laporan */}
+                            {/* ================================ */}
+                            {/* LAPORAN (Placeholder) */}
+                            {/* ================================ */}
                             <Link
                                 href="#"
                                 className="flex items-center space-x-3 px-4 py-3 rounded-lg transition-colors text-gray-700 hover:bg-blue-50 hover:text-blue-700"
@@ -323,12 +373,12 @@ export default function BaakLayout({ children, title }) {
                                 <span className="text-sm font-medium">Laporan</span>
                             </Link>
 
-                            {/* Extra spacing at bottom for better scrolling */}
+                            {/* Extra spacing untuk scrolling */}
                             <div className="h-4"></div>
                         </div>
                     </nav>
 
-                    {/* Logout Button - Fixed at Bottom */}
+                    {/* Logout Button - Fixed di Bottom */}
                     <div className="flex-shrink-0 p-4 border-t border-gray-200 bg-white">
                         <button
                             onClick={handleLogout}
@@ -351,7 +401,7 @@ export default function BaakLayout({ children, title }) {
                             <i className="fas fa-bars text-xl"></i>
                         </button>
                         <h1 className="text-lg font-semibold text-gray-800">
-                            Sistem Akademik
+                            SIAKAD ITB Riau
                         </h1>
                         <div className="w-6"></div>
                     </header>

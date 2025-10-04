@@ -17,37 +17,43 @@ class PengaturanKrsController extends Controller
 {
     public function index(Request $request)
     {
-        $query = MataKuliahPeriode::with(['mataKuliah.prodi']);
+        $query = MataKuliahPeriode::with(['mataKuliah', 'prodi', 'kelas']);
 
-        // Filter by periode
-        if ($request->filled('periode')) {
-            [$tahun, $jenis] = explode('-', $request->periode);
-            $query->where('tahun_ajaran', $tahun)
-                  ->where('jenis_semester', $jenis);
+        // Filter tahun ajaran
+        if ($request->filled('tahun_ajaran')) {
+            $query->where('tahun_ajaran', $request->tahun_ajaran);
         }
 
-        // Filter by prodi
-        if ($request->filled('prodi')) {
-            $query->whereHas('mataKuliah', fn($q) => $q->where('kode_prodi', $request->prodi));
+        // Filter jenis semester
+        if ($request->filled('jenis_semester')) {
+            $query->where('jenis_semester', $request->jenis_semester);
         }
 
-        // Search
-        if ($request->filled('search')) {
-            $query->whereHas('mataKuliah', function($q) use ($request) {
-                $q->where('kode_matkul', 'like', "%{$request->search}%")
-                  ->orWhere('nama_matkul', 'like', "%{$request->search}%");
-            });
+        // Filter prodi
+        if ($request->filled('kode_prodi')) {
+            $query->where('kode_prodi', $request->kode_prodi);
         }
 
-        $pengaturan = $query->latest('created_at')
-            ->paginate(15)
-            ->withQueryString();
+        // Filter semester
+        if ($request->filled('semester')) {
+            $query->where('semester_ditawarkan', $request->semester);
+        }
+
+        $pengaturan = $query->orderBy('semester_ditawarkan')
+            ->orderBy('kode_matkul')
+            ->get();
+
+        // Get unique tahun ajaran for filter
+        $periodes = MataKuliahPeriode::select('tahun_ajaran')
+            ->distinct()
+            ->orderBy('tahun_ajaran', 'desc')
+            ->get();
 
         return Inertia::render('Baak/PengaturanKrs/Index', [
             'pengaturan' => $pengaturan,
-            'filters' => $request->only(['periode', 'prodi', 'search']),
-            'periodes' => PeriodeRegistrasi::orderBy('tahun_ajaran', 'desc')->get(),
+            'filters' => $request->only(['tahun_ajaran', 'jenis_semester', 'kode_prodi', 'semester']),
             'prodis' => Prodi::orderBy('nama_prodi')->get(),
+            'periodes' => $periodes,
         ]);
     }
 
@@ -63,6 +69,7 @@ class PengaturanKrsController extends Controller
         ]);
     }
 
+
     public function store(StoreMataKuliahPeriodeRequest $request)
     {
         DB::beginTransaction();
@@ -71,20 +78,21 @@ class PengaturanKrsController extends Controller
             foreach ($request->mata_kuliah as $mk) {
                 MataKuliahPeriode::create([
                     'kode_matkul' => $mk['kode_matkul'],
+                    'kode_prodi' => $request->kode_prodi,
                     'tahun_ajaran' => $request->tahun_ajaran,
                     'jenis_semester' => $request->jenis_semester,
-                    'semester_ditawarkan' => $mk['semester_ditawarkan'],
-                    'kuota' => $mk['kuota'],
-                    'is_available' => $mk['is_available'] ?? true,
+                    'semester_ditawarkan' => $request->semester_ditawarkan,
                     'catatan' => $mk['catatan'] ?? null,
                 ]);
             }
 
             DB::commit();
 
+            $jumlahMk = count($request->mata_kuliah);
+
             return redirect()
                 ->route('baak.pengaturan-krs.index')
-                ->with('success', 'Pengaturan mata kuliah KRS berhasil disimpan');
+                ->with('success', "Berhasil menyimpan {$jumlahMk} mata kuliah untuk semester {$request->semester_ditawarkan}");
 
         } catch (\Exception $e) {
             DB::rollBack();
@@ -99,7 +107,7 @@ class PengaturanKrsController extends Controller
     public function edit(MataKuliahPeriode $pengaturan_kr)
     {
         return Inertia::render('Baak/PengaturanKrs/Edit', [
-            'pengaturan' => $pengaturan_kr->load('mataKuliah.prodi'),
+            'pengaturan' => $pengaturan_kr->load(['mataKuliah', 'prodi']),
         ]);
     }
 
@@ -114,6 +122,13 @@ class PengaturanKrsController extends Controller
 
     public function destroy(MataKuliahPeriode $pengaturan_kr)
     {
+        // Cek apakah ada kelas
+        if ($pengaturan_kr->kelas()->count() > 0) {
+            return redirect()
+                ->back()
+                ->with('error', 'Tidak dapat menghapus. Mata kuliah ini sudah memiliki kelas.');
+        }
+
         $pengaturan_kr->delete();
 
         return redirect()
@@ -121,7 +136,6 @@ class PengaturanKrsController extends Controller
             ->with('success', 'Pengaturan mata kuliah berhasil dihapus');
     }
 
-    // Copy dari periode sebelumnya
     public function copy(Request $request)
     {
         $request->validate([
@@ -145,8 +159,6 @@ class PengaturanKrsController extends Controller
                     'tahun_ajaran' => $request->to_tahun_ajaran,
                     'jenis_semester' => $request->to_jenis_semester,
                     'semester_ditawarkan' => $item->semester_ditawarkan,
-                    'kuota' => $item->kuota,
-                    'is_available' => $item->is_available,
                     'catatan' => 'Disalin dari periode ' . $fromTahun . ' ' . $fromJenis,
                 ]);
             }

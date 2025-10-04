@@ -262,35 +262,35 @@ export default function Show({ dosen }) {
                                                 </thead>
                                                 <tbody className="bg-white divide-y divide-gray-200">
                                                     {dosen.kelas.map((kelas, index) => (
-                                                        <tr key={kelas.id_kelas} className="hover:bg-gray-50">
-                                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
-                                                                {index + 1}
-                                                            </td>
-                                                            <td className="px-6 py-4 whitespace-nowrap">
-                                                                <span className="px-2 py-1 text-xs font-semibold text-blue-800 bg-blue-100 rounded-lg">
-                                                                    {kelas.mata_kuliah?.kode_matkul || '-'}
-                                                                </span>
-                                                            </td>
-                                                            <td className="px-6 py-4 text-sm text-gray-700 font-medium">
-                                                                {kelas.mata_kuliah?.nama_matkul || '-'}
-                                                            </td>
-                                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700 text-center">
-                                                                {kelas.nama_kelas}
-                                                            </td>
-                                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700 text-center font-medium">
-                                                                {kelas.mata_kuliah?.sks || 0}
-                                                            </td>
-                                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700 text-center">
-                                                                {kelas.hari}
-                                                            </td>
-                                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700 text-center">
-                                                                {kelas.jam_mulai?.substring(0, 5)} - {kelas.jam_selesai?.substring(0, 5)}
-                                                            </td>
-                                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700 text-center">
-                                                                {kelas.ruang_kelas}
-                                                            </td>
-                                                        </tr>
-                                                    ))}
+                                                    <tr key={kelas.id_kelas} className="hover:bg-gray-50">
+                                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
+                                                            {index + 1}
+                                                        </td>
+                                                        <td className="px-6 py-4 whitespace-nowrap">
+                                                            <span className="px-2 py-1 text-xs font-semibold text-blue-800 bg-blue-100 rounded-lg">
+                                                                {kelas.mata_kuliah_periode?.mata_kuliah?.kode_matkul || '-'}
+                                                            </span>
+                                                        </td>
+                                                        <td className="px-6 py-4 text-sm text-gray-700 font-medium">
+                                                            {kelas.mata_kuliah_periode?.mata_kuliah?.nama_matkul || '-'}
+                                                        </td>
+                                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700 text-center">
+                                                            {kelas.nama_kelas}
+                                                        </td>
+                                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700 text-center font-medium">
+                                                            {kelas.mata_kuliah_periode?.mata_kuliah?.sks || 0}
+                                                        </td>
+                                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700 text-center">
+                                                            {kelas.hari}
+                                                        </td>
+                                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700 text-center">
+                                                            {kelas.jam_mulai?.substring(0, 5)} - {kelas.jam_selesai?.substring(0, 5)}
+                                                        </td>
+                                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700 text-center">
+                                                            {kelas.ruang_kelas}
+                                                        </td>
+                                                    </tr>
+                                                ))}
                                                 </tbody>
                                             </table>
                                         </div>
@@ -304,16 +304,16 @@ export default function Show({ dosen }) {
                                                             <div className="flex items-center gap-2 mb-1">
                                                                 <span className="text-xs font-semibold text-gray-500">#{index + 1}</span>
                                                                 <span className="px-2 py-0.5 text-xs font-semibold text-blue-800 bg-blue-100 rounded">
-                                                                    {kelas.mata_kuliah?.kode_matkul}
+                                                                    {kelas.mata_kuliah_periode?.mata_kuliah?.kode_matkul}
                                                                 </span>
                                                             </div>
                                                             <h4 className="font-semibold text-gray-800 text-sm mb-1">
-                                                                {kelas.mata_kuliah?.nama_matkul}
+                                                                {kelas.mata_kuliah_periode?.mata_kuliah?.nama_matkul}
                                                             </h4>
                                                             <p className="text-xs text-gray-600">Kelas {kelas.nama_kelas}</p>
                                                         </div>
                                                         <span className="px-2 py-1 rounded text-xs font-semibold bg-purple-100 text-purple-800">
-                                                            {kelas.mata_kuliah?.sks || 0} SKS
+                                                            {kelas.mata_kuliah_periode?.mata_kuliah?.sks || 0} SKS
                                                         </span>
                                                     </div>
                                                     <div className="grid grid-cols-2 gap-2 pt-3 border-t border-gray-100">

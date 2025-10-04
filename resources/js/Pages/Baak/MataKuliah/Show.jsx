@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Head, Link, router } from '@inertiajs/react';
 import BaakLayout from '@/Layouts/BaakLayout';
 
-export default function Show({ mata_kuliah }) {
+export default function Show({ mata_kuliah, kelas }) {
     const [activeTab, setActiveTab] = useState('info');
 
     const handleToggleStatus = () => {
@@ -144,7 +144,7 @@ export default function Show({ mata_kuliah }) {
                                         <p className="text-xs md:text-sm text-gray-600 font-medium">Kelas</p>
                                     </div>
                                     <p className="font-bold text-gray-800 text-xl md:text-2xl">
-                                        {mata_kuliah.kelas?.length || 0} Kelas
+                                        {kelas?.length || 0} Kelas
                                     </p>
                                     <p className="text-xs text-gray-600 mt-1">Kelas Tersedia</p>
                                 </div>
@@ -178,7 +178,7 @@ export default function Show({ mata_kuliah }) {
                                 }`}
                             >
                                 <i className="fas fa-chalkboard-teacher mr-1 md:mr-2"></i>
-                                <span>Daftar Kelas ({mata_kuliah.kelas?.length || 0})</span>
+                                <span>Daftar Kelas ({kelas?.length || 0})</span>
                             </button>
                         </div>
                     </div>
@@ -199,6 +199,10 @@ export default function Show({ mata_kuliah }) {
                                 <div>
                                     <label className="text-xs md:text-sm font-semibold text-gray-600">SKS</label>
                                     <p className="text-gray-800 text-sm md:text-base mt-1">{mata_kuliah.sks || '-'} SKS</p>
+                                </div>
+                                <div>
+                                    <label className="text-xs md:text-sm font-semibold text-gray-600">Semester</label>
+                                    <p className="text-gray-800 text-sm md:text-base mt-1">Semester {mata_kuliah.semester || '-'}</p>
                                 </div>
                                 <div>
                                     <label className="text-xs md:text-sm font-semibold text-gray-600">Program Studi</label>
@@ -236,7 +240,7 @@ export default function Show({ mata_kuliah }) {
                                 </div>
                                 <div>
                                     <label className="text-xs md:text-sm font-semibold text-gray-600">Jumlah Kelas</label>
-                                    <p className="text-gray-800 text-sm md:text-base mt-1">{mata_kuliah.kelas?.length || 0} Kelas</p>
+                                    <p className="text-gray-800 text-sm md:text-base mt-1">{kelas?.length || 0} Kelas</p>
                                 </div>
                                 {mata_kuliah.deskripsi && (
                                     <div className="md:col-span-2">
@@ -250,7 +254,7 @@ export default function Show({ mata_kuliah }) {
                         {/* Kelas Tab */}
                         {activeTab === 'kelas' && (
                             <div>
-                                {mata_kuliah.kelas && mata_kuliah.kelas.length > 0 ? (
+                                {kelas && kelas.length > 0 ? (
                                     <>
                                         {/* Desktop Table */}
                                         <div className="hidden md:block overflow-x-auto rounded-lg border border-gray-200">
@@ -267,7 +271,7 @@ export default function Show({ mata_kuliah }) {
                                                     </tr>
                                                 </thead>
                                                 <tbody className="bg-white divide-y divide-gray-200">
-                                                    {mata_kuliah.kelas.map((item, index) => (
+                                                    {kelas.map((item, index) => (
                                                         <tr key={item.id_kelas} className="hover:bg-gray-50">
                                                             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
                                                                 {index + 1}
@@ -300,7 +304,7 @@ export default function Show({ mata_kuliah }) {
 
                                         {/* Mobile Cards */}
                                         <div className="md:hidden space-y-4">
-                                            {mata_kuliah.kelas.map((item, index) => (
+                                            {kelas.map((item, index) => (
                                                 <div key={item.id_kelas} className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm">
                                                     <div className="flex justify-between items-start mb-2">
                                                         <div className="flex-1 min-w-0">
