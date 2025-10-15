@@ -87,6 +87,13 @@ Route::middleware(['auth', 'role:baak'])->prefix('baak')->name('baak.')->group(f
     Route::post('/pengaturan-krs/copy', [PengaturanKrsController::class, 'copy'])
         ->name('pengaturan-krs.copy');
 
+    // Manajemen Nilai Routes
+    Route::prefix('nilai')->name('nilai.')->group(function () {
+    Route::get('/', [\App\Http\Controllers\Baak\NilaiController::class, 'index'])->name('index');
+    Route::get('/{kelas}', [\App\Http\Controllers\Baak\NilaiController::class, 'show'])->name('show');
+    Route::post('/{kelas}/toggle-lock', [\App\Http\Controllers\Baak\NilaiController::class, 'toggleLock'])->name('toggle-lock');
+    Route::post('/bulk-lock', [\App\Http\Controllers\Baak\NilaiController::class, 'bulkLock'])->name('bulk-lock');
+});
 });
 
 

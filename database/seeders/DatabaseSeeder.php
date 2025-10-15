@@ -583,11 +583,18 @@ class DatabaseSeeder extends Seeder
                 'updated_at' => now(),
             ]);
 
+            // ✅ INSERT NILAI (untuk semester yang sudah lewat)
             if ($semester < $this->getCurrentSemester($mhs['tahun'])) {
                 $nilaiTugas = rand(70, 95);
                 $nilaiUts = rand(70, 95);
                 $nilaiUas = rand(70, 95);
                 $nilaiAkhir = ($nilaiTugas * 0.3) + ($nilaiUts * 0.3) + ($nilaiUas * 0.4);
+
+                // ✅ TAMBAH is_locked
+                // Semester lama (>= 2 semester lalu) = locked
+                // Semester baru (1 semester lalu) = unlocked (masih bisa diedit dosen)
+                $currentSem = $this->getCurrentSemester($mhs['tahun']);
+                $isLocked = $semester < ($currentSem - 1); // Locked jika >= 2 semester lalu
 
                 DB::table('nilai_mahasiswa')->insert([
                     'id_mahasiswa' => $mhs['id'],
@@ -597,12 +604,14 @@ class DatabaseSeeder extends Seeder
                     'nilai_uas' => $nilaiUas,
                     'nilai_akhir' => $nilaiAkhir,
                     'nilai_huruf' => $this->getNilaiHuruf($nilaiAkhir),
+                    'is_locked' => $isLocked, // ✅ BARU DITAMBAHKAN
                     'created_at' => now(),
                     'updated_at' => now(),
                 ]);
             }
         }
 
+        // Insert riwayat akademik
         if ($semester < $this->getCurrentSemester($mhs['tahun'])) {
             $this->insertRiwayatAkademik($mhs['id'], $semester, $tahunAjaran, $currentSks);
         }
@@ -669,27 +678,43 @@ class DatabaseSeeder extends Seeder
 
     private function getBobotNilai($nilaiAkhir)
     {
-        if ($nilaiAkhir >= 85) return 4.00;
-        if ($nilaiAkhir >= 80) return 3.70;
-        if ($nilaiAkhir >= 75) return 3.30;
-        if ($nilaiAkhir >= 70) return 3.00;
-        if ($nilaiAkhir >= 65) return 2.70;
-        if ($nilaiAkhir >= 60) return 2.30;
-        if ($nilaiAkhir >= 55) return 2.00;
-        if ($nilaiAkhir >= 50) return 1.70;
+        if ($nilaiAkhir >= 85)
+            return 4.00;
+        if ($nilaiAkhir >= 80)
+            return 3.70;
+        if ($nilaiAkhir >= 75)
+            return 3.30;
+        if ($nilaiAkhir >= 70)
+            return 3.00;
+        if ($nilaiAkhir >= 65)
+            return 2.70;
+        if ($nilaiAkhir >= 60)
+            return 2.30;
+        if ($nilaiAkhir >= 55)
+            return 2.00;
+        if ($nilaiAkhir >= 50)
+            return 1.70;
         return 0.00;
     }
 
     private function getNilaiHuruf($nilaiAkhir)
     {
-        if ($nilaiAkhir >= 85) return 'A';
-        if ($nilaiAkhir >= 80) return 'A-';
-        if ($nilaiAkhir >= 75) return 'B+';
-        if ($nilaiAkhir >= 70) return 'B';
-        if ($nilaiAkhir >= 65) return 'B-';
-        if ($nilaiAkhir >= 60) return 'C+';
-        if ($nilaiAkhir >= 55) return 'C';
-        if ($nilaiAkhir >= 50) return 'D';
+        if ($nilaiAkhir >= 85)
+            return 'A';
+        if ($nilaiAkhir >= 80)
+            return 'A-';
+        if ($nilaiAkhir >= 75)
+            return 'B+';
+        if ($nilaiAkhir >= 70)
+            return 'B';
+        if ($nilaiAkhir >= 65)
+            return 'B-';
+        if ($nilaiAkhir >= 60)
+            return 'C+';
+        if ($nilaiAkhir >= 55)
+            return 'C';
+        if ($nilaiAkhir >= 50)
+            return 'D';
         return 'E';
     }
 }

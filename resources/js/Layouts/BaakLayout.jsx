@@ -295,6 +295,15 @@ export default function BaakLayout({ children, title }) {
                                         <i className="fas fa-clipboard-list w-4 text-center"></i>
                                         <span>Monitoring KRS</span>
                                     </Link>
+                                    <Link
+                                        href={route("baak.nilai.index")}
+                                        className={`flex items-center space-x-3 px-4 py-2 ml-6 rounded-lg text-sm transition-colors ${
+                                            isActive("baak.nilai") ? "bg-blue-600 text-white" : "text-gray-600 hover:bg-blue-50 hover:text-blue-700"
+                                        }`}
+                                    >
+                                        <i className="fas fa-star w-4 text-center"></i>
+                                        <span>Manajemen Nilai</span>
+                                    </Link>
                                 </div>
                             </div>
 

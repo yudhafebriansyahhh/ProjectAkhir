@@ -20,6 +20,7 @@ class NilaiMahasiswa extends Model
         'nilai_uas',
         'nilai_akhir',
         'nilai_huruf',
+        'is_locked',
     ];
 
     protected $casts = [
@@ -27,6 +28,7 @@ class NilaiMahasiswa extends Model
         'nilai_uts' => 'decimal:2',
         'nilai_uas' => 'decimal:2',
         'nilai_akhir' => 'decimal:2',
+        'is_locked' => 'boolean',
     ];
 
     // ========================================
@@ -80,4 +82,5 @@ class NilaiMahasiswa extends Model
         if ($nilai >= 50) return 'D';
         return 'E';
     }
+
 }

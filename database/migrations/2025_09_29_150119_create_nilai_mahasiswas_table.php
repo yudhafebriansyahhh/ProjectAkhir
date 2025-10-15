@@ -17,6 +17,7 @@ return new class extends Migration
             $table->decimal('nilai_uas', 5, 2)->nullable();
             $table->decimal('nilai_akhir', 5, 2)->nullable();
             $table->char('nilai_huruf', 2)->nullable();
+            $table->boolean('is_locked')->default(false);
             $table->timestamps();
         });
     }
