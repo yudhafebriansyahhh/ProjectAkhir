@@ -64,3 +64,35 @@
     scrollbar-width: thin;
     scrollbar-color: #d1d5db #f3f4f6;
 }
+
+/* resources/css/app.css - OPTIONAL ENHANCEMENTS */
+
+/* Smooth transitions for cards */
+.hover\:shadow-md {
+    transition: box-shadow 0.3s ease-in-out;
+}
+
+/* Progress bar animation */
+@keyframes progressBar {
+    from {
+        width: 0;
+    }
+}
+
+.animate-progress {
+    animation: progressBar 1s ease-out;
+}
+
+/* Pulse animation for alerts */
+@keyframes pulse {
+    0%, 100% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0.8;
+    }
+}
+
+.animate-pulse-slow {
+    animation: pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}

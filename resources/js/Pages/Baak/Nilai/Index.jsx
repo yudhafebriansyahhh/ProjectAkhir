@@ -1,47 +1,180 @@
-// resources/js/Pages/Baak/Nilai/Index.jsx
-
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Head, Link, router } from "@inertiajs/react";
 import BaakLayout from "@/Layouts/BaakLayout";
+import Swal from "sweetalert2";
+import Select from "react-select";
 
 export default function Index({
     kelas,
     prodis,
     dosens,
-    tahunAjaranList,
+    periodeList,
     filters,
+    periodStats,
 }) {
-    const [search, setSearch] = useState(filters.search || "");
-    const [tahunAjaran, setTahunAjaran] = useState(filters.tahun_ajaran || "");
-    const [prodi, setProdi] = useState(filters.prodi || "");
-    const [dosen, setDosen] = useState(filters.dosen || "");
-    const [statusNilai, setStatusNilai] = useState(filters.status_nilai || "");
+    const [search, setSearch] = useState(filters?.search || "");
 
-    const handleFilter = (e) => {
-        e.preventDefault();
-        router.get(
-            route("baak.nilai.index"),
-            {
-                search,
-                tahun_ajaran: tahunAjaran,
-                prodi,
-                dosen,
-                status_nilai: statusNilai,
-            },
-            {
-                preserveState: true,
-                preserveScroll: true,
-            }
-        );
-    };
+    // ✅ Safe initialization
+    const [selectedPeriode, setSelectedPeriode] = useState(() => {
+        if (!periodeList || !Array.isArray(periodeList)) return null;
+        if (filters?.tahun_ajaran && filters?.jenis_semester) {
+            return (
+                periodeList.find(
+                    (p) =>
+                        p.tahun_ajaran === filters.tahun_ajaran &&
+                        p.jenis_semester === filters.jenis_semester
+                ) || null
+            );
+        }
+        return null;
+    });
+
+    const [selectedProdi, setSelectedProdi] = useState(() => {
+        if (!prodis || !Array.isArray(prodis)) return null;
+        if (filters?.prodi) {
+            return prodis.find((p) => p.kode_prodi === filters.prodi) || null;
+        }
+        return null;
+    });
+
+    const [selectedDosen, setSelectedDosen] = useState(() => {
+        if (!dosens || !Array.isArray(dosens)) return null;
+        if (filters?.dosen) {
+            return dosens.find((d) => d.id_dosen === filters.dosen) || null;
+        }
+        return null;
+    });
+
+    const [statusNilai, setStatusNilai] = useState(filters?.status_nilai || "");
+
+    // ✅ AUTO-LOAD
+    useEffect(() => {
+        if (selectedPeriode) {
+            const timeoutId = setTimeout(() => {
+                router.get(
+                    route("baak.nilai.index"),
+                    {
+                        search,
+                        tahun_ajaran: selectedPeriode.tahun_ajaran,
+                        jenis_semester: selectedPeriode.jenis_semester,
+                        prodi: selectedProdi?.kode_prodi || "",
+                        dosen: selectedDosen?.id_dosen || "",
+                        status_nilai: statusNilai,
+                    },
+                    {
+                        preserveState: true,
+                        preserveScroll: true,
+                    }
+                );
+            }, 300);
+            return () => clearTimeout(timeoutId);
+        }
+    }, [selectedPeriode, selectedProdi, selectedDosen, statusNilai, search]);
 
     const handleReset = () => {
         setSearch("");
-        setTahunAjaran("");
-        setProdi("");
-        setDosen("");
+        setSelectedPeriode(null);
+        setSelectedProdi(null);
+        setSelectedDosen(null);
         setStatusNilai("");
         router.get(route("baak.nilai.index"));
+    };
+
+    const handleBulkLock = (action) => {
+        if (!selectedPeriode) {
+            Swal.fire({
+                icon: "warning",
+                title: "Pilih Periode Dulu",
+                text: "Silakan pilih Periode terlebih dahulu",
+                confirmButtonColor: "#3B82F6",
+            });
+            return;
+        }
+
+        const actionText = action === "lock" ? "Lock" : "Unlock";
+        const confirmText =
+            action === "lock"
+                ? "Semua nilai di periode ini akan di-lock dan tidak dapat diubah oleh dosen."
+                : "Semua nilai di periode ini akan di-unlock dan dapat diubah kembali oleh dosen.";
+
+        const warningText =
+            action === "lock" && periodStats?.nilai_kosong > 0
+                ? `<div class="bg-yellow-50 border border-yellow-200 rounded p-2 mt-2">
+                <p class="text-sm text-yellow-800">
+                    ⚠️ <strong>${periodStats.nilai_kosong} nilai masih kosong</strong> dan akan diisi otomatis dengan nilai 0 (E).
+                </p>
+               </div>`
+                : "";
+
+        Swal.fire({
+            title: `${actionText} Semua Nilai Periode?`,
+            html: `
+                <div class="text-left">
+                    <p class="mb-3">${confirmText}</p>
+                    <div class="bg-blue-50 border border-blue-200 rounded p-3 text-sm space-y-1">
+                        <p><strong>Periode:</strong> ${
+                            selectedPeriode.label
+                        }</p>
+                        ${
+                            selectedProdi
+                                ? `<p><strong>Prodi:</strong> ${selectedProdi.nama_prodi}</p>`
+                                : "<p><strong>Scope:</strong> Semua Prodi</p>"
+                        }
+                        ${
+                            periodStats
+                                ? `
+                            <p><strong>Total Kelas:</strong> ${periodStats.total_kelas}</p>
+                            <p><strong>Total Mahasiswa:</strong> ${periodStats.total_mahasiswa}</p>
+                            <p><strong>Nilai Sudah Diinput:</strong> ${periodStats.total_nilai} (${periodStats.persen_nilai}%)</p>
+                            <p><strong>Nilai Kosong:</strong> ${periodStats.nilai_kosong}</p>
+                        `
+                                : ""
+                        }
+                    </div>
+                    ${warningText}
+                </div>
+            `,
+            icon: "warning",
+            showCancelButton: true,
+            confirmButtonColor: action === "lock" ? "#16a34a" : "#3b82f6",
+            cancelButtonColor: "#6b7280",
+            confirmButtonText: `Ya, ${actionText}!`,
+            cancelButtonText: "Batal",
+            width: "600px",
+        }).then((result) => {
+            if (result.isConfirmed) {
+                router.post(
+                    route("baak.nilai.bulk-lock"),
+                    {
+                        tahun_ajaran: selectedPeriode.tahun_ajaran,
+                        jenis_semester: selectedPeriode.jenis_semester,
+                        kode_prodi: selectedProdi?.kode_prodi || null,
+                        action: action,
+                        auto_fill_empty: true,
+                    },
+                    {
+                        preserveScroll: true,
+                        onSuccess: () => {
+                            Swal.fire({
+                                icon: "success",
+                                title: "Berhasil!",
+                                text: `Nilai berhasil di-${action} untuk periode ini.`,
+                                timer: 2000,
+                                showConfirmButton: false,
+                            });
+                        },
+                        onError: () => {
+                            Swal.fire({
+                                icon: "error",
+                                title: "Gagal!",
+                                text: "Terjadi kesalahan. Silakan coba lagi.",
+                                confirmButtonColor: "#dc2626",
+                            });
+                        },
+                    }
+                );
+            }
+        });
     };
 
     const getStatusBadge = (status) => {
@@ -62,71 +195,117 @@ export default function Index({
         return labels[status] || status;
     };
 
-    const handleBulkLock = (action) => {
-        if (!tahunAjaran) {
-            window.Swal.fire({
-                icon: 'warning',
-                title: 'Pilih Periode Dulu',
-                text: 'Silakan pilih Tahun Ajaran terlebih dahulu',
-                confirmButtonColor: '#3B82F6'
-            });
-            return;
-        }
-
-        // Determine jenis_semester from current filter or guess
-        const jenisSemester = 'ganjil'; // You might want to add a jenis_semester filter
-
-        const actionText = action === 'lock' ? 'Lock' : 'Unlock';
-        const confirmText = action === 'lock'
-            ? 'Semua nilai di periode ini akan di-lock dan tidak dapat diubah oleh dosen.'
-            : 'Semua nilai di periode ini akan di-unlock dan dapat diubah kembali oleh dosen.';
-
-        window.Swal.fire({
-            title: `${actionText} All Period?`,
-            html: `
-                <p class="mb-2">${confirmText}</p>
-                <div class="bg-blue-50 border border-blue-200 rounded p-3 text-left text-sm">
-                    <p><strong>Periode:</strong> ${tahunAjaran}</p>
-                    ${prodi ? `<p><strong>Prodi:</strong> ${prodis.find(p => p.kode_prodi === prodi)?.nama_prodi}</p>` : ''}
-                    <p class="text-xs text-gray-600 mt-2">⚠️ Aksi ini akan mempengaruhi semua kelas di periode ini</p>
-                </div>
-            `,
-            icon: 'warning',
-            showCancelButton: true,
-            confirmButtonColor: action === 'lock' ? '#16a34a' : '#3b82f6',
-            cancelButtonColor: '#6b7280',
-            confirmButtonText: `Ya, ${actionText}!`,
-            cancelButtonText: 'Batal'
-        }).then((result) => {
-            if (result.isConfirmed) {
-                router.post(route('baak.nilai.bulk-lock'), {
-                    tahun_ajaran: tahunAjaran,
-                    jenis_semester: jenisSemester,
-                    kode_prodi: prodi || null,
-                    action: action
-                }, {
-                    preserveScroll: true,
-                    onSuccess: () => {
-                        window.Swal.fire({
-                            icon: 'success',
-                            title: 'Berhasil!',
-                            text: `Nilai berhasil di-${action} untuk periode ini.`,
-                            timer: 2000,
-                            showConfirmButton: false
-                        });
-                    },
-                    onError: () => {
-                        window.Swal.fire({
-                            icon: 'error',
-                            title: 'Gagal!',
-                            text: 'Terjadi kesalahan. Silakan coba lagi.',
-                            confirmButtonColor: '#dc2626'
-                        });
-                    }
-                });
-            }
-        });
+    // ✅ CUSTOM STYLES
+    const customSelectStyles = {
+        control: (base, state) => ({
+            ...base,
+            minHeight: "38px",
+            borderColor: state.isFocused ? "#3B82F6" : "#D1D5DB",
+            borderWidth: state.isFocused ? "2px" : "1px",
+            boxShadow: state.isFocused ? "0 0 0 1px #3B82F6" : "none",
+            "&:hover": {
+                borderColor: "#3B82F6",
+            },
+            borderRadius: "0.5rem",
+            fontSize: "0.875rem",
+        }),
+        valueContainer: (base) => ({
+            ...base,
+            padding: "2px 12px",
+        }),
+        input: (base) => ({
+            ...base,
+            margin: "0 !important",
+            padding: "0 !important",
+            caretColor: "#111827",
+            "& input": {
+                outline: "none !important",
+                border: "none !important",
+                boxShadow: "none !important",
+            },
+            "& input:focus": {
+                outline: "none !important",
+                border: "none !important",
+                boxShadow: "none !important",
+            },
+        }),
+        option: (base, state) => ({
+            ...base,
+            backgroundColor: state.isSelected
+                ? "#3B82F6"
+                : state.isFocused
+                ? "#EFF6FF"
+                : "white",
+            color: state.isSelected ? "white" : "#374151",
+            fontSize: "0.875rem",
+            padding: "8px 12px",
+            cursor: "pointer",
+            "&:active": {
+                backgroundColor: "#3B82F6",
+            },
+        }),
+        placeholder: (base) => ({
+            ...base,
+            fontSize: "0.875rem",
+            color: "#9CA3AF",
+            fontWeight: "400",
+        }),
+        singleValue: (base) => ({
+            ...base,
+            fontSize: "0.875rem",
+            fontWeight: "500",
+            color: "#111827",
+        }),
+        menu: (base) => ({
+            ...base,
+            zIndex: 50,
+            marginTop: "4px",
+            boxShadow:
+                "0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)",
+        }),
+        menuList: (base) => ({
+            ...base,
+            padding: "4px",
+        }),
+        dropdownIndicator: (base, state) => ({
+            ...base,
+            color: "#9CA3AF",
+            padding: "8px",
+            "&:hover": {
+                color: "#3B82F6",
+            },
+            transition: "all 0.2s",
+            transform: state.selectProps.menuIsOpen ? "rotate(180deg)" : null,
+        }),
+        indicatorSeparator: () => ({
+            display: "none",
+        }),
+        clearIndicator: (base) => ({
+            ...base,
+            color: "#9CA3AF",
+            padding: "8px",
+            cursor: "pointer",
+            "&:hover": {
+                color: "#EF4444",
+            },
+        }),
     };
+    // ✅ PREPARE OPTIONS
+    const periodeOptions = Array.isArray(periodeList) ? periodeList : [];
+    const prodiOptions = Array.isArray(prodis)
+        ? prodis.map((p) => ({
+              value: p.kode_prodi,
+              label: p.nama_prodi,
+              ...p,
+          }))
+        : [];
+    const dosenOptions = Array.isArray(dosens)
+        ? dosens.map((d) => ({
+              value: d.id_dosen,
+              label: d.nama,
+              ...d,
+          }))
+        : [];
 
     return (
         <BaakLayout title="Manajemen Nilai">
@@ -139,175 +318,272 @@ export default function Index({
                         Manajemen Nilai
                     </h1>
                     <p className="text-gray-600">
-                        Monitor dan kelola nilai mahasiswa per kelas
+                        Monitor dan kelola nilai mahasiswa per periode
                     </p>
                 </div>
 
                 {/* Filters */}
                 <div className="mb-6 bg-white rounded-lg border border-gray-200 p-4">
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-3">
-                        {/* Search */}
-                        <div className="lg:col-span-2">
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
+                        {/* Periode */}
+                        <div>
+                            <label className="block text-xs font-medium text-gray-700 mb-1">
+                                Periode <span className="text-red-500">*</span>
+                            </label>
+                            <Select
+                                value={selectedPeriode}
+                                onChange={setSelectedPeriode}
+                                options={periodeOptions}
+                                styles={customSelectStyles}
+                                placeholder="Pilih Periode..."
+                                isClearable
+                                isSearchable
+                                noOptionsMessage={() => "Tidak ada data"}
+                                autoComplete="off"
+                                inputProps={{
+                                    autoComplete: "off",
+                                    autoCorrect: "off",
+                                    spellCheck: "false",
+                                }}
+                            />
+                        </div>
+
+                        {/* Prodi */}
+                        <div>
+                            <label className="block text-xs font-medium text-gray-700 mb-1">
+                                Program Studi
+                            </label>
+                            <Select
+                                value={selectedProdi}
+                                onChange={setSelectedProdi}
+                                options={prodiOptions}
+                                styles={customSelectStyles}
+                                placeholder="Semua Prodi"
+                                isClearable
+                                isSearchable
+                                isDisabled={!selectedPeriode}
+                                noOptionsMessage={() => "Tidak ada data"}
+                                autoComplete="off"
+                            />
+                        </div>
+
+                        {/* Dosen */}
+                        <div>
+                            <label className="block text-xs font-medium text-gray-700 mb-1">
+                                Dosen Pengampu
+                            </label>
+                            <Select
+                                value={selectedDosen}
+                                onChange={setSelectedDosen}
+                                options={dosenOptions}
+                                styles={customSelectStyles}
+                                placeholder="Semua Dosen"
+                                isClearable
+                                isSearchable
+                                isDisabled={!selectedPeriode}
+                                noOptionsMessage={() => "Tidak ada data"}
+                                autoComplete="off"
+                            />
+                        </div>
+
+                        {/* Status Nilai */}
+                        <div>
+                            <label className="block text-xs font-medium text-gray-700 mb-1">
+                                Status Input
+                            </label>
+                            <select
+                                value={statusNilai}
+                                onChange={(e) => setStatusNilai(e.target.value)}
+                                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                                disabled={!selectedPeriode}
+                                autoComplete="off"
+                            >
+                                <option value="">Semua Status</option>
+                                <option value="belum">Belum Diinput</option>
+                                <option value="sebagian">Sebagian</option>
+                                <option value="lengkap">Lengkap</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    {/* Search Box */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mt-3">
+                        <div>
+                            <label className="block text-xs font-medium text-gray-700 mb-1">
+                                Pencarian
+                            </label>
                             <input
                                 type="text"
                                 value={search}
                                 onChange={(e) => setSearch(e.target.value)}
                                 placeholder="Cari Mata Kuliah atau Kelas..."
                                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                                disabled={!selectedPeriode}
+                                autoComplete="off"
                             />
                         </div>
 
-                        {/* Tahun Ajaran */}
-                        <select
-                            value={tahunAjaran}
-                            onChange={(e) => setTahunAjaran(e.target.value)}
-                            className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
-                        >
-                            <option value="">Semua Tahun Ajaran</option>
-                            {tahunAjaranList.map((ta) => (
-                                <option key={ta} value={ta}>
-                                    {ta}
-                                </option>
-                            ))}
-                        </select>
-
-                        {/* Prodi */}
-                        <select
-                            value={prodi}
-                            onChange={(e) => setProdi(e.target.value)}
-                            className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
-                        >
-                            <option value="">Semua Prodi</option>
-                            {prodis.map((p) => (
-                                <option key={p.kode_prodi} value={p.kode_prodi}>
-                                    {p.nama_prodi}
-                                </option>
-                            ))}
-                        </select>
-
-                        {/* Dosen */}
-                        <select
-                            value={dosen}
-                            onChange={(e) => setDosen(e.target.value)}
-                            className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
-                        >
-                            <option value="">Semua Dosen</option>
-                            {dosens.map((d) => (
-                                <option key={d.id_dosen} value={d.id_dosen}>
-                                    {d.nama}
-                                </option>
-                            ))}
-                        </select>
-
-                        {/* Status Nilai */}
-                        <select
-                            value={statusNilai}
-                            onChange={(e) => setStatusNilai(e.target.value)}
-                            className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
-                        >
-                            <option value="">Semua Status</option>
-                            <option value="belum">Belum Diinput</option>
-                            <option value="sebagian">Sebagian</option>
-                            <option value="lengkap">Lengkap</option>
-                        </select>
-                    </div>
-
-                    {/* Filter Buttons */}
-                    <div className="flex gap-2 mt-3">
-                        <button
-                            onClick={handleFilter}
-                            className="flex-1 md:flex-none bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium flex items-center justify-center gap-2 transition-colors"
-                        >
-                            <i className="fas fa-filter"></i>
-                            <span>Filter</span>
-                        </button>
+                        {/* Reset Button */}
                         {(search ||
-                            tahunAjaran ||
-                            prodi ||
-                            dosen ||
+                            selectedPeriode ||
+                            selectedProdi ||
+                            selectedDosen ||
                             statusNilai) && (
-                            <button
-                                onClick={handleReset}
-                                className="flex-1 md:flex-none bg-gray-100 hover:bg-gray-200 px-4 py-2 rounded-lg text-sm font-medium text-gray-700 flex items-center justify-center gap-2 transition-colors"
-                            >
-                                <i className="fas fa-redo"></i>
-                                <span>Reset</span>
-                            </button>
+                            <div className="flex items-end">
+                                <button
+                                    onClick={handleReset}
+                                    className="w-full md:w-auto px-4 py-2 bg-gray-100 hover:bg-gray-200 rounded-lg text-sm font-medium text-gray-700 flex items-center justify-center gap-2 transition-colors"
+                                >
+                                    <i className="fas fa-redo"></i>
+                                    <span>Reset Filter</span>
+                                </button>
+                            </div>
                         )}
                     </div>
+
+                    {/* Info Badge */}
+                    {!selectedPeriode && (
+                        <div className="mt-3 bg-blue-50 border border-blue-200 rounded-lg p-3 flex items-start gap-2">
+                            <i className="fas fa-info-circle text-blue-600 mt-0.5"></i>
+                            <p className="text-sm text-blue-800">
+                                Pilih <strong>Periode</strong> terlebih dahulu
+                                untuk melihat data nilai
+                            </p>
+                        </div>
+                    )}
                 </div>
 
-                {/* Bulk Lock Section */}
-                {(tahunAjaran && (statusNilai === 'lengkap' || statusNilai === '')) && (
-                    <div className="mb-4 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg border border-blue-200 p-4">
-                        <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-                            <div>
-                                <h3 className="text-sm font-semibold text-gray-900 mb-1">
-                                    🔒 Finalisasi Nilai Periode
+                {/* Period Stats & Bulk Lock */}
+                {selectedPeriode && periodStats && (
+                    <div className="mb-6 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg border border-blue-200 p-4">
+                        <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4">
+                            <div className="flex-1">
+                                <h3 className="text-sm font-semibold text-gray-900 mb-2 flex items-center gap-2">
+                                    <i className="fas fa-chart-bar text-blue-600"></i>
+                                    Statistik Periode {selectedPeriode.label}
+                                    {selectedProdi &&
+                                        ` - ${selectedProdi.nama_prodi}`}
                                 </h3>
-                                <p className="text-xs text-gray-600">
-                                    Lock/Unlock semua nilai untuk periode: <span className="font-semibold">{tahunAjaran}</span>
-                                    {prodi && ` - Prodi: ${prodis.find(p => p.kode_prodi === prodi)?.nama_prodi}`}
-                                </p>
+                                <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-xs">
+                                    <div className="bg-white rounded p-2">
+                                        <p className="text-gray-600">
+                                            Total Kelas
+                                        </p>
+                                        <p className="text-lg font-bold text-gray-900">
+                                            {periodStats.total_kelas}
+                                        </p>
+                                    </div>
+                                    <div className="bg-white rounded p-2">
+                                        <p className="text-gray-600">
+                                            Total Mahasiswa
+                                        </p>
+                                        <p className="text-lg font-bold text-gray-900">
+                                            {periodStats.total_mahasiswa}
+                                        </p>
+                                    </div>
+                                    <div className="bg-white rounded p-2">
+                                        <p className="text-gray-600">
+                                            Nilai Terisi
+                                        </p>
+                                        <p className="text-lg font-bold text-green-600">
+                                            {periodStats.total_nilai} (
+                                            {periodStats.persen_nilai}%)
+                                        </p>
+                                    </div>
+                                    <div className="bg-white rounded p-2">
+                                        <p className="text-gray-600">
+                                            Nilai Kosong
+                                        </p>
+                                        <p className="text-lg font-bold text-red-600">
+                                            {periodStats.nilai_kosong}
+                                        </p>
+                                    </div>
+                                </div>
                             </div>
                             <div className="flex gap-2">
                                 <button
-                                    onClick={() => handleBulkLock('lock')}
-                                    className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg text-sm font-medium flex items-center gap-2 transition-colors"
+                                    onClick={() => handleBulkLock("lock")}
+                                    className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg text-sm font-medium flex items-center gap-2 transition-colors shadow-sm whitespace-nowrap"
                                 >
                                     <i className="fas fa-lock"></i>
-                                    Lock All Period
+                                    <span>Lock All</span>
                                 </button>
                                 <button
-                                    onClick={() => handleBulkLock('unlock')}
-                                    className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium flex items-center gap-2 transition-colors"
+                                    onClick={() => handleBulkLock("unlock")}
+                                    className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium flex items-center gap-2 transition-colors shadow-sm whitespace-nowrap"
                                 >
                                     <i className="fas fa-lock-open"></i>
-                                    Unlock All Period
+                                    <span>Unlock All</span>
                                 </button>
                             </div>
                         </div>
+
+                        {/* Warnings */}
+                        {periodStats.nilai_kosong > 0 && (
+                            <div className="mt-3 bg-yellow-50 border border-yellow-200 rounded-lg p-3 flex items-start gap-2">
+                                <i className="fas fa-exclamation-triangle text-yellow-600 mt-0.5"></i>
+                                <p className="text-sm text-yellow-800">
+                                    <strong>
+                                        {periodStats.nilai_kosong} nilai masih
+                                        kosong.
+                                    </strong>{" "}
+                                    Jika Anda lock periode ini, nilai kosong
+                                    akan otomatis diisi dengan nilai 0 (Grade
+                                    E).
+                                </p>
+                            </div>
+                        )}
+
+                        {periodStats.persen_locked === 100 && (
+                            <div className="mt-3 bg-green-50 border border-green-200 rounded-lg p-3 flex items-start gap-2">
+                                <i className="fas fa-check-circle text-green-600 mt-0.5"></i>
+                                <p className="text-sm text-green-800">
+                                    <strong>Semua nilai sudah di-lock.</strong>{" "}
+                                    Periode ini sudah difinalisasi.
+                                </p>
+                            </div>
+                        )}
                     </div>
                 )}
 
                 {/* Table - Desktop */}
-                <div className="hidden md:block bg-white rounded-lg overflow-hidden border border-gray-200">
-                    <div className="overflow-x-auto">
-                        <table className="w-full">
-                            <thead className="bg-gray-50">
-                                <tr className="text-gray-600 font-semibold text-xs">
-                                    <th className="px-6 py-4 text-left uppercase tracking-wider">
-                                        No
-                                    </th>
-                                    <th className="px-6 py-3 text-left uppercase tracking-wider">
-                                        Kode MK
-                                    </th>
-                                    <th className="px-6 py-3 text-left uppercase tracking-wider">
-                                        Mata Kuliah
-                                    </th>
-                                    <th className="px-6 py-3 text-center uppercase tracking-wider">
-                                        Kelas
-                                    </th>
-                                    <th className="px-6 py-3 text-left uppercase tracking-wider">
-                                        Dosen
-                                    </th>
-                                    <th className="px-6 py-3 text-center uppercase tracking-wider">
-                                        Jumlah Mhs
-                                    </th>
-                                    <th className="px-6 py-3 text-center uppercase tracking-wider">
-                                        Status Input
-                                    </th>
-                                    <th className="px-6 py-3 text-center uppercase tracking-wider">
-                                        Status Lock
-                                    </th>
-                                    <th className="px-6 py-3 text-center uppercase tracking-wider">
-                                        Aksi
-                                    </th>
-                                </tr>
-                            </thead>
-                            <tbody className="bg-white divide-y divide-gray-200">
-                                {kelas.data.length > 0 ? (
-                                    kelas.data.map((item, index) => (
+                {selectedPeriode && kelas?.data && kelas.data.length > 0 ? (
+                    <div className="hidden md:block bg-white rounded-lg overflow-hidden border border-gray-200">
+                        <div className="overflow-x-auto">
+                            <table className="w-full">
+                                <thead className="bg-gray-50">
+                                    <tr className="text-gray-600 font-semibold text-xs">
+                                        <th className="px-6 py-4 text-left uppercase tracking-wider">
+                                            No
+                                        </th>
+                                        <th className="px-6 py-3 text-left uppercase tracking-wider">
+                                            Kode MK
+                                        </th>
+                                        <th className="px-6 py-3 text-left uppercase tracking-wider">
+                                            Mata Kuliah
+                                        </th>
+                                        <th className="px-6 py-3 text-center uppercase tracking-wider">
+                                            Kelas
+                                        </th>
+                                        <th className="px-6 py-3 text-left uppercase tracking-wider">
+                                            Dosen
+                                        </th>
+                                        <th className="px-6 py-3 text-center uppercase tracking-wider">
+                                            Jumlah Mhs
+                                        </th>
+                                        <th className="px-6 py-3 text-center uppercase tracking-wider">
+                                            Status Input
+                                        </th>
+                                        <th className="px-6 py-3 text-center uppercase tracking-wider">
+                                            Status Lock
+                                        </th>
+                                        <th className="px-6 py-3 text-center uppercase tracking-wider">
+                                            Aksi
+                                        </th>
+                                    </tr>
+                                </thead>
+                                <tbody className="bg-white divide-y divide-gray-200">
+                                    {kelas.data.map((item, index) => (
                                         <tr
                                             key={item.id_kelas}
                                             className="hover:bg-gray-50"
@@ -370,63 +646,64 @@ export default function Index({
                                                         item.id_kelas
                                                     )}
                                                     className="bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded text-xs font-medium transition-colors"
-                                                    title="Detail Nilai"
                                                 >
                                                     <i className="fas fa-eye"></i>
                                                 </Link>
                                             </td>
                                         </tr>
-                                    ))
-                                ) : (
-                                    <tr>
-                                        <td
-                                            colSpan="9"
-                                            className="px-6 py-8 text-center text-gray-500"
-                                        >
-                                            <i className="fas fa-inbox text-4xl mb-2 text-gray-400"></i>
-                                            <p>Tidak ada data kelas</p>
-                                        </td>
-                                    </tr>
-                                )}
-                            </tbody>
-                        </table>
-                    </div>
-
-                    {/* Pagination */}
-                    {kelas.last_page > 1 && (
-                        <div className="bg-gray-50 px-6 py-4 border-t border-gray-200 flex items-center justify-between">
-                            <div className="text-sm text-gray-600">
-                                Menampilkan {kelas.from} - {kelas.to} dari{" "}
-                                {kelas.total} data
-                            </div>
-                            <div className="flex gap-2">
-                                {kelas.links.map((link, index) => (
-                                    <Link
-                                        key={index}
-                                        href={link.url || "#"}
-                                        preserveState
-                                        preserveScroll
-                                        className={`px-3 py-1 text-sm rounded ${
-                                            link.active
-                                                ? "bg-blue-600 text-white"
-                                                : link.url
-                                                ? "bg-white text-gray-700 hover:bg-gray-50 border border-gray-300"
-                                                : "bg-gray-100 text-gray-400 cursor-not-allowed"
-                                        }`}
-                                        dangerouslySetInnerHTML={{
-                                            __html: link.label,
-                                        }}
-                                    />
-                                ))}
-                            </div>
+                                    ))}
+                                </tbody>
+                            </table>
                         </div>
-                    )}
-                </div>
 
-                {/* Cards - Mobile */}
-                <div className="block md:hidden space-y-4">
-                    {kelas.data.length > 0 ? (
-                        kelas.data.map((item) => (
+                        {/* Pagination */}
+                        {kelas.last_page > 1 && (
+                            <div className="bg-gray-50 px-6 py-4 border-t border-gray-200 flex items-center justify-between">
+                                <div className="text-sm text-gray-600">
+                                    Menampilkan {kelas.from} - {kelas.to} dari{" "}
+                                    {kelas.total} data
+                                </div>
+                                <div className="flex gap-2">
+                                    {kelas.links.map((link, index) => (
+                                        <Link
+                                            key={index}
+                                            href={link.url || "#"}
+                                            preserveState
+                                            preserveScroll
+                                            className={`px-3 py-1 text-sm rounded ${
+                                                link.active
+                                                    ? "bg-blue-600 text-white"
+                                                    : link.url
+                                                    ? "bg-white text-gray-700 hover:bg-gray-50 border border-gray-300"
+                                                    : "bg-gray-100 text-gray-400 cursor-not-allowed"
+                                            }`}
+                                            dangerouslySetInnerHTML={{
+                                                __html: link.label,
+                                            }}
+                                        />
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+                    </div>
+                ) : selectedPeriode &&
+                  kelas?.data &&
+                  kelas.data.length === 0 ? (
+                    <div className="bg-white rounded-lg border border-gray-200 p-12 text-center">
+                        <i className="fas fa-inbox text-6xl mb-4 text-gray-300"></i>
+                        <p className="text-gray-600 font-medium mb-2">
+                            Tidak ada data kelas
+                        </p>
+                        <p className="text-sm text-gray-500">
+                            Silakan ubah filter untuk melihat data lainnya
+                        </p>
+                    </div>
+                ) : null}
+
+                {/* Cards - Mobile - ✅ FIXED: Ganti tahunAjaran jadi selectedPeriode */}
+                {selectedPeriode && kelas?.data && kelas.data.length > 0 && (
+                    <div className="block md:hidden space-y-4">
+                        {kelas.data.map((item) => (
                             <div
                                 key={item.id_kelas}
                                 className="bg-white rounded-lg border border-gray-200 p-4"
@@ -497,46 +774,39 @@ export default function Index({
                                     Detail
                                 </Link>
                             </div>
-                        ))
-                    ) : (
-                        <div className="bg-white rounded-lg border border-gray-200 p-8 text-center">
-                            <i className="fas fa-inbox text-4xl mb-2 text-gray-400"></i>
-                            <p className="text-gray-500">
-                                Tidak ada data kelas
-                            </p>
-                        </div>
-                    )}
+                        ))}
 
-                    {/* Pagination Mobile */}
-                    {kelas.last_page > 1 && (
-                        <div className="bg-white rounded-lg border border-gray-200 p-4">
-                            <div className="text-sm text-gray-600 mb-3 text-center">
-                                Menampilkan {kelas.from} - {kelas.to} dari{" "}
-                                {kelas.total} data
+                        {/* Pagination Mobile */}
+                        {kelas.last_page > 1 && (
+                            <div className="bg-white rounded-lg border border-gray-200 p-4">
+                                <div className="text-sm text-gray-600 mb-3 text-center">
+                                    Menampilkan {kelas.from} - {kelas.to} dari{" "}
+                                    {kelas.total} data
+                                </div>
+                                <div className="flex flex-wrap gap-2 justify-center">
+                                    {kelas.links.map((link, index) => (
+                                        <Link
+                                            key={index}
+                                            href={link.url || "#"}
+                                            preserveState
+                                            preserveScroll
+                                            className={`px-3 py-1 text-sm rounded ${
+                                                link.active
+                                                    ? "bg-blue-600 text-white"
+                                                    : link.url
+                                                    ? "bg-white text-gray-700 hover:bg-gray-50 border border-gray-300"
+                                                    : "bg-gray-100 text-gray-400 cursor-not-allowed"
+                                            }`}
+                                            dangerouslySetInnerHTML={{
+                                                __html: link.label,
+                                            }}
+                                        />
+                                    ))}
+                                </div>
                             </div>
-                            <div className="flex flex-wrap gap-2 justify-center">
-                                {kelas.links.map((link, index) => (
-                                    <Link
-                                        key={index}
-                                        href={link.url || "#"}
-                                        preserveState
-                                        preserveScroll
-                                        className={`px-3 py-1 text-sm rounded ${
-                                            link.active
-                                                ? "bg-blue-600 text-white"
-                                                : link.url
-                                                ? "bg-white text-gray-700 hover:bg-gray-50 border border-gray-300"
-                                                : "bg-gray-100 text-gray-400 cursor-not-allowed"
-                                        }`}
-                                        dangerouslySetInnerHTML={{
-                                            __html: link.label,
-                                        }}
-                                    />
-                                ))}
-                            </div>
-                        </div>
-                    )}
-                </div>
+                        )}
+                    </div>
+                )}
             </div>
         </BaakLayout>
     );

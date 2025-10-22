@@ -13,6 +13,7 @@ return new class extends Migration
             $table->foreignId('user_id')->constrained()->cascadeOnDelete();
             $table->string('nim', 10)->unique();
             $table->string('nama');
+            $table->string('tahun_masuk');
             $table->string('kode_prodi', 2);
             $table->foreign('kode_prodi')->references('kode_prodi')->on('prodi')->cascadeOnDelete();
             $table->foreignId('id_dosen_wali')->nullable()->constrained('dosen', 'id_dosen')->nullOnDelete();

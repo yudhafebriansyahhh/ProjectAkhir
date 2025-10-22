@@ -1,10 +1,12 @@
 <?php
 
 use App\Http\Controllers\Baak\BaakController;
+use App\Http\Controllers\Baak\DashboardController;
 use App\Http\Controllers\Baak\FakultasController;
 use App\Http\Controllers\Baak\JadwalKrsController;
 use App\Http\Controllers\Baak\KelasController;
 use App\Http\Controllers\Baak\KrsController;
+use App\Http\Controllers\Baak\LaporanController;
 use App\Http\Controllers\Baak\PengaturanKrsController;
 use App\Http\Controllers\Baak\PeriodeRegistrasiController;
 use App\Http\Controllers\Baak\RegistrasiSemesterController;
@@ -32,7 +34,7 @@ require __DIR__ . '/auth.php';
 
 // BAAK routes
 Route::middleware(['auth', 'role:baak'])->prefix('baak')->name('baak.')->group(function () {
-    Route::get('/dashboard', [BaakController::class, 'dashboard'])->name('dashboard');
+    Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
 
     // Mahasiswa Routes
     Route::resource('mahasiswa', \App\Http\Controllers\Baak\MahasiswaController::class);
@@ -41,7 +43,7 @@ Route::middleware(['auth', 'role:baak'])->prefix('baak')->name('baak.')->group(f
     Route::resource('dosen', \App\Http\Controllers\Baak\DosenController::class);
 
     Route::resource('kelas', KelasController::class);
-     Route::post('/kelas/get-mata-kuliah-by-periode', [KelasController::class, 'getMataKuliahByPeriode'])
+    Route::post('/kelas/get-mata-kuliah-by-periode', [KelasController::class, 'getMataKuliahByPeriode'])
         ->name('kelas.get-mata-kuliah-by-periode');
     // Fakultas Routes
     Route::resource('fakultas', FakultasController::class)->parameters([
@@ -89,12 +91,34 @@ Route::middleware(['auth', 'role:baak'])->prefix('baak')->name('baak.')->group(f
 
     // Manajemen Nilai Routes
     Route::prefix('nilai')->name('nilai.')->group(function () {
-    Route::get('/', [\App\Http\Controllers\Baak\NilaiController::class, 'index'])->name('index');
-    Route::get('/{kelas}', [\App\Http\Controllers\Baak\NilaiController::class, 'show'])->name('show');
-    Route::post('/{kelas}/toggle-lock', [\App\Http\Controllers\Baak\NilaiController::class, 'toggleLock'])->name('toggle-lock');
-    Route::post('/bulk-lock', [\App\Http\Controllers\Baak\NilaiController::class, 'bulkLock'])->name('bulk-lock');
+        Route::get('/', [\App\Http\Controllers\Baak\NilaiController::class, 'index'])->name('index');
+        Route::get('/{kelas}', [\App\Http\Controllers\Baak\NilaiController::class, 'show'])->name('show');
+        Route::post('/{kelas}/toggle-lock', [\App\Http\Controllers\Baak\NilaiController::class, 'toggleLock'])->name('toggle-lock');
+        Route::post('/bulk-lock', [\App\Http\Controllers\Baak\NilaiController::class, 'bulkLock'])->name('bulk-lock'); // ✅ BARU
+    });
+
+    // Laporan Akademik
+    Route::prefix('laporan')->name('laporan.')->group(function () {
+        Route::get('/', [LaporanController::class, 'index'])->name('index');
+
+        // API untuk load data laporan
+        Route::get('/mahasiswa', [LaporanController::class, 'laporanMahasiswa'])->name('mahasiswa');
+        Route::get('/kelulusan', [LaporanController::class, 'laporanKelulusan'])->name('kelulusan');
+        Route::get('/do', [LaporanController::class, 'laporanDO'])->name('do');
+        Route::get('/ipk', [LaporanController::class, 'laporanIpk'])->name('ipk');
+
+        // Export Excel
+        Route::get('/export/mahasiswa-excel', [LaporanController::class, 'exportMahasiswaExcel'])->name('export.mahasiswa.excel');
+        Route::get('/export/kelulusan-excel', [LaporanController::class, 'exportKelulusanExcel'])->name('export.kelulusan.excel');
+        Route::get('/export/ipk-excel', [LaporanController::class, 'exportIpkExcel'])->name('export.ipk.excel');
+
+        // Export PDF
+        Route::get('/export/mahasiswa-pdf', [LaporanController::class, 'exportMahasiswaPdf'])->name('export.mahasiswa.pdf');
+        Route::get('/export/kelulusan-pdf', [LaporanController::class, 'exportKelulusanPdf'])->name('export.kelulusan.pdf');
+        Route::get('/export/ipk-pdf', [LaporanController::class, 'exportIpkPdf'])->name('export.ipk.pdf');
+    });
 });
-});
+
 
 
 // Mahasiswa routes

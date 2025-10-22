@@ -12,7 +12,7 @@ class Mahasiswa extends Model
     protected $primaryKey = 'id_mahasiswa';
 
     protected $fillable = [
-        'user_id', 'nim', 'nama', 'kode_prodi', 'id_dosen_wali',
+        'user_id', 'nim', 'nama', 'tahun_masuk', 'kode_prodi', 'id_dosen_wali',
         'tanggal_lahir', 'jenis_kelamin', 'alamat', 'no_hp',
         'status', 'foto'
     ];
