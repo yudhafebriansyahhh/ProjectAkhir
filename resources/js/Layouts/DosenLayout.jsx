@@ -16,12 +16,12 @@ export default function DosenLayout({ children, title }) {
                 confirmButtonColor: "#dc2626",
             }).then((result) => {
                 if (result.isConfirmed) {
-                    router.post(route("auth.logout"));
+                    router.post(route("logout"));
                 }
             });
         } else {
             if (confirm("Yakin ingin logout?")) {
-                router.post(route("auth.logout"));
+                router.post(route("logout"));
             }
         }
     };
