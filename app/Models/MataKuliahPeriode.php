@@ -1,5 +1,4 @@
 <?php
-// app/Models/MataKuliahPeriode.php
 
 namespace App\Models;
 
@@ -15,68 +14,25 @@ class MataKuliahPeriode extends Model
 
     protected $fillable = [
         'kode_matkul',
-        'kode_prodi',
-        'tahun_ajaran',
-        'jenis_semester',
-        'semester_ditawarkan',
-        'catatan',
+        'id_periode',
+        'semester'
     ];
 
-    // Relations
+    // RELASI KE MATA KULIAH (WAJIB ADA!)
     public function mataKuliah()
     {
         return $this->belongsTo(MataKuliah::class, 'kode_matkul', 'kode_matkul');
     }
 
-    public function prodi()
-    {
-        return $this->belongsTo(Prodi::class, 'kode_prodi', 'kode_prodi');
-    }
-
+    // RELASI KE KELAS
     public function kelas()
     {
         return $this->hasMany(Kelas::class, 'id_mk_periode', 'id_mk_periode');
     }
 
-    // Helper Methods
-    public function getSemesterLabel()
+    // RELASI KE PERIODE
+    public function periode()
     {
-        return "Semester {$this->semester_ditawarkan}";
-    }
-
-    public function getPeriodeLabel()
-    {
-        return "{$this->tahun_ajaran} - " . ucfirst($this->jenis_semester);
-    }
-
-    public function getProdiLabelAttribute()
-    {
-        return $this->prodi ? $this->prodi->nama_prodi : 'Semua Prodi';
-    }
-
-    // Auto-calculate total kuota dari kelas
-    public function getTotalKuotaAttribute()
-    {
-        return $this->kelas()->sum('kapasitas');
-    }
-
-    // Get jumlah mahasiswa yang sudah ambil
-    public function getJumlahMahasiswaAttribute()
-    {
-        return \App\Models\DetailKrs::whereHas('kelas', function($q) {
-            $q->where('id_mk_periode', $this->id_mk_periode);
-        })->count();
-    }
-
-    // Get sisa slot
-    public function getSisaSlotAttribute()
-    {
-        return $this->total_kuota - $this->jumlah_mahasiswa;
-    }
-
-    // Check apakah masih ada slot
-    public function hasAvailableSlot()
-    {
-        return $this->sisa_slot > 0;
+        return $this->belongsTo(Periode::class, 'id_periode', 'id_periode');
     }
 }

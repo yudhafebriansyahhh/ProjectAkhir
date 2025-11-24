@@ -1,5 +1,4 @@
 <?php
-// app/Models/Kelas.php
 
 namespace App\Models;
 
@@ -29,7 +28,10 @@ class Kelas extends Model
         'jam_selesai' => 'datetime:H:i',
     ];
 
-    // Relations
+    // ======================
+    // RELATIONSHIPS
+    // ======================
+
     public function mataKuliahPeriode()
     {
         return $this->belongsTo(MataKuliahPeriode::class, 'id_mk_periode', 'id_mk_periode');
@@ -60,7 +62,7 @@ class Kelas extends Model
         return $this->hasOne(BobotNilai::class, 'id_kelas', 'id_kelas');
     }
 
-    // Helper: Akses mata kuliah via mata_kuliah_periode
+    // Helper: Dapatkan data mata kuliah langsung
     public function getMataKuliahAttribute()
     {
         return $this->mataKuliahPeriode?->mataKuliah;
@@ -72,13 +74,13 @@ class Kelas extends Model
         return $this->detailKrs()->count();
     }
 
-    // Helper: Cek apakah kelas penuh
+    // Helper: kelas penuh?
     public function isFull()
     {
         return $this->jumlah_mahasiswa >= $this->kapasitas;
     }
 
-    // Helper: Sisa slot
+    // Helper: sisa slot
     public function getSisaSlotAttribute()
     {
         return $this->kapasitas - $this->jumlah_mahasiswa;
