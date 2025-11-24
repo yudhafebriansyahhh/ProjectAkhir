@@ -1,7 +1,10 @@
 import { useState } from 'react';
-import { Head, Link, router } from '@inertiajs/react';
+import { Head, Link, router, usePage } from '@inertiajs/react';
 
 export default function DosenLayout({ children, title }) {
+    const { auth } = usePage().props; // user login
+    const user = auth?.user;
+
     const [sidebarOpen, setSidebarOpen] = useState(false);
 
     const handleLogout = () => {
@@ -16,12 +19,12 @@ export default function DosenLayout({ children, title }) {
                 confirmButtonColor: "#dc2626",
             }).then((result) => {
                 if (result.isConfirmed) {
-                    router.post(route("auth.logout"));
+                    router.post(route("logout"));
                 }
             });
         } else {
             if (confirm("Yakin ingin logout?")) {
-                router.post(route("auth.logout"));
+                router.post(route("logout"));
             }
         }
     };
@@ -43,7 +46,7 @@ export default function DosenLayout({ children, title }) {
             </Head>
 
             <div className="flex min-h-screen bg-gray-100 font-sans">
-                {/* Sidebar overlay (for mobile) */}
+
                 {sidebarOpen && (
                     <div
                         className="fixed inset-0 z-40 lg:hidden"
@@ -57,7 +60,7 @@ export default function DosenLayout({ children, title }) {
                         sidebarOpen ? 'translate-x-0' : '-translate-x-full'
                     }`}
                 >
-                    {/* Logo Section */}
+                    {/* Logo */}
                     <div className="p-6 border-b border-gray-200 bg-gradient-to-r from-blue-600 to-blue-700">
                         <div className="flex flex-col items-center">
                             <img
@@ -70,7 +73,7 @@ export default function DosenLayout({ children, title }) {
                         </div>
                     </div>
 
-                    {/* User Profile Section */}
+                    {/* User Profile */}
                     <div className="p-4 border-b border-gray-200 bg-gray-50">
                         <div className="flex items-center space-x-3">
                             <div className="flex items-center justify-center">
@@ -83,15 +86,20 @@ export default function DosenLayout({ children, title }) {
                                 </div>
                             </div>
                             <div>
-                                <p className="text-sm font-medium text-gray-900">Muhammad Raihan</p>
-                                <p className="text-xs text-gray-600">2253301851</p>
+                                <p className="text-sm font-medium text-gray-900">
+                                    {user?.name ?? 'Nama Tidak Ditemukan'}
+                                </p>
+                                <p className="text-xs text-gray-600">
+                                    {user?.nidn ?? user?.username ?? user?.nip ?? '-'}
+                                </p>
                             </div>
                         </div>
                     </div>
 
-                    {/* Navigation Menu */}
+                    {/* Navigation */}
                     <nav className="mt-4 overflow-y-auto max-h-[55vh]">
                         <div className="px-4 space-y-1">
+
                             <Link
                                 href={route('dosen.dashboard')}
                                 className={`flex items-center space-x-3 px-4 py-3 rounded-lg transition-colors ${
@@ -128,10 +136,11 @@ export default function DosenLayout({ children, title }) {
                                 <span className="text-sm font-medium">Absensi</span>
                             </Link>
 
+                            {/* FIX RPS ROUTE */}
                             <Link
-                                href={route('dosen.rps')}
+                                href={route('dosen.rps.index')}
                                 className={`flex items-center space-x-3 px-4 py-3 rounded-lg transition-colors ${
-                                    isActive('dosen.rps')
+                                    isActive('dosen.rps.index')
                                         ? 'bg-blue-600 text-white shadow-sm'
                                         : 'text-gray-700 hover:bg-blue-50 hover:text-blue-700'
                                 }`}
@@ -148,9 +157,10 @@ export default function DosenLayout({ children, title }) {
                                         : 'text-gray-700 hover:bg-blue-50 hover:text-blue-700'
                                 }`}
                             >
-                                <i className="fas fa-calendar-alt w-5"></i>
+                                <i className="fas fa-calendar-week w-5"></i>
                                 <span className="text-sm font-medium">Jadwal Kelas</span>
                             </Link>
+
                         </div>
                     </nav>
 
@@ -168,7 +178,6 @@ export default function DosenLayout({ children, title }) {
 
                 {/* Main Content */}
                 <div className="flex-1 flex flex-col min-h-screen">
-                    {/* Topbar (for mobile) */}
                     <header className="bg-white border-b border-gray-200 shadow-sm px-4 py-3 flex items-center justify-between lg:hidden">
                         <button
                             onClick={() => setSidebarOpen(true)}

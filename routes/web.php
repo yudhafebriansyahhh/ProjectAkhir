@@ -10,11 +10,14 @@ use App\Http\Controllers\Baak\LaporanController;
 use App\Http\Controllers\Baak\PengaturanKrsController;
 use App\Http\Controllers\Baak\PeriodeRegistrasiController;
 use App\Http\Controllers\Baak\RegistrasiSemesterController;
-use App\Http\Controllers\DosenController;
+use App\Http\Controllers\Dosen\DosenController;
 use App\Http\Controllers\MahasiswaController;
 use App\Http\Controllers\Baak\MataKuliahController;
 use App\Http\Controllers\Baak\ProdiController;
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\Dosen\JadwalController;
+use App\Http\Controllers\Dosen\RpsController;
+
 
 // Root route
 Route::get('/', function () {
@@ -133,18 +136,35 @@ Route::middleware(['auth', 'role:mahasiswa'])->prefix('mahasiswa')->name('mahasi
     Route::get('/ganti-password', [MahasiswaController::class, 'ganti_password'])->name('profile.ganti-password');
 });
 
-// Dosen routes
-Route::middleware(['auth', 'role:dosen'])->prefix('dosen')->name('dosen.')->group(function () {
-    Route::get('/dashboard', action: [DosenController::class, 'dashboard'])->name('dashboard');
-    Route::get('/nilai', [DosenController::class, 'nilai'])->name('nilai');
-    Route::get('/nilai/input-nilai', [DosenController::class, 'input_nilai'])->name('input_nilai');
-    Route::get('/nilai/edit-nilai', [DosenController::class, 'edit_nilai'])->name('edit_nilai');
-    Route::get('/rps', [DosenController::class, 'rps'])->name('rps');
-    Route::get('/rps/tambah-rps', [DosenController::class, 'tambah_rps'])->name('tambah_rps');
-    Route::get('/rps/edit-rps', [DosenController::class, 'edit_rps'])->name('edit_rps');
-    Route::get('/absensi', [DosenController::class, 'absensi'])->name('absensi');
-    Route::get('/jadwal', [DosenController::class, 'jadwal'])->name('jadwal');
-});
+Route::middleware(['auth', 'role:dosen'])
+    ->prefix('dosen')
+    ->name('dosen.')
+    ->group(function () {
+
+        Route::get('/dashboard', [DosenController::class, 'dashboard'])->name('dashboard');
+        Route::get('/nilai', [DosenController::class, 'nilai'])->name('nilai');
+        Route::get('/nilai/input-nilai', [DosenController::class, 'input_nilai'])->name('input_nilai');
+        Route::get('/nilai/edit-nilai', [DosenController::class, 'edit_nilai'])->name('edit_nilai');
+        Route::get('/absensi', [DosenController::class, 'absensi'])->name('absensi');
+        Route::get('/jadwal', [JadwalController::class, 'index'])->name('jadwal');
+
+       Route::prefix('rps')->name('rps.')->group(function () {
+        Route::get('/', [RpsController::class, 'index'])->name('index');
+        Route::get('/create', [RpsController::class, 'create'])->name('create');
+        Route::post('/', [RpsController::class, 'store'])->name('store');
+
+        Route::get('{id}/edit', [RpsController::class, 'edit'])->name('edit');
+        Route::put('{id}', [RpsController::class, 'update'])->name('update');
+
+        Route::delete('{id}', [RpsController::class, 'destroy'])->name('destroy');
+    });
+    });
+
+
+
+
+
+
 
 
 
