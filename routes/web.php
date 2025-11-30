@@ -17,6 +17,7 @@ use App\Http\Controllers\Baak\ProdiController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Dosen\JadwalController;
 use App\Http\Controllers\Dosen\RpsController;
+ use App\Http\Controllers\Dosen\AbsensiController;
 
 
 // Root route
@@ -148,6 +149,28 @@ Route::middleware(['auth', 'role:dosen'])
         Route::get('/absensi', [DosenController::class, 'absensi'])->name('absensi');
         Route::get('/jadwal', [JadwalController::class, 'index'])->name('jadwal');
 
+
+       
+
+// Routes untuk Dosen
+Route::middleware(['auth', 'role:dosen'])->prefix('dosen')->name('dosen.')->group(function () {
+    
+ // routes/web.php
+
+
+Route::middleware(['auth', 'role:dosen'])->prefix('dosen')->name('dosen.')->group(function () {
+    
+    // Absensi Routes
+    Route::get('/absensi', [AbsensiController::class, 'index'])->name('absensi');
+    Route::post('/absensi', [AbsensiController::class, 'store'])->name('absensi.store');
+    Route::get('/absensi/history', [AbsensiController::class, 'history'])->name('absensi.history');
+    Route::get('/absensi/{idPertemuan}', [AbsensiController::class, 'show'])->name('absensi.show');
+    
+    // API Routes untuk AJAX
+    Route::get('/api/kelas-by-matkul/{idMkPeriode}', [AbsensiController::class, 'getKelasByMataKuliah']);
+    Route::get('/api/kelas-data/{idKelas}', [AbsensiController::class, 'getKelasData']);
+});
+});
        Route::prefix('rps')->name('rps.')->group(function () {
         Route::get('/', [RpsController::class, 'index'])->name('index');
         Route::get('/create', [RpsController::class, 'create'])->name('create');

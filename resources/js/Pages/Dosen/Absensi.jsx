@@ -8,7 +8,8 @@ export default function Absensi() {
         sks: '',
         kelas: '',
         tanggal: '2025-06-23',
-        waktu: '08:00',
+        waktuMulai: '08:00',
+        waktuSelesai: '10:00',
         materi: ''
     });
 
@@ -205,27 +206,40 @@ export default function Absensi() {
                                     </div>
                                 </div>
 
+                                <div className="space-y-2">
+                                    <label className="block text-sm font-medium text-gray-700">
+                                        Tanggal
+                                    </label>
+                                    <input
+                                        type="date"
+                                        name="tanggal"
+                                        value={formData.tanggal}
+                                        onChange={handleInputChange}
+                                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                    />
+                                </div>
+
                                 <div className="grid grid-cols-2 gap-4">
                                     <div className="space-y-2">
                                         <label className="block text-sm font-medium text-gray-700">
-                                            Tanggal
+                                            Waktu Mulai
                                         </label>
                                         <input
-                                            type="date"
-                                            name="tanggal"
-                                            value={formData.tanggal}
+                                            type="time"
+                                            name="waktuMulai"
+                                            value={formData.waktuMulai}
                                             onChange={handleInputChange}
                                             className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                                         />
                                     </div>
                                     <div className="space-y-2">
                                         <label className="block text-sm font-medium text-gray-700">
-                                            Waktu
+                                            Waktu Selesai
                                         </label>
                                         <input
                                             type="time"
-                                            name="waktu"
-                                            value={formData.waktu}
+                                            name="waktuSelesai"
+                                            value={formData.waktuSelesai}
                                             onChange={handleInputChange}
                                             className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                                         />
