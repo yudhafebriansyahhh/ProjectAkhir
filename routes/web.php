@@ -1,6 +1,8 @@
 <?php
 
-use App\Http\Controllers\Baak\BaakController;
+use Illuminate\Support\Facades\Route;
+
+// BAAK
 use App\Http\Controllers\Baak\DashboardController;
 use App\Http\Controllers\Baak\FakultasController;
 use App\Http\Controllers\Baak\JadwalKrsController;
@@ -10,184 +12,204 @@ use App\Http\Controllers\Baak\LaporanController;
 use App\Http\Controllers\Baak\PengaturanKrsController;
 use App\Http\Controllers\Baak\PeriodeRegistrasiController;
 use App\Http\Controllers\Baak\RegistrasiSemesterController;
-use App\Http\Controllers\Dosen\DosenController;
-use App\Http\Controllers\MahasiswaController;
 use App\Http\Controllers\Baak\MataKuliahController;
 use App\Http\Controllers\Baak\ProdiController;
-use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\Baak\MahasiswaController as BaakMahasiswaController;
+use App\Http\Controllers\Baak\DosenController as BaakDosenController;
+use App\Http\Controllers\Baak\NilaiController;
+
+// DOSEN
+use App\Http\Controllers\Dosen\DosenController;
 use App\Http\Controllers\Dosen\JadwalController;
 use App\Http\Controllers\Dosen\RpsController;
- use App\Http\Controllers\Dosen\AbsensiController;
+use App\Http\Controllers\Dosen\AbsensiController;
+
+// MAHASISWA
+use App\Http\Controllers\MahasiswaController;
 
 
-// Root route
+// ======================================================================
+// ROOT ROUTE
+// ======================================================================
 Route::get('/', function () {
-    if (auth()->check()) {
-        return match (auth()->user()->role) {
-            'mahasiswa' => redirect()->route('mahasiswa.dashboard'),
-            'dosen' => redirect()->route('dosen.dashboard'),
-            'baak' => redirect()->route('baak.dashboard'),
-            default => redirect()->route('login'),
-        };
+    if (!auth()->check()) {
+        return redirect()->route('login');
     }
-    return redirect()->route('login');
+
+    return match (auth()->user()->role) {
+        'mahasiswa' => redirect()->route('mahasiswa.dashboard'),
+        'dosen' => redirect()->route('dosen.dashboard'),
+        'baak' => redirect()->route('baak.dashboard'),
+        default => redirect()->route('login'),
+    };
 })->name('home');
 
-// Auth routes
+
+// ======================================================================
+// AUTH ROUTES
+// ======================================================================
 require __DIR__ . '/auth.php';
 
-// BAAK routes
-Route::middleware(['auth', 'role:baak'])->prefix('baak')->name('baak.')->group(function () {
-    Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
 
-    // Mahasiswa Routes
-    Route::resource('mahasiswa', \App\Http\Controllers\Baak\MahasiswaController::class);
-    Route::post('/mahasiswa/{mahasiswa}/reset-password', [\App\Http\Controllers\Baak\MahasiswaController::class, 'resetPassword'])->name('mahasiswa.reset-password');
-    // Dosen Routes
-    Route::resource('dosen', \App\Http\Controllers\Baak\DosenController::class);
+// ======================================================================
+// BAAK ROUTES
+// ======================================================================
+Route::middleware(['auth', 'role:baak'])
+    ->prefix('baak')
+    ->name('baak.')
+    ->group(function () {
 
-    Route::resource('kelas', KelasController::class);
-    Route::post('/kelas/get-mata-kuliah-by-periode', [KelasController::class, 'getMataKuliahByPeriode'])
-        ->name('kelas.get-mata-kuliah-by-periode');
-    // Fakultas Routes
-    Route::resource('fakultas', FakultasController::class)->parameters([
-        'fakultas' => 'kode_fakultas'
-    ]);
-    // Prodi Routes
-    Route::resource('prodi', ProdiController::class)->parameters([
-        'prodi' => 'kode_prodi'
-    ]);
-    Route::prefix('krs')->name('krs.')->group(function () {
-        Route::get('/', [KrsController::class, 'index'])->name('index');
-        Route::get('/{krs}', [KrsController::class, 'show'])->name('show');
+        Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
+
+        // Mahasiswa
+        Route::resource('mahasiswa', BaakMahasiswaController::class);
+        Route::post('mahasiswa/{mahasiswa}/reset-password', [BaakMahasiswaController::class, 'resetPassword'])
+            ->name('mahasiswa.reset-password');
+
+        // Dosen
+        Route::resource('dosen', BaakDosenController::class);
+
+        // Kelas
+        Route::resource('kelas', KelasController::class);
+        Route::post('kelas/get-mata-kuliah-by-periode', [KelasController::class, 'getMataKuliahByPeriode'])
+            ->name('kelas.get-mata-kuliah-by-periode');
+
+        // Fakultas
+        Route::resource('fakultas', FakultasController::class)
+            ->parameters(['fakultas' => 'kode_fakultas']);
+
+        // Prodi
+        Route::resource('prodi', ProdiController::class)
+            ->parameters(['prodi' => 'kode_prodi']);
+
+        // KRS
+        Route::prefix('krs')->name('krs.')->group(function () {
+            Route::get('/', [KrsController::class, 'index'])->name('index');
+            Route::get('/{krs}', [KrsController::class, 'show'])->name('show');
+        });
+
+        // Mata Kuliah
+        Route::resource('mata-kuliah', MataKuliahController::class)
+            ->parameters(['mata-kuliah' => 'kode_matkul']);
+
+        // Periode Registrasi
+        Route::resource('periode-registrasi', PeriodeRegistrasiController::class)
+            ->parameters(['periode-registrasi' => 'periodeRegistrasi']);
+        Route::post('periode-registrasi/{periodeRegistrasi}/toggle-status', [PeriodeRegistrasiController::class, 'toggleStatus'])
+            ->name('periode-registrasi.toggle-status');
+
+        // Jadwal Pengisian KRS
+        Route::resource('jadwal-krs', JadwalKrsController::class)
+            ->parameters(['jadwal-krs' => 'jadwalKrs']);
+
+        // Registrasi Semester
+        Route::resource('registrasi-semester', RegistrasiSemesterController::class);
+        Route::get('api/search-mahasiswa', [RegistrasiSemesterController::class, 'searchMahasiswa'])
+            ->name('api.search-mahasiswa');
+
+        // Pengaturan KRS
+        Route::resource('pengaturan-krs', PengaturanKrsController::class)
+            ->parameters(['pengaturan-krs' => 'pengaturan_kr']);
+        Route::post('pengaturan-krs/copy', [PengaturanKrsController::class, 'copy'])
+            ->name('pengaturan-krs.copy');
+
+        // Manajemen Nilai
+        Route::prefix('nilai')->name('nilai.')->group(function () {
+            Route::get('/', [NilaiController::class, 'index'])->name('index');
+            Route::get('/{kelas}', [NilaiController::class, 'show'])->name('show');
+            Route::post('/{kelas}/toggle-lock', [NilaiController::class, 'toggleLock'])->name('toggle-lock');
+            Route::post('/bulk-lock', [NilaiController::class, 'bulkLock'])->name('bulk-lock');
+        });
+
+        // Laporan Akademik
+        Route::prefix('laporan')->name('laporan.')->group(function () {
+            Route::get('/', [LaporanController::class, 'index'])->name('index');
+
+            Route::get('/mahasiswa', [LaporanController::class, 'laporanMahasiswa'])->name('mahasiswa');
+            Route::get('/kelulusan', [LaporanController::class, 'laporanKelulusan'])->name('kelulusan');
+            Route::get('/do', [LaporanController::class, 'laporanDO'])->name('do');
+            Route::get('/ipk', [LaporanController::class, 'laporanIpk'])->name('ipk');
+
+            // Export excel
+            Route::get('export/mahasiswa-excel', [LaporanController::class, 'exportMahasiswaExcel'])->name('export.mahasiswa.excel');
+            Route::get('export/kelulusan-excel', [LaporanController::class, 'exportKelulusanExcel'])->name('export.kelulusan.excel');
+            Route::get('export/ipk-excel', [LaporanController::class, 'exportIpkExcel'])->name('export.ipk.excel');
+
+            // Export PDF
+            Route::get('export/mahasiswa-pdf', [LaporanController::class, 'exportMahasiswaPdf'])->name('export.mahasiswa.pdf');
+            Route::get('export/kelulusan-pdf', [LaporanController::class, 'exportKelulusanPdf'])->name('export.kelulusan.pdf');
+            Route::get('export/ipk-pdf', [LaporanController::class, 'exportIpkPdf'])->name('export.ipk.pdf');
+        });
     });
-    // Mata Kuliah Routes
-    Route::resource('mata-kuliah', MataKuliahController::class)->parameters([
-        'mata-kuliah' => 'kode_matkul'
-    ]);
 
-    // Periode Registrasi Routes
-    Route::resource('periode-registrasi', PeriodeRegistrasiController::class)
-        ->parameters(['periode-registrasi' => 'periodeRegistrasi']);
 
-    Route::post(
-        '/periode-registrasi/{periodeRegistrasi}/toggle-status',
-        [PeriodeRegistrasiController::class, 'toggleStatus']
-    )
-        ->name('periode-registrasi.toggle-status');
+// ======================================================================
+// MAHASISWA ROUTES
+// ======================================================================
+Route::middleware(['auth', 'role:mahasiswa'])
+    ->prefix('mahasiswa')
+    ->name('mahasiswa.')
+    ->group(function () {
 
-    // Jadwal Pengisian KRS Routes
-    Route::resource('jadwal-krs', JadwalKrsController::class)->parameters([
-        'jadwal-krs' => 'jadwalKrs'
-    ]);
+        Route::get('/dashboard', [MahasiswaController::class, 'dashboard'])->name('dashboard');
+        Route::get('/nilai', [MahasiswaController::class, 'nilai'])->name('nilai');
+        Route::get('/penjadwalan', [MahasiswaController::class, 'penjadwalan'])->name('penjadwalan');
+        Route::get('/krs', [MahasiswaController::class, 'krs'])->name('krs');
+        Route::get('/absensi', [MahasiswaController::class, 'absensi'])->name('absensi');
 
-    // Registrasi Semester Routes
-    Route::resource('registrasi-semester', RegistrasiSemesterController::class);
-    Route::get('/api/search-mahasiswa', [RegistrasiSemesterController::class, 'searchMahasiswa'])
-        ->name('api.search-mahasiswa');
-
-    // Pengaturan KRS Routes
-    Route::resource('pengaturan-krs', PengaturanKrsController::class)->parameters([
-        'pengaturan-krs' => 'pengaturan_kr'
-    ]);
-    Route::post('/pengaturan-krs/copy', [PengaturanKrsController::class, 'copy'])
-        ->name('pengaturan-krs.copy');
-
-    // Manajemen Nilai Routes
-    Route::prefix('nilai')->name('nilai.')->group(function () {
-        Route::get('/', [\App\Http\Controllers\Baak\NilaiController::class, 'index'])->name('index');
-        Route::get('/{kelas}', [\App\Http\Controllers\Baak\NilaiController::class, 'show'])->name('show');
-        Route::post('/{kelas}/toggle-lock', [\App\Http\Controllers\Baak\NilaiController::class, 'toggleLock'])->name('toggle-lock');
-        Route::post('/bulk-lock', [\App\Http\Controllers\Baak\NilaiController::class, 'bulkLock'])->name('bulk-lock'); // ✅ BARU
+        // Profile
+        Route::get('/profile', [MahasiswaController::class, 'profile'])->name('profile');
+        Route::get('/perbarui-data', [MahasiswaController::class, 'perbarui_data'])->name('profile.perbarui-data');
+        Route::get('/ganti-password', [MahasiswaController::class, 'ganti_password'])->name('profile.ganti-password');
     });
 
-    // Laporan Akademik
-    Route::prefix('laporan')->name('laporan.')->group(function () {
-        Route::get('/', [LaporanController::class, 'index'])->name('index');
 
-        // API untuk load data laporan
-        Route::get('/mahasiswa', [LaporanController::class, 'laporanMahasiswa'])->name('mahasiswa');
-        Route::get('/kelulusan', [LaporanController::class, 'laporanKelulusan'])->name('kelulusan');
-        Route::get('/do', [LaporanController::class, 'laporanDO'])->name('do');
-        Route::get('/ipk', [LaporanController::class, 'laporanIpk'])->name('ipk');
-
-        // Export Excel
-        Route::get('/export/mahasiswa-excel', [LaporanController::class, 'exportMahasiswaExcel'])->name('export.mahasiswa.excel');
-        Route::get('/export/kelulusan-excel', [LaporanController::class, 'exportKelulusanExcel'])->name('export.kelulusan.excel');
-        Route::get('/export/ipk-excel', [LaporanController::class, 'exportIpkExcel'])->name('export.ipk.excel');
-
-        // Export PDF
-        Route::get('/export/mahasiswa-pdf', [LaporanController::class, 'exportMahasiswaPdf'])->name('export.mahasiswa.pdf');
-        Route::get('/export/kelulusan-pdf', [LaporanController::class, 'exportKelulusanPdf'])->name('export.kelulusan.pdf');
-        Route::get('/export/ipk-pdf', [LaporanController::class, 'exportIpkPdf'])->name('export.ipk.pdf');
-    });
-});
-
-
-
-// Mahasiswa routes
-Route::middleware(['auth', 'role:mahasiswa'])->prefix('mahasiswa')->name('mahasiswa.')->group(function () {
-    Route::get('/dashboard', [MahasiswaController::class, 'dashboard'])->name('dashboard');
-    Route::get('/nilai', [MahasiswaController::class, 'nilai'])->name('nilai');
-    Route::get('/penjadwalan', [MahasiswaController::class, 'penjadwalan'])->name('penjadwalan');
-    Route::get('/krs', [MahasiswaController::class, 'krs'])->name('krs');
-    Route::get('/absensi', [MahasiswaController::class, 'absensi'])->name('absensi');
-    Route::get('/profile', [MahasiswaController::class, 'profile'])->name('profile');
-    Route::get('/perbarui-data', [MahasiswaController::class, 'perbarui_data'])->name('profile.perbarui-data');
-    Route::get('/ganti-password', [MahasiswaController::class, 'ganti_password'])->name('profile.ganti-password');
-});
-
+// ======================================================================
+// DOSEN ROUTES
+// ======================================================================
 Route::middleware(['auth', 'role:dosen'])
     ->prefix('dosen')
     ->name('dosen.')
     ->group(function () {
 
         Route::get('/dashboard', [DosenController::class, 'dashboard'])->name('dashboard');
+
+        // Nilai
         Route::get('/nilai', [DosenController::class, 'nilai'])->name('nilai');
         Route::get('/nilai/input-nilai', [DosenController::class, 'input_nilai'])->name('input_nilai');
         Route::get('/nilai/edit-nilai', [DosenController::class, 'edit_nilai'])->name('edit_nilai');
-        Route::get('/absensi', [DosenController::class, 'absensi'])->name('absensi');
+
+        // Jadwal
         Route::get('/jadwal', [JadwalController::class, 'index'])->name('jadwal');
 
+        // Absensi
+        Route::prefix('absensi')->name('absensi.')->group(function () {
+            Route::get('/', [AbsensiController::class, 'index'])->name('index'); // List Tahun Ajaran & Mata Kuliah
+            Route::get('/mata-kuliah/{idMkPeriode}', [AbsensiController::class, 'showMataKuliah'])->name('mata-kuliah.show'); // List Kelas
+            Route::get('/kelas/{idKelas}', [AbsensiController::class, 'showKelas'])->name('kelas.show'); // List Mahasiswa + Stats
+            Route::get('/create/{idKelas}', [AbsensiController::class, 'create'])->name('create'); // Form Input Absensi
+            Route::post('/', [AbsensiController::class, 'store'])->name('store');
+            Route::get('/mahasiswa/{idKelas}/{idMahasiswa}', [AbsensiController::class, 'detailMahasiswa'])->name('mahasiswa.detail'); // Detail per mahasiswa
 
-       
+            // History & Edit
+            Route::get('/history', [AbsensiController::class, 'history'])->name('history');
+            Route::get('/{idPertemuan}', [AbsensiController::class, 'show'])->name('show');
+            Route::get('/{idPertemuan}/edit', [AbsensiController::class, 'edit'])->name('edit');
+            Route::put('/{idPertemuan}', [AbsensiController::class, 'update'])->name('update');
+            Route::delete('/{idPertemuan}', [AbsensiController::class, 'destroy'])->name('destroy');
+        });
 
-// Routes untuk Dosen
-Route::middleware(['auth', 'role:dosen'])->prefix('dosen')->name('dosen.')->group(function () {
-    
- // routes/web.php
+        // RPS
+        Route::prefix('rps')->name('rps.')->group(function () {
+            Route::get('/', [RpsController::class, 'index'])->name('index');
+            Route::get('/create', [RpsController::class, 'create'])->name('create');
+            Route::post('/', [RpsController::class, 'store'])->name('store');
+            Route::get('/{id}/edit', [RpsController::class, 'edit'])->name('edit');
+            Route::put('/{id}', [RpsController::class, 'update'])->name('update');
+            Route::delete('/{id}', [RpsController::class, 'destroy'])->name('destroy');
+        });
 
-
-Route::middleware(['auth', 'role:dosen'])->prefix('dosen')->name('dosen.')->group(function () {
-    
-    // Absensi Routes
-    Route::get('/absensi', [AbsensiController::class, 'index'])->name('absensi');
-    Route::post('/absensi', [AbsensiController::class, 'store'])->name('absensi.store');
-    Route::get('/absensi/history', [AbsensiController::class, 'history'])->name('absensi.history');
-    Route::get('/absensi/{idPertemuan}', [AbsensiController::class, 'show'])->name('absensi.show');
-    
-    // API Routes untuk AJAX
-    Route::get('/api/kelas-by-matkul/{idMkPeriode}', [AbsensiController::class, 'getKelasByMataKuliah']);
-    Route::get('/api/kelas-data/{idKelas}', [AbsensiController::class, 'getKelasData']);
-});
-});
-       Route::prefix('rps')->name('rps.')->group(function () {
-        Route::get('/', [RpsController::class, 'index'])->name('index');
-        Route::get('/create', [RpsController::class, 'create'])->name('create');
-        Route::post('/', [RpsController::class, 'store'])->name('store');
-
-        Route::get('{id}/edit', [RpsController::class, 'edit'])->name('edit');
-        Route::put('{id}', [RpsController::class, 'update'])->name('update');
-
-        Route::delete('{id}', [RpsController::class, 'destroy'])->name('destroy');
+        // API
+        Route::get('/api/kelas-by-matkul/{idMkPeriode}', [AbsensiController::class, 'getKelasByMataKuliah']);
+        Route::get('/api/kelas-data/{idKelas}', [AbsensiController::class, 'getKelasData']);
     });
-    });
-
-
-
-
-
-
-
-
-

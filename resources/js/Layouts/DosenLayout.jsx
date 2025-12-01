@@ -125,7 +125,7 @@ export default function DosenLayout({ children, title }) {
                             </Link>
 
                             <Link
-                                href={route('dosen.absensi')}
+                                href={route('dosen.absensi.index')}
                                 className={`flex items-center space-x-3 px-4 py-3 rounded-lg transition-colors ${
                                     isActive('dosen.absensi')
                                         ? 'bg-blue-600 text-white shadow-sm'
