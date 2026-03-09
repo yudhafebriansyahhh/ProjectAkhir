@@ -1,7 +1,7 @@
 import { Head } from '@inertiajs/react';
 import MahasiswaLayout from '@/Layouts/MahasiswaLayout';
 
-export default function Profile() {
+export default function Profile({ mahasiswa }) {
     return (
         <MahasiswaLayout title="Profil Mahasiswa">
             <Head title="Profil Mahasiswa" />
@@ -14,7 +14,8 @@ export default function Profile() {
 
                 <div className="shadow-sm rounded-lg p-8 bg-white">
                     <div className="flex flex-col items-center mb-8">
-                        <img className="w-32 h-32 object-cover rounded-full shadow" src="/profile.png"
+                        <img className="w-32 h-32 object-cover rounded-full shadow" 
+                            src={mahasiswa.foto}
                             alt="Foto Profil" />
 
                         <div className="mt-5 flex gap-4">
@@ -34,27 +35,27 @@ export default function Profile() {
                         <div className="space-y-4">
                             <div className="flex items-center">
                                 <label className="w-32 text-gray-700 font-medium">Nama</label>
-                                <input type="text" value="Muhammad Raihan" disabled
+                                <input type="text" value={mahasiswa.nama} disabled
                                     className="flex-1 px-4 py-2 border border-gray-200 rounded-lg bg-white text-gray-700 focus:outline-none" />
                             </div>
                             <div className="flex items-center">
                                 <label className="w-32 text-gray-700 font-medium">NIM</label>
-                                <input type="text" value="2253301851" disabled
+                                <input type="text" value={mahasiswa.nim} disabled
                                     className="flex-1 px-4 py-2 border border-gray-200 rounded-lg bg-white text-gray-700 focus:outline-none" />
                             </div>
                             <div className="flex items-center">
                                 <label className="w-32 text-gray-700 font-medium">Alamat</label>
-                                <input type="text" value="JL. Ada deh" disabled
+                                <input type="text" value={mahasiswa.alamat} disabled
                                     className="flex-1 px-4 py-2 border border-gray-200 rounded-lg bg-white text-gray-700 focus:outline-none" />
                             </div>
                             <div className="flex items-center">
                                 <label className="w-32 text-gray-700 font-medium">Prodi</label>
-                                <input type="text" value="Teknik Informatika" disabled
+                                <input type="text" value={mahasiswa.prodi} disabled
                                     className="flex-1 px-4 py-2 border border-gray-200 rounded-lg bg-white text-gray-700 focus:outline-none" />
                             </div>
                             <div className="flex items-center">
                                 <label className="w-32 text-gray-700 font-medium">Jurusan</label>
-                                <input type="text" value="Teknologi Informasi" disabled
+                                <input type="text" value={mahasiswa.jurusan} disabled
                                     className="flex-1 px-4 py-2 border border-gray-200 rounded-lg bg-white text-gray-700 focus:outline-none" />
                             </div>
                         </div>
@@ -63,17 +64,17 @@ export default function Profile() {
                         <div className="space-y-4">
                             <div className="flex items-center">
                                 <label className="w-32 text-gray-700 font-medium">No Telp</label>
-                                <input type="text" value="643646346436" disabled
+                                <input type="text" value={mahasiswa.no_hp} disabled
                                     className="flex-1 px-4 py-2 border border-gray-200 rounded-lg bg-white text-gray-700 focus:outline-none" />
                             </div>
                             <div className="flex items-center">
                                 <label className="w-32 text-gray-700 font-medium">Nama Ayah</label>
-                                <input type="text" value="Ada deh" disabled
+                                <input type="text" value={mahasiswa.nama_ayah} disabled
                                     className="flex-1 px-4 py-2 border border-gray-200 rounded-lg bg-white text-gray-700 focus:outline-none" />
                             </div>
                             <div className="flex items-center">
                                 <label className="w-32 text-gray-700 font-medium">Nama Ibu</label>
-                                <input type="text" value="Ada deh" disabled
+                                <input type="text" value={mahasiswa.nama_ibu} disabled
                                     className="flex-1 px-4 py-2 border border-gray-200 rounded-lg bg-white text-gray-700 focus:outline-none" />
                             </div>
                         </div>

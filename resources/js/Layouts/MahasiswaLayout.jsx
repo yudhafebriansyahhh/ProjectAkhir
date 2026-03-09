@@ -1,7 +1,8 @@
 import { useState } from 'react';
-import { Head, Link, router } from '@inertiajs/react';
+import { Head, Link, router, usePage } from '@inertiajs/react';
 
 export default function MahasiswaLayout({ children, title }) {
+    const { auth } = usePage().props;
     const [sidebarOpen, setSidebarOpen] = useState(false);
 
     const handleLogout = () => {
@@ -79,8 +80,8 @@ export default function MahasiswaLayout({ children, title }) {
                                 alt="Profile"
                             />
                             <div>
-                                <p className="text-sm font-medium text-gray-900">Muhammad Raihan</p>
-                                <p className="text-xs text-gray-600">2253301851</p>
+                                <p className="text-sm font-medium text-gray-900">{auth?.user?.name || 'Mahasiswa'}</p>
+                                <p className="text-xs text-gray-600">{auth?.user?.username || auth?.user?.email || '-'}</p>
                             </div>
                         </div>
                     </div>

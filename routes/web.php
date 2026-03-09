@@ -160,6 +160,7 @@ Route::middleware(['auth', 'role:mahasiswa'])
         // Profile
         Route::get('/profile', [MahasiswaController::class, 'profile'])->name('profile');
         Route::get('/perbarui-data', [MahasiswaController::class, 'perbarui_data'])->name('profile.perbarui-data');
+        Route::patch('/perbarui-data', [MahasiswaController::class, 'update_profile'])->name('profile.update-data');
         Route::get('/ganti-password', [MahasiswaController::class, 'ganti_password'])->name('profile.ganti-password');
     });
 
@@ -175,9 +176,25 @@ Route::middleware(['auth', 'role:dosen'])
         Route::get('/dashboard', [DosenController::class, 'dashboard'])->name('dashboard');
 
         // Nilai
-        Route::get('/nilai', [DosenController::class, 'nilai'])->name('nilai');
-        Route::get('/nilai/input-nilai', [DosenController::class, 'input_nilai'])->name('input_nilai');
-        Route::get('/nilai/edit-nilai', [DosenController::class, 'edit_nilai'])->name('edit_nilai');
+       // Nilai Routes
+    Route::get('/nilai', [App\Http\Controllers\Dosen\NilaiController::class, 'index'])
+        ->name('nilai');
+    
+    Route::get('/nilai/input', [App\Http\Controllers\Dosen\NilaiController::class, 'create'])
+        ->name('input_nilai');
+    
+    Route::post('/nilai/store', [App\Http\Controllers\Dosen\NilaiController::class, 'store'])
+        ->name('nilai.store');
+    
+    Route::get('/nilai/edit/{id_nilai}', [App\Http\Controllers\Dosen\NilaiController::class, 'edit'])
+        ->name('edit_nilai');
+    
+    Route::put('/nilai/update/{id_nilai}', [App\Http\Controllers\Dosen\NilaiController::class, 'update'])
+        ->name('nilai.update');
+
+    // API untuk mendapatkan kelas berdasarkan mata kuliah
+    Route::get('/api/kelas-by-matakuliah', [App\Http\Controllers\Dosen\NilaiController::class, 'getKelasByMataKuliah'])
+        ->name('api.kelas_by_matakuliah');
 
         // Jadwal
         Route::get('/jadwal', [JadwalController::class, 'index'])->name('jadwal');

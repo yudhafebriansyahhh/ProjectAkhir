@@ -1,24 +1,37 @@
-import { useState } from 'react';
-import { Head, Link } from '@inertiajs/react';
+import { useState, useEffect } from 'react';
+import { Head, Link, router } from '@inertiajs/react';
 import DosenLayout from '@/Layouts/DosenLayout';
 
-export default function Nilai() {
+export default function Nilai({ prodiList, mataKuliahList, mahasiswaList, filters: initialFilters }) {
     const [filters, setFilters] = useState({
-        prodi: '',
-        mataKuliah: '',
-        semester: '',
-        kelas: ''
+        prodi: initialFilters?.prodi || '',
+        mataKuliah: initialFilters?.mataKuliah || '',
+        semester: initialFilters?.semester || '',
+        kelas: initialFilters?.kelas || ''
     });
 
-    const mahasiswa = [
-        { nama: 'Siti Aminah', nim: '2210001', nilai_akhir: 87, nilai_huruf: 'A' },
-        { nama: 'Budi Santoso', nim: '2210002', nilai_akhir: 76, nilai_huruf: 'B' },
-        { nama: 'Dewi Lestari', nim: '2210003', nilai_akhir: 65, nilai_huruf: 'C' },
-        { nama: 'Ahmad Fauzi', nim: '2210004', nilai_akhir: 58, nilai_huruf: 'D' },
-        { nama: 'Nina Kartika', nim: '2210005', nilai_akhir: 92, nilai_huruf: 'A' },
-    ];
+    const [kelasList, setKelasList] = useState([]);
+    const [loadingKelas, setLoadingKelas] = useState(false);
 
-    const [showData, setShowData] = useState(true);
+    // Fetch kelas ketika mata kuliah dipilih
+    useEffect(() => {
+        if (filters.mataKuliah) {
+            setLoadingKelas(true);
+            fetch(route('dosen.api.kelas_by_matakuliah', { kode_mk: filters.mataKuliah }))
+                .then(res => res.json())
+                .then(data => {
+                    setKelasList(data);
+                    setLoadingKelas(false);
+                })
+                .catch(err => {
+                    console.error('Error fetching kelas:', err);
+                    setLoadingKelas(false);
+                });
+        } else {
+            setKelasList([]);
+            setFilters(prev => ({ ...prev, kelas: '' }));
+        }
+    }, [filters.mataKuliah]);
 
     const handleFilterChange = (e) => {
         const { name, value } = e.target;
@@ -46,9 +59,14 @@ export default function Nilai() {
             return;
         }
 
-        setShowData(true);
-        console.log('Filters applied:', filters);
+        // Reload dengan filters
+        router.get(route('dosen.nilai'), filters, {
+            preserveState: true,
+            preserveScroll: true,
+        });
     };
+
+    const showData = mahasiswaList && mahasiswaList.length > 0;
 
     return (
         <DosenLayout title="Nilai">
@@ -76,9 +94,11 @@ export default function Nilai() {
                                 className="flex-1 px-4 py-2 border border-gray-200 rounded-lg bg-white text-gray-700 focus:outline-none focus:border-blue-600"
                             >
                                 <option value="">Pilih Prodi</option>
-                                <option value="informatika">Teknik Informatika</option>
-                                <option value="sistem-informasi">Sistem Informasi</option>
-                                <option value="manajemen">Manajemen Informatika</option>
+                                {prodiList.map(prodi => (
+                                    <option key={prodi.kode_prodi} value={prodi.kode_prodi}>
+                                        {prodi.nama_prodi}
+                                    </option>
+                                ))}
                             </select>
                         </div>
                         <div className="flex items-center gap-4">
@@ -90,10 +110,11 @@ export default function Nilai() {
                                 className="flex-1 px-4 py-2 border border-gray-200 rounded-lg bg-white text-gray-700 focus:outline-none focus:border-blue-600"
                             >
                                 <option value="">Pilih Mata Kuliah</option>
-                                <option value="algoritma">Algoritma</option>
-                                <option value="basisdata">Basis Data</option>
-                                <option value="pemrograman-web">Pemrograman Web</option>
-                                <option value="mobile">Pemrograman Mobile</option>
+                                {mataKuliahList.map(mk => (
+                                    <option key={mk.kode_mk} value={mk.kode_mk}>
+                                        {mk.nama_mk}
+                                    </option>
+                                ))}
                             </select>
                         </div>
                     </div>
@@ -120,13 +141,17 @@ export default function Nilai() {
                                 name="kelas"
                                 value={filters.kelas}
                                 onChange={handleFilterChange}
-                                className="flex-1 px-4 py-2 border border-gray-200 rounded-lg bg-white text-gray-700 focus:outline-none focus:border-blue-600"
+                                disabled={!filters.mataKuliah || loadingKelas}
+                                className="flex-1 px-4 py-2 border border-gray-200 rounded-lg bg-white text-gray-700 focus:outline-none focus:border-blue-600 disabled:bg-gray-100 disabled:cursor-not-allowed"
                             >
-                                <option value="">Pilih Kelas</option>
-                                <option value="A">Kelas A</option>
-                                <option value="B">Kelas B</option>
-                                <option value="C">Kelas C</option>
-                                <option value="D">Kelas D</option>
+                                <option value="">
+                                    {loadingKelas ? 'Memuat...' : 'Pilih Kelas'}
+                                </option>
+                                {kelasList.map(kelas => (
+                                    <option key={kelas.value} value={kelas.value}>
+                                        {kelas.label}
+                                    </option>
+                                ))}
                             </select>
                         </div>
                     </div>
@@ -162,38 +187,69 @@ export default function Nilai() {
                                 </tr>
                             </thead>
                             <tbody className="bg-white divide-y divide-gray-200">
-                                {mahasiswa.map((mhs, index) => (
-                                    <tr key={mhs.nim} className="hover:bg-gray-50">
+                                {mahasiswaList.map((mhs, index) => (
+                                    <tr key={mhs.id_mahasiswa} className="hover:bg-gray-50">
                                         <td className="px-6 py-4 text-gray-700">{index + 1}</td>
                                         <td className="px-6 py-4 text-gray-700">{mhs.nama}</td>
                                         <td className="px-6 py-4 text-center text-gray-700">{mhs.nim}</td>
-                                        <td className="px-6 py-4 text-center text-gray-700">{mhs.nilai_akhir}</td>
                                         <td className="px-6 py-4 text-center text-gray-700">
-                                            <span className="px-2 py-1 rounded-lg text-xs font-semibold">
-                                                {mhs.nilai_huruf}
-                                            </span>
+                                            {mhs.nilai_akhir ? parseFloat(mhs.nilai_akhir).toFixed(2) : '-'}
+                                        </td>
+                                        <td className="px-6 py-4 text-center text-gray-700">
+                                            {mhs.nilai_huruf ? (
+                                                <span className={`px-2 py-1 rounded-lg text-xs font-semibold ${
+                                                    mhs.nilai_huruf.startsWith('A') ? 'bg-green-100 text-green-700' :
+                                                    mhs.nilai_huruf.startsWith('B') ? 'bg-blue-100 text-blue-700' :
+                                                    mhs.nilai_huruf.startsWith('C') ? 'bg-yellow-100 text-yellow-700' :
+                                                    'bg-red-100 text-red-700'
+                                                }`}>
+                                                    {mhs.nilai_huruf}
+                                                </span>
+                                            ) : '-'}
                                         </td>
                                         <td className="px-6 py-4 text-center">
                                             <div className="inline-flex gap-2">
-                                                <Link
-                                                    href={route('dosen.input_nilai')}
-                                                    className="px-3 font-semibold py-1.5 text-xs bg-blue-100 text-blue-700 border border-blue-200 rounded-lg hover:bg-blue-200 transition flex items-center gap-1"
-                                                >
-                                                    <i className="fas fa-file-signature"></i> Nilai
-                                                </Link>
-
-                                                <Link
-                                                    href={route('dosen.edit_nilai')}
-                                                    className="px-3 font-semibold py-1.5 text-xs bg-amber-100 text-amber-700 border border-amber-300 rounded-lg hover:bg-amber-200 transition flex items-center gap-1"
-                                                >
-                                                    <i className="fas fa-pen-to-square"></i> Edit
-                                                </Link>
+                                                {!mhs.has_nilai ? (
+                                                    <Link
+                                                        href={route('dosen.input_nilai', {
+                                                            id_mahasiswa: mhs.id_mahasiswa,
+                                                            id_kelas: mhs.id_kelas
+                                                        })}
+                                                        className="px-3 font-semibold py-1.5 text-xs bg-blue-100 text-blue-700 border border-blue-200 rounded-lg hover:bg-blue-200 transition flex items-center gap-1"
+                                                    >
+                                                        <i className="fas fa-file-signature"></i> Nilai
+                                                    </Link>
+                                                ) : (
+                                                    <>
+                                                        {!mhs.is_locked && (
+                                                            <Link
+                                                                href={route('dosen.edit_nilai', mhs.id_nilai)}
+                                                                className="px-3 font-semibold py-1.5 text-xs bg-amber-100 text-amber-700 border border-amber-300 rounded-lg hover:bg-amber-200 transition flex items-center gap-1"
+                                                            >
+                                                                <i className="fas fa-pen-to-square"></i> Edit
+                                                            </Link>
+                                                        )}
+                                                        {mhs.is_locked && (
+                                                            <span className="px-3 py-1.5 text-xs bg-gray-100 text-gray-500 border border-gray-200 rounded-lg flex items-center gap-1">
+                                                                <i className="fas fa-lock"></i> Terkunci
+                                                            </span>
+                                                        )}
+                                                    </>
+                                                )}
                                             </div>
                                         </td>
                                     </tr>
                                 ))}
                             </tbody>
                         </table>
+                    </div>
+                )}
+
+                {/* No Data Message */}
+                {filters.prodi && filters.mataKuliah && filters.semester && filters.kelas && !showData && (
+                    <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-6 text-center">
+                        <i className="fas fa-info-circle text-yellow-600 text-3xl mb-3"></i>
+                        <p className="text-gray-700 font-medium">Tidak ada data mahasiswa untuk filter yang dipilih.</p>
                     </div>
                 )}
             </div>

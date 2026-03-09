@@ -1,42 +1,13 @@
 import { useEffect, useRef } from 'react';
-import { Head } from '@inertiajs/react';
+import { Head, usePage } from '@inertiajs/react';
 import MahasiswaLayout from '@/Layouts/MahasiswaLayout';
 
-export default function Index() {
+export default function Index({ ipData = [], sksData = [], attendanceData = [], currentIpk = "0.00" }) {
+    const { auth } = usePage().props;
     const ipChartRef = useRef(null);
     const sksChartRef = useRef(null);
     const ipChartInstance = useRef(null);
     const sksChartInstance = useRef(null);
-
-    // Data IP per semester untuk grafik
-    const ipData = [3.67, 3.61, 3.56, 3.57, 3.54, 3.53, 3.54, 3.52];
-    const sksData = [18, 20, 18, 16, 17, 16, 14, 15];
-
-    // Data keuangan
-    const financialData = [
-        { jenis: "Uang Kuliah", biaya: 12500000, semester: "6", tahun_ajaran: "2024/2025", status: 'Lunas' },
-        { jenis: "Uang Gedung", biaya: 12500000, semester: "6", tahun_ajaran: "2024/2025", status: 'Lunas' },
-        { jenis: "Praktikum", biaya: 13000000, semester: "6", tahun_ajaran: "2024/2025", status: 'Lunas' },
-        { jenis: "UTS", biaya: 13000000, semester: "6", tahun_ajaran: "2024/2025", status: 'Lunas' },
-        { jenis: "UAS", biaya: 13500000, semester: "6", tahun_ajaran: "2024/2025", status: 'Belum Lunas' },
-    ];
-
-    // Data absensi
-    const attendanceData = [
-        { mataKuliah: 'Pemrograman Web', sks: 3, kelas: 'A', persentase: 86 },
-        { mataKuliah: 'Basis Data', sks: 3, kelas: 'A', persentase: 79 },
-        { mataKuliah: 'Jaringan Komputer', sks: 3, kelas: 'A', persentase: 93 },
-        { mataKuliah: 'Struktur Data', sks: 3, kelas: 'A', persentase: 71 },
-        { mataKuliah: 'Sistem Operasi', sks: 3, kelas: 'A', persentase: 100 }
-    ];
-
-    const formatCurrency = (amount) => {
-        return new Intl.NumberFormat('id-ID', {
-            style: 'currency',
-            currency: 'IDR',
-            minimumFractionDigits: 0
-        }).format(amount);
-    };
 
     const initCharts = () => {
         // Cek apakah Chart.js sudah loaded
@@ -62,10 +33,12 @@ export default function Index() {
 
             // IP Chart
             const ipCtx = ipChartRef.current.getContext('2d');
+            const semesterLabels = ipData.map((_, i) => `Sem ${i + 1}`);
+
             ipChartInstance.current = new window.Chart(ipCtx, {
                 type: 'line',
                 data: {
-                    labels: ['Sem 1', 'Sem 2', 'Sem 3', 'Sem 4', 'Sem 5', 'Sem 6', 'Sem 7', 'Sem 8'],
+                    labels: semesterLabels,
                     datasets: [{
                         label: 'IP Per Semester',
                         data: ipData,
@@ -107,10 +80,12 @@ export default function Index() {
 
             // SKS Chart
             const sksCtx = sksChartRef.current.getContext('2d');
+            const sksLabels = sksData.map((_, i) => `Sem ${i + 1}`);
+
             sksChartInstance.current = new window.Chart(sksCtx, {
                 type: 'bar',
                 data: {
-                    labels: ['Sem 1', 'Sem 2', 'Sem 3', 'Sem 4', 'Sem 5', 'Sem 6', 'Sem 7', 'Sem 8'],
+                    labels: sksLabels,
                     datasets: [{
                         label: 'Jumlah SKS',
                         data: sksData,
@@ -189,7 +164,7 @@ export default function Index() {
                 <div className="mb-8">
                     <h1 className="text-2xl font-bold text-gray-700 mb-2">Dashboard</h1>
                     <p className="text-gray-600">
-                        Selamat datang <span className="font-bold">Muhammad Raihan</span>. Pantau ringkasan akademik dan informasi terkini Anda.
+                        Selamat datang <span className="font-bold">{auth?.user?.name || 'Mahasiswa'}</span>. Pantau ringkasan akademik dan informasi terkini Anda.
                     </p>
                 </div>
 
@@ -199,58 +174,20 @@ export default function Index() {
                         <div className="text-start">
                             <div className="flex items-center gap-2 mb-2">
                                 <i className="fa-solid fa-medal text-3xl text-blue-600"></i>
-                                <h1 className="text-3xl text-gray-700 font-bold">3.52</h1>
+                                <h1 className="text-3xl text-gray-700 font-bold">{currentIpk}</h1>
                             </div>
                             <p className="text-lg font-semibold text-gray-700 mb-1">Indeks Prestasi Kumulatif</p>
                             <p className="text-sm text-gray-600">
-                                IP Semester Saat ini <span className="font-bold text-blue-600">4.00</span>
+                                Total SKS Diambil <span className="font-bold text-blue-600">{sksData.reduce((acc, curr) => acc + parseInt(curr || 0, 10), 0)}</span>
                             </p>
                         </div>
                     </div>
 
                     <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
-                        <div className="col-span-full lg:col-span-5 px-4 py-4 bg-white rounded-lg border border-gray-200 shadow-sm">
+                        <div className="col-span-full px-4 py-4 bg-white rounded-lg border border-gray-200 shadow-sm">
                             <h2 className="text-lg font-semibold text-gray-700 mb-4">Perkembangan Studi Per Semester - IP</h2>
                             <div className="relative h-64">
                                 <canvas ref={ipChartRef} id="ipChart"></canvas>
-                            </div>
-                        </div>
-
-                        <div className="col-span-full lg:col-span-7 px-4 py-4 bg-white rounded-lg border border-gray-200 shadow-sm">
-                            <h2 className="text-lg font-semibold text-gray-700 mb-4">Informasi Keuangan</h2>
-                            <div className="overflow-x-auto">
-                                <table className="w-full text-sm min-w-[600px]">
-                                    <thead className="bg-gray-50 text-gray-700">
-                                        <tr>
-                                            <th className="px-3 py-2 text-left font-semibold">Jenis</th>
-                                            <th className="px-3 py-2 text-center font-semibold">Tahun Ajaran</th>
-                                            <th className="px-3 py-2 text-center font-semibold">Semester</th>
-                                            <th className="px-3 py-2 text-center font-semibold">Nominal</th>
-                                            <th className="px-3 py-2 text-center font-semibold">Status</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody className="divide-y divide-gray-200">
-                                        {financialData.map((finance, index) => (
-                                            <tr key={index} className="hover:bg-gray-50">
-                                                <td className="text-gray-700 px-3 py-2 font-semibold">{finance.jenis}</td>
-                                                <td className="text-gray-700 px-3 py-2 text-center">{finance.tahun_ajaran}</td>
-                                                <td className="text-gray-700 px-3 py-2 text-center font-semibold">{finance.semester}</td>
-                                                <td className="text-gray-700 px-3 py-2 text-right">{formatCurrency(finance.biaya)}</td>
-                                                <td className="text-gray-700 px-3 py-2 text-center">
-                                                    <span
-                                                        className={`px-2 py-1 text-xs border font-semibold rounded-lg ${
-                                                            finance.status === 'Lunas'
-                                                                ? 'bg-green-100 text-green-800 border-green-200'
-                                                                : 'bg-red-100 text-red-800 border-red-200'
-                                                        }`}
-                                                    >
-                                                        {finance.status}
-                                                    </span>
-                                                </td>
-                                            </tr>
-                                        ))}
-                                    </tbody>
-                                </table>
                             </div>
                         </div>
                     </div>
@@ -277,7 +214,7 @@ export default function Index() {
                                         </tr>
                                     </thead>
                                     <tbody className="divide-y divide-gray-200">
-                                        {attendanceData.map((attendance, index) => (
+                                        {attendanceData.length > 0 ? attendanceData.map((attendance, index) => (
                                             <tr key={index} className="hover:bg-gray-50">
                                                 <td className="text-gray-700 px-3 py-2 font-semibold">{attendance.mataKuliah}</td>
                                                 <td className="text-gray-700 px-3 py-2 text-center">{attendance.sks}</td>
@@ -294,7 +231,13 @@ export default function Index() {
                                                     </span>
                                                 </td>
                                             </tr>
-                                        ))}
+                                        )) : (
+                                            <tr>
+                                                <td colSpan="4" className="px-3 py-4 text-center text-sm text-gray-500">
+                                                    Tidak ada data absensi untuk semester berjalan.
+                                                </td>
+                                            </tr>
+                                        )}
                                     </tbody>
                                 </table>
                             </div>

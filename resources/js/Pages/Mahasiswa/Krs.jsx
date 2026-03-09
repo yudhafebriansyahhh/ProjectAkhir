@@ -2,12 +2,10 @@ import { Head } from '@inertiajs/react';
 import MahasiswaLayout from '@/Layouts/MahasiswaLayout';
 import Swal from 'sweetalert2';
 
-export default function Krs() {
-    const mataKuliah = [
-        { kode: 'IF301', nama: 'Pemrograman Web', dosen: 'Dr. Ahmad Sholeh, M.Kom', hari: 'Senin', jam: '09:10-10:50', ruang: 'Lab Komputer 1', sks: 3 },
-        { kode: 'IF303', nama: 'Sistem Operasi', dosen: 'Dr. Budi Santoso, M.Kom', hari: 'Rabu', jam: '10:00-11:40', ruang: 'R302', sks: 3 },
-        { kode: 'IF304', nama: 'Rekayasa Perangkat Lunak', dosen: 'Ir. Dewi Lestari, M.T', hari: 'Kamis', jam: '13:00-14:40', ruang: 'R105', sks: 3 },
-    ];
+export default function Krs({ semesterAktif = '-', krsStatus = null, mataKuliah = [] }) {
+    // Calculate total SKS
+    const totalSKS = mataKuliah.reduce((sum, mk) => sum + parseInt(mk.sks || 0, 10), 0);
+
 
     const handleHapus = (id) => {
         Swal.fire({
@@ -38,15 +36,17 @@ export default function Krs() {
                     <div className="flex items-center gap-4">
                         <div className="bg-blue-50 px-4 py-2 rounded-lg border border-blue-200">
                             <span className="text-sm font-medium text-blue-800">Semester Aktif: </span>
-                            <span className="text-sm text-blue-600 ml-1">Ganjil 2024/2025</span>
+                            <span className="text-sm text-blue-600 ml-1">{semesterAktif}</span>
                         </div>
                     </div>
 
-                    <a href="/mahasiswa/tambah-krs"
-                        className="inline-flex items-center px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg shadow-sm border border-blue-600 transition-colors duration-200">
-                        <i className="fas fa-plus mr-2"></i>
-                        Tambah Mata Kuliah
-                    </a>
+                    {(!krsStatus || krsStatus.status !== 'approved') && (
+                        <a href="/mahasiswa/tambah-krs"
+                            className="inline-flex items-center px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg shadow-sm border border-blue-600 transition-colors duration-200">
+                            <i className="fas fa-plus mr-2"></i>
+                            Tambah Mata Kuliah
+                        </a>
+                    )}
                 </div>
 
                 <div className="bg-white rounded-lg shadow-sm overflow-hidden border border-gray-200">
@@ -69,39 +69,51 @@ export default function Krs() {
                                 </tr>
                             </thead>
                             <tbody className="bg-white divide-y divide-gray-200">
-                                {mataKuliah.map((mk, index) => (
-                                    <tr key={index} className="hover:bg-gray-50 transition duration-150">
-                                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-700">
-                                            {index + 1}
-                                        </td>
-                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700 ">
-                                            {mk.kode}
-                                        </td>
-                                        <td className="px-6 py-4 text-sm text-gray-700">
-                                            <div className="font-medium">{mk.nama}</div>
-                                        </td>
-                                        <td className="px-6 py-4 text-sm text-gray-700">
-                                            {mk.dosen}
-                                        </td>
-                                        <td className="px-6 py-4 whitespace-nowrap text-center text-sm font-semibold text-gray-700">
-                                            {mk.sks}
-                                        </td>
-                                        <td className="px-6 py-4 whitespace-nowrap text-center text-sm text-gray-700">
-                                            <div className="text-xs">
-                                                <div className="font-medium text-gray-700">{mk.hari}</div>
-                                                <div className="text-gray-600">{mk.jam}</div>
-                                            </div>
-                                        </td>
-                                        <td className="px-6 py-4 whitespace-nowrap text-center text-sm">
-                                            <button type="button"
-                                                onClick={() => handleHapus(mk.kode)}
-                                                className="hapus-btn inline-flex items-center px-3 py-1.5 border gap-2 border-red-300 text-red-700 bg-red-50 hover:bg-red-100 rounded-lg text-xs font-semibold transition duration-200">
-                                                <i className="fa-regular fa-trash-can"></i>
-                                                <span>Hapus</span>
-                                            </button>
+                                {mataKuliah.length > 0 ? (
+                                    mataKuliah.map((mk, index) => (
+                                        <tr key={index} className="hover:bg-gray-50 transition duration-150">
+                                            <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-700">
+                                                {index + 1}
+                                            </td>
+                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700 ">
+                                                {mk.kode}
+                                            </td>
+                                            <td className="px-6 py-4 text-sm text-gray-700">
+                                                <div className="font-medium">{mk.nama}</div>
+                                            </td>
+                                            <td className="px-6 py-4 text-sm text-gray-700">
+                                                {mk.dosen}
+                                            </td>
+                                            <td className="px-6 py-4 whitespace-nowrap text-center text-sm font-semibold text-gray-700">
+                                                {mk.sks}
+                                            </td>
+                                            <td className="px-6 py-4 whitespace-nowrap text-center text-sm text-gray-700">
+                                                <div className="text-xs">
+                                                    <div className="font-medium text-gray-700">{mk.hari}</div>
+                                                    <div className="text-gray-600">{mk.jam}</div>
+                                                </div>
+                                            </td>
+                                            <td className="px-6 py-4 whitespace-nowrap text-center text-sm">
+                                                {(!krsStatus || krsStatus.status !== 'approved') ? (
+                                                    <button type="button"
+                                                        onClick={() => handleHapus(mk.id_detail_krs || mk.kode)}
+                                                        className="hapus-btn inline-flex items-center px-3 py-1.5 border gap-2 border-red-300 text-red-700 bg-red-50 hover:bg-red-100 rounded-lg text-xs font-semibold transition duration-200">
+                                                        <i className="fa-regular fa-trash-can"></i>
+                                                        <span>Hapus</span>
+                                                    </button>
+                                                ) : (
+                                                    <span className="text-xs text-gray-400">Terkunci</span>
+                                                )}
+                                            </td>
+                                        </tr>
+                                    ))
+                                ) : (
+                                    <tr>
+                                        <td colSpan="7" className="px-6 py-8 text-center text-gray-500">
+                                            Belum ada mata kuliah KRS yang diambil pada semester ini.
                                         </td>
                                     </tr>
-                                ))}
+                                )}
                             </tbody>
                         </table>
                     </div>
@@ -124,28 +136,22 @@ export default function Krs() {
                                 </tr>
                             </thead>
                             <tbody className="bg-white divide-y divide-gray-200">
-                                <tr className="hover:bg-gray-50 transition duration-150">
-                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
-                                        Pemrograman
-                                    </td>
-                                    <td className="px-6 py-4 text-sm text-gray-700">
-                                        <div className="font-medium">3</div>
-                                    </td>
-                                </tr>
-                                <tr className="hover:bg-gray-50 transition duration-150">
-                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
-                                        Sistem Operasi
-                                    </td>
-                                    <td className="px-6 py-4 text-sm text-gray-700">
-                                        <div className="font-medium">3</div>
-                                    </td>
-                                </tr>
-                                <tr className="hover:bg-gray-50 transition duration-150">
-                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
+                                {mataKuliah.map((mk, index) => (
+                                    <tr key={index} className="hover:bg-gray-50 transition duration-150">
+                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
+                                            {mk.nama}
+                                        </td>
+                                        <td className="px-6 py-4 text-sm text-gray-700">
+                                            <div className="font-medium">{mk.sks}</div>
+                                        </td>
+                                    </tr>
+                                ))}
+                                <tr className="hover:bg-gray-50 transition duration-150 bg-gray-50">
+                                    <td className="px-6 py-4 whitespace-nowrap text-sm font-bold text-gray-900">
                                         Total SKS
                                     </td>
-                                    <td className="px-6 py-4 text-sm text-gray-700">
-                                        <div className="font-medium">6</div>
+                                    <td className="px-6 py-4 text-sm font-bold text-gray-900">
+                                        {totalSKS}
                                     </td>
                                 </tr>
                             </tbody>
@@ -153,12 +159,14 @@ export default function Krs() {
                     </div>
                 </div>
 
-                <div className="mt-4 flex justify-end">
-                    <a href="/mahasiswa/krs"
-                        className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg shadow-sm border border-blue-600">
-                        <i className="fa-solid fa-save mr-2"></i> Simpan KRS
-                    </a>
-                </div>
+                {(!krsStatus || krsStatus.status !== 'approved') && (
+                    <div className="mt-4 flex justify-end">
+                        <a href="/mahasiswa/krs/simpan"
+                            className="px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 transition-colors rounded-lg shadow-sm border border-blue-600">
+                            <i className="fa-solid fa-save mr-2"></i> Ajukan KRS
+                        </a>
+                    </div>
+                )}
             </div>
         </MahasiswaLayout>
     );
