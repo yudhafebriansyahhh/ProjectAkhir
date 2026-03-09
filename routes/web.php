@@ -176,9 +176,11 @@ Route::middleware(['auth', 'role:dosen'])
         Route::get('/dashboard', [DosenController::class, 'dashboard'])->name('dashboard');
 
         // Nilai
-       // Nilai Routes
     Route::get('/nilai', [App\Http\Controllers\Dosen\NilaiController::class, 'index'])
         ->name('nilai');
+
+    Route::get('/nilai/{kelas}', [App\Http\Controllers\Dosen\NilaiController::class, 'show'])
+        ->name('nilai.show');
     
     Route::get('/nilai/input', [App\Http\Controllers\Dosen\NilaiController::class, 'create'])
         ->name('input_nilai');
@@ -229,4 +231,13 @@ Route::middleware(['auth', 'role:dosen'])
         // API
         Route::get('/api/kelas-by-matkul/{idMkPeriode}', [AbsensiController::class, 'getKelasByMataKuliah']);
         Route::get('/api/kelas-data/{idKelas}', [AbsensiController::class, 'getKelasData']);
+
+        // Debug query
+        Route::get('/debug-mk', function() {
+            $dosen = auth()->user()->dosen;
+            $mataKuliahList = \App\Models\MataKuliah::whereHas('periode.kelas', function ($q) use ($dosen) {
+                $q->where('id_dosen', $dosen->id_dosen);
+            })->distinct()->select('mata_kuliah.kode_matkul', 'mata_kuliah.nama_matkul')->get();
+            return response()->json($mataKuliahList);
+        });
     });

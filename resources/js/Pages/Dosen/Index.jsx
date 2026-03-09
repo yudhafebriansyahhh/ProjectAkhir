@@ -2,7 +2,7 @@ import { useEffect, useRef } from 'react';
 import { Head } from '@inertiajs/react';
 import DosenLayout from '@/Layouts/DosenLayout';
 
-export default function Index() {
+export default function Index({ dosen, stats, daftar_kelas, jadwal_hari_ini, grafik_nilai }) {
     const chartRerataNilaiRef = useRef(null);
     const chartRerataNilaiInstance = useRef(null);
 
@@ -17,19 +17,23 @@ export default function Index() {
         chartRerataNilaiInstance.current = new window.Chart(ctx, {
             type: 'bar',
             data: {
-                labels: ['Pemrograman Web', 'Sistem Operasi', 'Struktur Data'],
+                labels: grafik_nilai.labels.length > 0 ? grafik_nilai.labels : ['Belum Ada Kelas'],
                 datasets: [{
                     label: 'Rata-rata Nilai',
-                    data: [82, 75, 88],
+                    data: grafik_nilai.data.length > 0 ? grafik_nilai.data : [0],
                     backgroundColor: [
                         'rgba(59, 130, 246, 0.8)',
                         'rgba(16, 185, 129, 0.8)',
-                        'rgba(139, 92, 246, 0.8)'
+                        'rgba(139, 92, 246, 0.8)',
+                        'rgba(245, 158, 11, 0.8)',
+                        'rgba(239, 68, 68, 0.8)'
                     ],
                     borderColor: [
                         'rgb(59, 130, 246)',
                         'rgb(16, 185, 129)',
-                        'rgb(139, 92, 246)'
+                        'rgb(139, 92, 246)',
+                        'rgb(245, 158, 11)',
+                        'rgb(239, 68, 68)'
                     ],
                     borderWidth: 2,
                     borderRadius: 8
@@ -102,7 +106,7 @@ export default function Index() {
                             <div>
                                 <h1 className="text-3xl font-bold text-gray-800">Dashboard</h1>
                                 <p className="text-gray-600 mt-1">
-                                    Selamat datang <span className="font-bold text-blue-600">Budi Santoso, M.Kom</span>. Pantau aktivitas akademik dan informasi pengajaran Anda di sini.
+                                    Selamat datang <span className="font-bold text-blue-600">{dosen.nama}</span>. Pantau aktivitas akademik dan informasi pengajaran Anda di sini.
                                 </p>
                             </div>
                         </div>
@@ -114,7 +118,7 @@ export default function Index() {
                             <div className="flex items-center justify-between">
                                 <div>
                                     <p className="text-sm text-gray-600 mb-1">Kelas Diampu</p>
-                                    <h2 className="text-3xl font-bold text-gray-800">5</h2>
+                                    <h2 className="text-3xl font-bold text-gray-800">{stats.total_kelas}</h2>
                                 </div>
                                 <div className="p-3 bg-blue-100 rounded-lg">
                                     <i className="fas fa-chalkboard-teacher text-blue-600 text-xl"></i>
@@ -126,7 +130,7 @@ export default function Index() {
                             <div className="flex items-center justify-between">
                                 <div>
                                     <p className="text-sm text-gray-600 mb-1">Total Mahasiswa</p>
-                                    <h2 className="text-3xl font-bold text-gray-800">134</h2>
+                                    <h2 className="text-3xl font-bold text-gray-800">{stats.total_mahasiswa}</h2>
                                 </div>
                                 <div className="p-3 bg-green-100 rounded-lg">
                                     <i className="fas fa-users text-green-600 text-xl"></i>
@@ -138,7 +142,7 @@ export default function Index() {
                             <div className="flex items-center justify-between">
                                 <div>
                                     <p className="text-sm text-gray-600 mb-1">Pertemuan Minggu Ini</p>
-                                    <h2 className="text-3xl font-bold text-gray-800">8</h2>
+                                    <h2 className="text-3xl font-bold text-gray-800">{stats.pertemuan_minggu_ini}</h2>
                                 </div>
                                 <div className="p-3 bg-purple-100 rounded-lg">
                                     <i className="fas fa-calendar-check text-purple-600 text-xl"></i>
@@ -160,62 +164,42 @@ export default function Index() {
                             </div>
                             
                             <div className="p-4">
-                                <div className="overflow-x-auto">
-                                    <table className="w-full text-sm">
-                                        <thead>
-                                            <tr className="bg-gradient-to-r from-gray-50 to-gray-100">
-                                                <th className="px-4 py-3 text-left text-xs font-bold text-gray-700 uppercase">Mata Kuliah</th>
-                                                <th className="px-4 py-3 text-center text-xs font-bold text-gray-700 uppercase">SKS</th>
-                                                <th className="px-4 py-3 text-center text-xs font-bold text-gray-700 uppercase">Kelas</th>
-                                                <th className="px-4 py-3 text-center text-xs font-bold text-gray-700 uppercase">Jadwal</th>
+                                <div className="overflow-x-auto max-h-[300px] overflow-y-auto">
+                                    <table className="w-full text-sm relative">
+                                        <thead className="sticky top-0 z-10">
+                                            <tr className="bg-gradient-to-r from-gray-50 to-gray-100 shadow-sm">
+                                                <th className="px-4 py-3 text-left text-xs font-bold text-gray-700 uppercase bg-gray-50">Mata Kuliah</th>
+                                                <th className="px-4 py-3 text-center text-xs font-bold text-gray-700 uppercase bg-gray-50">SKS</th>
+                                                <th className="px-4 py-3 text-center text-xs font-bold text-gray-700 uppercase bg-gray-50">Kelas</th>
+                                                <th className="px-4 py-3 text-center text-xs font-bold text-gray-700 uppercase bg-gray-50">Jadwal</th>
                                             </tr>
                                         </thead>
                                         <tbody className="divide-y divide-gray-200">
-                                            <tr className="hover:bg-blue-50 transition-colors">
-                                                <td className="px-4 py-3 font-medium text-gray-800">Pemrograman Web</td>
-                                                <td className="px-4 py-3 text-center">
-                                                    <span className="inline-block px-2 py-1 bg-blue-100 text-blue-700 rounded text-xs font-semibold">3 SKS</span>
-                                                </td>
-                                                <td className="px-4 py-3 text-center">
-                                                    <span className="inline-block px-2 py-1 bg-purple-100 text-purple-700 rounded text-xs font-semibold">A</span>
-                                                </td>
-                                                <td className="px-4 py-3 text-center">
-                                                    <div className="text-xs">
-                                                        <div className="font-semibold text-gray-800">Senin</div>
-                                                        <div className="text-gray-600">10:00 - 12:00</div>
-                                                    </div>
-                                                </td>
-                                            </tr>
-                                            <tr className="hover:bg-blue-50 transition-colors">
-                                                <td className="px-4 py-3 font-medium text-gray-800">Sistem Operasi</td>
-                                                <td className="px-4 py-3 text-center">
-                                                    <span className="inline-block px-2 py-1 bg-blue-100 text-blue-700 rounded text-xs font-semibold">3 SKS</span>
-                                                </td>
-                                                <td className="px-4 py-3 text-center">
-                                                    <span className="inline-block px-2 py-1 bg-purple-100 text-purple-700 rounded text-xs font-semibold">B</span>
-                                                </td>
-                                                <td className="px-4 py-3 text-center">
-                                                    <div className="text-xs">
-                                                        <div className="font-semibold text-gray-800">Selasa</div>
-                                                        <div className="text-gray-600">10:00 - 12:00</div>
-                                                    </div>
-                                                </td>
-                                            </tr>
-                                            <tr className="hover:bg-blue-50 transition-colors">
-                                                <td className="px-4 py-3 font-medium text-gray-800">Struktur Data</td>
-                                                <td className="px-4 py-3 text-center">
-                                                    <span className="inline-block px-2 py-1 bg-blue-100 text-blue-700 rounded text-xs font-semibold">3 SKS</span>
-                                                </td>
-                                                <td className="px-4 py-3 text-center">
-                                                    <span className="inline-block px-2 py-1 bg-purple-100 text-purple-700 rounded text-xs font-semibold">C</span>
-                                                </td>
-                                                <td className="px-4 py-3 text-center">
-                                                    <div className="text-xs">
-                                                        <div className="font-semibold text-gray-800">Rabu</div>
-                                                        <div className="text-gray-600">10:00 - 12:00</div>
-                                                    </div>
-                                                </td>
-                                            </tr>
+                                            {daftar_kelas.length > 0 ? (
+                                                daftar_kelas.map((kelas, index) => (
+                                                    <tr key={index} className="hover:bg-blue-50 transition-colors">
+                                                        <td className="px-4 py-3 font-medium text-gray-800">{kelas.mata_kuliah}</td>
+                                                        <td className="px-4 py-3 text-center">
+                                                            <span className="inline-block px-2 py-1 bg-blue-100 text-blue-700 rounded text-xs font-semibold">{kelas.sks} SKS</span>
+                                                        </td>
+                                                        <td className="px-4 py-3 text-center">
+                                                            <span className="inline-block px-2 py-1 bg-purple-100 text-purple-700 rounded text-xs font-semibold">{kelas.nama_kelas}</span>
+                                                        </td>
+                                                        <td className="px-4 py-3 text-center">
+                                                            <div className="text-xs">
+                                                                <div className="font-semibold text-gray-800">{kelas.hari}</div>
+                                                                <div className="text-gray-600">{kelas.waktu}</div>
+                                                            </div>
+                                                        </td>
+                                                    </tr>
+                                                ))
+                                            ) : (
+                                                <tr>
+                                                    <td colSpan="4" className="px-4 py-6 text-center text-gray-500 text-sm">
+                                                        Belum ada kelas yang diampu pada semester ini.
+                                                    </td>
+                                                </tr>
+                                            )}
                                         </tbody>
                                     </table>
                                 </div>
@@ -259,42 +243,38 @@ export default function Index() {
                                         </tr>
                                     </thead>
                                     <tbody className="divide-y divide-gray-200">
-                                        <tr className="hover:bg-blue-50 transition-colors">
-                                            <td className="px-6 py-4 font-medium text-gray-800">Pemrograman Web</td>
-                                            <td className="px-6 py-4 text-center">
-                                                <div className="flex items-center justify-center gap-1">
-                                                    <i className="far fa-clock text-gray-400 text-xs"></i>
-                                                    <span className="text-gray-700">08:00 - 10:00</span>
-                                                </div>
-                                            </td>
-                                            <td className="px-6 py-4 text-center">
-                                                <div className="flex items-center justify-center gap-1">
-                                                    <i className="fas fa-door-open text-gray-400 text-xs"></i>
-                                                    <span className="text-gray-700">Lab A</span>
-                                                </div>
-                                            </td>
-                                            <td className="px-6 py-4 text-center">
-                                                <span className="inline-block px-3 py-1 bg-purple-100 text-purple-700 rounded text-xs font-semibold">A</span>
-                                            </td>
-                                        </tr>
-                                        <tr className="hover:bg-blue-50 transition-colors">
-                                            <td className="px-6 py-4 font-medium text-gray-800">Sistem Operasi</td>
-                                            <td className="px-6 py-4 text-center">
-                                                <div className="flex items-center justify-center gap-1">
-                                                    <i className="far fa-clock text-gray-400 text-xs"></i>
-                                                    <span className="text-gray-700">13:00 - 15:00</span>
-                                                </div>
-                                            </td>
-                                            <td className="px-6 py-4 text-center">
-                                                <div className="flex items-center justify-center gap-1">
-                                                    <i className="fas fa-door-open text-gray-400 text-xs"></i>
-                                                    <span className="text-gray-700">Lab B</span>
-                                                </div>
-                                            </td>
-                                            <td className="px-6 py-4 text-center">
-                                                <span className="inline-block px-3 py-1 bg-purple-100 text-purple-700 rounded text-xs font-semibold">B</span>
-                                            </td>
-                                        </tr>
+                                        {jadwal_hari_ini.length > 0 ? (
+                                            jadwal_hari_ini.map((kelas, index) => (
+                                                <tr key={index} className="hover:bg-blue-50 transition-colors">
+                                                    <td className="px-6 py-4 font-medium text-gray-800">{kelas.mata_kuliah}</td>
+                                                    <td className="px-6 py-4 text-center">
+                                                        <div className="flex items-center justify-center gap-1">
+                                                            <i className="far fa-clock text-gray-400 text-xs"></i>
+                                                            <span className="text-gray-700">{kelas.waktu}</span>
+                                                        </div>
+                                                    </td>
+                                                    <td className="px-6 py-4 text-center">
+                                                        <div className="flex items-center justify-center gap-1">
+                                                            <i className="fas fa-door-open text-gray-400 text-xs"></i>
+                                                            <span className="text-gray-700">{kelas.ruangan}</span>
+                                                        </div>
+                                                    </td>
+                                                    <td className="px-6 py-4 text-center">
+                                                        <span className="inline-block px-3 py-1 bg-purple-100 text-purple-700 rounded text-xs font-semibold">{kelas.nama_kelas}</span>
+                                                    </td>
+                                                </tr>
+                                            ))
+                                        ) : (
+                                            <tr>
+                                                <td colSpan="4" className="px-6 py-8 text-center text-gray-500">
+                                                    <div className="inline-flex justify-center items-center w-12 h-12 rounded-full bg-gray-100 mb-3">
+                                                        <i className="fas fa-mug-hot text-xl text-gray-400"></i>
+                                                    </div>
+                                                    <p className="font-medium text-gray-600">Tidak ada jadwal mengajar hari ini.</p>
+                                                    <p className="text-sm mt-1">Waktunya istirahat atau fokus pada penelitian.</p>
+                                                </td>
+                                            </tr>
+                                        )}
                                     </tbody>
                                 </table>
                             </div>

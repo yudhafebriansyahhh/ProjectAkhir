@@ -33,6 +33,6 @@ class MataKuliahPeriode extends Model
     // RELASI KE PERIODE
     public function periode()
     {
-        return $this->belongsTo(Periode::class, 'id_periode', 'id_periode');
+        return $this->belongsTo(PeriodeRegistrasi::class, 'id_periode', 'id_periode');
     }
 }

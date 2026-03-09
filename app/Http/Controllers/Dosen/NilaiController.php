@@ -19,63 +19,99 @@ class NilaiController extends Controller
     public function index(Request $request)
     {
         $dosen = auth()->user()->dosen;
-
-        // Data untuk dropdown filter
-        $prodiList = Prodi::select('kode_prodi', 'nama_prodi')->get();
         
-        // Mata kuliah yang diampu dosen ini
-        $mataKuliahList = MataKuliah::whereHas('mataKuliahPeriodes.kelas', function ($q) use ($dosen) {
-            $q->where('id_dosen', $dosen->id_dosen);
-        })->select('kode_mk', 'nama_mk')->get();
+        $periodeAktif = \App\Models\PeriodeRegistrasi::getPeriodeAktif();
+        $idPeriodeAktif = $periodeAktif ? $periodeAktif->id_periode : null;
+
+        // Ambil kelas yang diampu dosen ini untuk ditampilkan
+        $kelasList = Kelas::with(['mataKuliahPeriode.mataKuliah', 'mataKuliahPeriode.periode'])
+            ->where('id_dosen', $dosen->id_dosen)
+            ->when($idPeriodeAktif, function ($query) use ($idPeriodeAktif) {
+                $query->whereHas('mataKuliahPeriode', function ($q) use ($idPeriodeAktif) {
+                    $q->where('id_periode', $idPeriodeAktif);
+                });
+            })
+            ->get()
+            ->map(function ($kelas) {
+                // Return data yang diperlukan untuk UI
+                return [
+                    'id_kelas' => $kelas->id_kelas,
+                    'nama_kelas' => $kelas->nama_kelas,
+                    'mata_kuliah' => [
+                        'kode_matkul' => $kelas->mataKuliahPeriode->mataKuliah->kode_matkul ?? '-',
+                        'nama_matkul' => $kelas->mataKuliahPeriode->mataKuliah->nama_matkul ?? '-',
+                        'sks' => $kelas->mataKuliahPeriode->mataKuliah->sks ?? 0,
+                    ],
+                    'periode' => [
+                        'tahun_ajaran' => $kelas->mataKuliahPeriode->periode->tahun_ajaran ?? '-',
+                        'jenis_semester' => $kelas->mataKuliahPeriode->periode->jenis_semester ?? '-',
+                    ],
+                    'hari' => $kelas->hari,
+                    'jam_mulai' => $kelas->jam_mulai ? \Carbon\Carbon::parse($kelas->jam_mulai)->format('H:i') : null,
+                    'jam_selesai' => $kelas->jam_selesai ? \Carbon\Carbon::parse($kelas->jam_selesai)->format('H:i') : null,
+                    'ruang_kelas' => $kelas->ruang_kelas,
+                ];
+            });
+
+        return Inertia::render('Dosen/Nilai/Index', [
+            'kelasList' => $kelasList,
+        ]);
+    }
+
+    /**
+     * Halaman detail nilai kelas (List mahasiswa)
+     */
+    public function show($idKelas)
+    {
+        $dosen = auth()->user()->dosen;
+
+        // Validasi dan ambil data kelas
+        $kelas = Kelas::with([
+            'mataKuliahPeriode.mataKuliah',
+            'mataKuliahPeriode.periode',
+            'detailKrs.krs.mahasiswa',
+            'nilais'
+        ])
+        ->where('id_kelas', $idKelas)
+        ->where('id_dosen', $dosen->id_dosen)
+        ->firstOrFail();
 
         $mahasiswaList = [];
 
-        // Jika semua filter terisi, ambil data mahasiswa
-        if ($request->filled(['prodi', 'mataKuliah', 'semester', 'kelas'])) {
-            $kelas = Kelas::with([
-                'mataKuliahPeriode.mataKuliah',
-                'detailKrs.krs.mahasiswa.prodi',
-                'nilais'
-            ])
-            ->whereHas('mataKuliahPeriode.mataKuliah', function ($q) use ($request) {
-                $q->where('kode_mk', $request->mataKuliah);
-            })
-            ->where('nama_kelas', $request->kelas)
-            ->where('id_dosen', $dosen->id_dosen)
-            ->first();
+        foreach ($kelas->detailKrs as $detail) {
+            $mahasiswa = $detail->krs->mahasiswa;
+            
+            // Cari nilai mahasiswa
+            $nilai = $kelas->nilais->where('id_mahasiswa', $mahasiswa->id_mahasiswa)->first();
 
-            if ($kelas) {
-                foreach ($kelas->detailKrs as $detail) {
-                    $mahasiswa = $detail->krs->mahasiswa;
-                    
-                    // Filter berdasarkan prodi dan semester
-                    if ($mahasiswa->kode_prodi !== $request->prodi) {
-                        continue;
-                    }
-
-                    // Cari nilai mahasiswa
-                    $nilai = $kelas->nilais->where('id_mahasiswa', $mahasiswa->id_mahasiswa)->first();
-
-                    $mahasiswaList[] = [
-                        'id_mahasiswa' => $mahasiswa->id_mahasiswa,
-                        'id_kelas' => $kelas->id_kelas,
-                        'id_nilai' => $nilai->id_nilai ?? null,
-                        'nama' => $mahasiswa->nama,
-                        'nim' => $mahasiswa->nim,
-                        'nilai_akhir' => $nilai->nilai_akhir ?? null,
-                        'nilai_huruf' => $nilai->nilai_huruf ?? null,
-                        'is_locked' => $nilai->is_locked ?? false,
-                        'has_nilai' => $nilai !== null,
-                    ];
-                }
-            }
+            $mahasiswaList[] = [
+                'id_mahasiswa' => $mahasiswa->id_mahasiswa,
+                'id_kelas' => $kelas->id_kelas,
+                'id_nilai' => $nilai->id_nilai ?? null,
+                'nama' => $mahasiswa->nama,
+                'nim' => $mahasiswa->nim,
+                'nilai_akhir' => $nilai->nilai_akhir ?? null,
+                'nilai_huruf' => $nilai->nilai_huruf ?? null,
+                'is_locked' => $nilai->is_locked ?? false,
+                'has_nilai' => $nilai !== null,
+            ];
         }
 
-        return Inertia::render('Dosen/Nilai/Nilai', [
-            'prodiList' => $prodiList,
-            'mataKuliahList' => $mataKuliahList,
+        return Inertia::render('Dosen/Nilai/Show', [
+            'kelasData' => [
+                'id_kelas' => $kelas->id_kelas,
+                'nama_kelas' => $kelas->nama_kelas,
+                'mata_kuliah' => [
+                    'kode_matkul' => $kelas->mataKuliahPeriode->mataKuliah->kode_matkul ?? '-',
+                    'nama_matkul' => $kelas->mataKuliahPeriode->mataKuliah->nama_matkul ?? '-',
+                    'sks' => $kelas->mataKuliahPeriode->mataKuliah->sks ?? 0,
+                ],
+                'periode' => [
+                    'tahun_ajaran' => $kelas->mataKuliahPeriode->periode->tahun_ajaran ?? '-',
+                    'jenis_semester' => $kelas->mataKuliahPeriode->periode->jenis_semester ?? '-',
+                ],
+            ],
             'mahasiswaList' => $mahasiswaList,
-            'filters' => $request->only(['prodi', 'mataKuliah', 'semester', 'kelas']),
         ]);
     }
 
@@ -125,7 +161,7 @@ class NilaiController extends Controller
             'kelas' => [
                 'id_kelas' => $kelas->id_kelas,
                 'nama_kelas' => $kelas->nama_kelas,
-                'mata_kuliah' => $kelas->mataKuliah->nama_mk,
+                'mata_kuliah' => $kelas->mataKuliahPeriode->mataKuliah->nama_matkul ?? '-',
             ],
             'bobot' => [
                 'tugas' => $bobotNilai->bobot_tugas,
@@ -215,7 +251,7 @@ class NilaiController extends Controller
             'kelas' => [
                 'id_kelas' => $nilai->kelas->id_kelas,
                 'nama_kelas' => $nilai->kelas->nama_kelas,
-                'mata_kuliah' => $nilai->kelas->mataKuliah->nama_mk,
+                'mata_kuliah' => $nilai->kelas->mataKuliahPeriode->mataKuliah->nama_matkul ?? '-',
             ],
             'bobot' => [
                 'tugas' => $bobotNilai->bobot_tugas,
@@ -259,7 +295,7 @@ class NilaiController extends Controller
 
         $kelasList = Kelas::with('mataKuliahPeriode.mataKuliah')
             ->whereHas('mataKuliahPeriode.mataKuliah', function ($q) use ($kodeMk) {
-                $q->where('kode_mk', $kodeMk);
+                $q->where('mata_kuliah.kode_matkul', $kodeMk);
             })
             ->where('id_dosen', $dosen->id_dosen)
             ->get()

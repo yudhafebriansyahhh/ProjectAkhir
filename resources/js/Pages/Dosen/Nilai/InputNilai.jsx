@@ -1,36 +1,32 @@
 import { useState, useEffect } from 'react';
-import { Head, Link, router } from '@inertiajs/react';
+import { Head, Link, useForm } from '@inertiajs/react';
 import DosenLayout from '@/Layouts/DosenLayout';
 
-export default function InputNilai() {
-    const [nilai, setNilai] = useState({
-        tugas: '',
-        uts: '',
-        uas: ''
+export default function InputNilai({ mahasiswa, kelas, bobot }) {
+    const { data, setData, post, processing, errors } = useForm({
+        id_mahasiswa: mahasiswa?.id_mahasiswa || '',
+        id_kelas: kelas?.id_kelas || '',
+        nilai_tugas: '',
+        nilai_uts: '',
+        nilai_uas: ''
     });
 
     const [nilaiAkhir, setNilaiAkhir] = useState(0);
 
-    const bobot = {
-        tugas: 0.30,
-        uts: 0.35,
-        uas: 0.35
-    };
-
     // Hitung nilai akhir otomatis
     useEffect(() => {
-        const tugas = parseFloat(nilai.tugas) || 0;
-        const uts = parseFloat(nilai.uts) || 0;
-        const uas = parseFloat(nilai.uas) || 0;
+        const tugas = parseFloat(data.nilai_tugas) || 0;
+        const uts = parseFloat(data.nilai_uts) || 0;
+        const uas = parseFloat(data.nilai_uas) || 0;
 
         const total = (
-            tugas * bobot.tugas +
-            uts * bobot.uts +
-            uas * bobot.uas
+            tugas * (bobot?.tugas / 100 || 0.30) +
+            uts * (bobot?.uts / 100 || 0.35) +
+            uas * (bobot?.uas / 100 || 0.35)
         );
 
         setNilaiAkhir(total.toFixed(2));
-    }, [nilai]);
+    }, [data.nilai_tugas, data.nilai_uts, data.nilai_uas, bobot]);
 
     const handleInputChange = (e) => {
         const { name, value } = e.target;
@@ -38,10 +34,7 @@ export default function InputNilai() {
 
         // Validasi nilai antara 0-100
         if (value === '' || (numValue >= 0 && numValue <= 100)) {
-            setNilai(prev => ({
-                ...prev,
-                [name]: value === '' ? '' : numValue
-            }));
+            setData(name, value === '' ? '' : numValue);
         }
     };
 
@@ -49,7 +42,7 @@ export default function InputNilai() {
         e.preventDefault();
 
         // Validasi input tidak boleh kosong
-        if (!nilai.tugas || !nilai.uts || !nilai.uas) {
+        if (data.nilai_tugas === '' || data.nilai_uts === '' || data.nilai_uas === '') {
             if (window.Swal) {
                 window.Swal.fire({
                     title: 'Data Tidak Lengkap',
@@ -74,27 +67,21 @@ export default function InputNilai() {
                 confirmButtonColor: '#2563eb',
             }).then((result) => {
                 if (result.isConfirmed) {
-                    // Logic untuk menyimpan nilai
-                    console.log('Nilai Data:', nilai);
-                    console.log('Nilai Akhir:', nilaiAkhir);
-
-                    window.Swal.fire({
-                        title: 'Berhasil!',
-                        text: 'Nilai berhasil disimpan.',
-                        icon: 'success',
-                        confirmButtonColor: '#2563eb',
-                    }).then(() => {
-                        // Redirect ke halaman nilai
-                        // router.visit(route('dosen.nilai'));
+                    post(route('dosen.nilai.store'), {
+                        onSuccess: () => {
+                            window.Swal.fire({
+                                title: 'Berhasil!',
+                                text: 'Nilai berhasil disimpan.',
+                                icon: 'success',
+                                confirmButtonColor: '#2563eb',
+                            });
+                        }
                     });
                 }
             });
         } else {
             if (confirm('Simpan nilai?')) {
-                console.log('Nilai Data:', nilai);
-                console.log('Nilai Akhir:', nilaiAkhir);
-                alert('Nilai berhasil disimpan.');
-                // router.visit(route('dosen.nilai'));
+                post(route('dosen.nilai.store'));
             }
         }
     };
@@ -115,9 +102,9 @@ export default function InputNilai() {
                 <div className="max-w-4xl bg-white border border-gray-200 shadow-sm rounded-lg overflow-hidden">
                     {/* Header Card */}
                     <div className="border-b border-gray-200 bg-gray-50 px-6 py-4">
-                        <h3 className="text-lg font-semibold text-gray-700">Form Penilaian</h3>
+                        <h3 className="text-lg font-semibold text-gray-700">Form Penilaian - {mahasiswa?.nama} ({mahasiswa?.nim})</h3>
                         <p className="text-sm text-gray-600 mt-1">
-                            Silakan masukkan nilai berdasarkan komponen penilaian: Tugas, UTS, dan UAS.
+                            Mata Kuliah: <span className="font-semibold">{kelas?.mata_kuliah}</span> | Kelas: <span className="font-semibold">{kelas?.nama_kelas}</span>
                         </p>
                     </div>
 
@@ -132,44 +119,53 @@ export default function InputNilai() {
                                     <div className="space-y-3">
                                         <div className="flex items-center gap-4">
                                             <label className="w-16 text-gray-700 font-medium text-sm">Tugas</label>
-                                            <input
-                                                type="number"
-                                                name="tugas"
-                                                min="0"
-                                                max="100"
-                                                placeholder="0-100"
-                                                value={nilai.tugas}
-                                                onChange={handleInputChange}
-                                                className="flex-1 px-4 py-2 border border-gray-300 rounded-lg bg-white text-gray-700 focus:outline-none focus:border-blue-600 transition-all duration-200"
-                                            />
+                                            <div className="flex-1">
+                                                <input
+                                                    type="number"
+                                                    name="nilai_tugas"
+                                                    min="0"
+                                                    max="100"
+                                                    placeholder="0-100"
+                                                    value={data.nilai_tugas}
+                                                    onChange={handleInputChange}
+                                                    className={`w-full px-4 py-2 border ${errors.nilai_tugas ? 'border-red-500 focus:border-red-600' : 'border-gray-300 focus:border-blue-600'} rounded-lg bg-white text-gray-700 focus:outline-none transition-all duration-200`}
+                                                />
+                                                {errors.nilai_tugas && <p className="text-red-500 text-xs mt-1">{errors.nilai_tugas}</p>}
+                                            </div>
                                         </div>
 
                                         <div className="flex items-center gap-4">
                                             <label className="w-16 text-gray-700 font-medium text-sm">UTS</label>
-                                            <input
-                                                type="number"
-                                                name="uts"
-                                                min="0"
-                                                max="100"
-                                                placeholder="0-100"
-                                                value={nilai.uts}
-                                                onChange={handleInputChange}
-                                                className="flex-1 px-4 py-2 border border-gray-300 rounded-lg bg-white text-gray-700 focus:outline-none focus:border-blue-600 transition-all duration-200"
-                                            />
+                                            <div className="flex-1">
+                                                <input
+                                                    type="number"
+                                                    name="nilai_uts"
+                                                    min="0"
+                                                    max="100"
+                                                    placeholder="0-100"
+                                                    value={data.nilai_uts}
+                                                    onChange={handleInputChange}
+                                                    className={`w-full px-4 py-2 border ${errors.nilai_uts ? 'border-red-500 focus:border-red-600' : 'border-gray-300 focus:border-blue-600'} rounded-lg bg-white text-gray-700 focus:outline-none transition-all duration-200`}
+                                                />
+                                                {errors.nilai_uts && <p className="text-red-500 text-xs mt-1">{errors.nilai_uts}</p>}
+                                            </div>
                                         </div>
 
                                         <div className="flex items-center gap-4">
                                             <label className="w-16 text-gray-700 font-medium text-sm">UAS</label>
-                                            <input
-                                                type="number"
-                                                name="uas"
-                                                min="0"
-                                                max="100"
-                                                placeholder="0-100"
-                                                value={nilai.uas}
-                                                onChange={handleInputChange}
-                                                className="flex-1 px-4 py-2 border border-gray-300 rounded-lg bg-white text-gray-700 focus:outline-none focus:border-blue-600 transition-all duration-200"
-                                            />
+                                            <div className="flex-1">
+                                                <input
+                                                    type="number"
+                                                    name="nilai_uas"
+                                                    min="0"
+                                                    max="100"
+                                                    placeholder="0-100"
+                                                    value={data.nilai_uas}
+                                                    onChange={handleInputChange}
+                                                    className={`w-full px-4 py-2 border ${errors.nilai_uas ? 'border-red-500 focus:border-red-600' : 'border-gray-300 focus:border-blue-600'} rounded-lg bg-white text-gray-700 focus:outline-none transition-all duration-200`}
+                                                />
+                                                {errors.nilai_uas && <p className="text-red-500 text-xs mt-1">{errors.nilai_uas}</p>}
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
@@ -183,7 +179,7 @@ export default function InputNilai() {
                                             <label className="w-16 text-gray-700 font-medium text-sm">Bobot</label>
                                             <input
                                                 type="text"
-                                                value="30%"
+                                                value={`${bobot?.tugas || 30}%`}
                                                 readOnly
                                                 className="flex-1 px-4 py-2 border border-gray-200 rounded-lg bg-gray-50 focus:outline-none text-gray-600 cursor-not-allowed"
                                             />
@@ -193,7 +189,7 @@ export default function InputNilai() {
                                             <label className="w-16 text-gray-700 font-medium text-sm">Bobot</label>
                                             <input
                                                 type="text"
-                                                value="35%"
+                                                value={`${bobot?.uts || 35}%`}
                                                 readOnly
                                                 className="flex-1 px-4 py-2 border border-gray-200 rounded-lg bg-gray-50 focus:outline-none text-gray-600 cursor-not-allowed"
                                             />
@@ -203,7 +199,7 @@ export default function InputNilai() {
                                             <label className="w-16 text-gray-700 font-medium text-sm">Bobot</label>
                                             <input
                                                 type="text"
-                                                value="35%"
+                                                value={`${bobot?.uas || 35}%`}
                                                 readOnly
                                                 className="flex-1 px-4 py-2 border border-gray-200 rounded-lg bg-gray-50 focus:outline-none text-gray-600 cursor-not-allowed"
                                             />
@@ -218,7 +214,7 @@ export default function InputNilai() {
                                     <div className="flex items-center justify-between">
                                         <div>
                                             <h5 className="text-sm font-medium text-blue-900">Total Bobot: 100%</h5>
-                                            <p className="text-xs text-blue-700 mt-1">Tugas (30%) + UTS (35%) + UAS (35%)</p>
+                                            <p className="text-xs text-blue-700 mt-1">Tugas ({bobot?.tugas || 30}%) + UTS ({bobot?.uts || 35}%) + UAS ({bobot?.uas || 35}%)</p>
                                         </div>
                                         <div className="text-right">
                                             <p className="text-sm font-medium text-blue-900">Nilai Akhir:</p>
@@ -241,10 +237,11 @@ export default function InputNilai() {
                                 <button
                                     type="button"
                                     onClick={handleSubmit}
-                                    className="px-6 py-2 text-sm shadow-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:outline-none transition-all duration-200 font-medium"
+                                    disabled={processing}
+                                    className="px-6 py-2 text-sm shadow-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:outline-none transition-all duration-200 font-medium disabled:opacity-50 disabled:cursor-not-allowed"
                                 >
                                     <i className="fas fa-save mr-2"></i>
-                                    Simpan Nilai
+                                    {processing ? 'Menyimpan...' : 'Simpan Nilai'}
                                 </button>
                             </div>
                         </div>
