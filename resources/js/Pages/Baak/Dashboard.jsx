@@ -1,20 +1,27 @@
 import { Head, Link } from '@inertiajs/react';
 import BaakLayout from '@/Layouts/BaakLayout';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/Components/ui/card';
+import { Badge } from '@/Components/ui/badge';
 import {
     LineChart, Line, BarChart, Bar, PieChart, Pie, Cell,
     XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
     Area, AreaChart
 } from 'recharts';
+import {
+    Users, GraduationCap, BookOpen, DoorOpen, Clock, UserX, FileText,
+    TrendingUp, PieChart as PieChartIcon, BarChart3, Activity,
+    Zap, Building2, University, ChevronRight, CalendarCheck, ArrowUpRight
+} from 'lucide-react';
 
 export default function Dashboard({ stats, charts, alerts, recent_activities, periode_aktif }) {
 
-    const COLORS = ['#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6', '#EC4899'];
+    const COLORS = ['#2563EB', '#0EA5E9', '#6366F1', '#8B5CF6', '#3B82F6', '#1D4ED8'];
 
     const CustomTooltip = ({ active, payload, label }) => {
         if (active && payload && payload.length) {
             return (
-                <div className="bg-white border border-gray-200 rounded-lg shadow-lg p-3">
-                    <p className="text-sm font-semibold text-gray-700 mb-1">{label}</p>
+                <div className="bg-white/95 backdrop-blur-sm border border-blue-100 rounded-xl shadow-xl p-3 ring-1 ring-blue-50">
+                    <p className="text-sm font-semibold text-gray-800 mb-1">{label}</p>
                     {payload.map((entry, index) => (
                         <p key={index} className="text-sm" style={{ color: entry.color }}>
                             {entry.name}: <span className="font-bold">{entry.value}</span>
@@ -26,249 +33,249 @@ export default function Dashboard({ stats, charts, alerts, recent_activities, pe
         return null;
     };
 
+    const statCards = [
+        {
+            title: 'Total Mahasiswa',
+            value: stats.mahasiswa.total,
+            icon: GraduationCap,
+            route: 'baak.mahasiswa.index',
+            gradient: 'from-blue-500 to-blue-600',
+            bgLight: 'bg-blue-50',
+            textColor: 'text-blue-600',
+            badges: [
+                { label: `${stats.mahasiswa.aktif} Aktif`, variant: 'success', icon: '✓' },
+                { label: `${stats.mahasiswa.lulus} Lulus`, variant: 'default', icon: '🎓' },
+                { label: `${stats.mahasiswa.cuti} Cuti`, variant: 'warning', icon: '⏸' },
+                { label: `${stats.mahasiswa.do} DO`, variant: 'destructive', icon: '✕' },
+            ],
+        },
+        {
+            title: 'Total Dosen',
+            value: stats.dosen.total,
+            icon: Users,
+            route: 'baak.dosen.index',
+            gradient: 'from-sky-500 to-cyan-500',
+            bgLight: 'bg-sky-50',
+            textColor: 'text-sky-600',
+            progress: {
+                current: stats.dosen.aktif,
+                total: stats.dosen.total,
+                label: `${stats.dosen.aktif} Aktif`,
+            },
+        },
+        {
+            title: 'Mata Kuliah',
+            value: stats.mata_kuliah,
+            icon: BookOpen,
+            route: 'baak.mata-kuliah.index',
+            gradient: 'from-indigo-500 to-violet-500',
+            bgLight: 'bg-indigo-50',
+            textColor: 'text-indigo-600',
+            subtitle: 'Mata kuliah terdaftar',
+        },
+        {
+            title: 'Kelas Aktif',
+            value: stats.kelas,
+            icon: DoorOpen,
+            route: 'baak.kelas.index',
+            gradient: 'from-blue-600 to-indigo-600',
+            bgLight: 'bg-blue-50',
+            textColor: 'text-blue-700',
+            subtitle: 'Total kelas terdaftar',
+        },
+    ];
+
+    const alertCards = [
+        {
+            condition: alerts.krs_pending > 0,
+            count: alerts.krs_pending,
+            label: 'KRS Menunggu Persetujuan',
+            badge: 'Pending',
+            badgeVariant: 'warning',
+            icon: Clock,
+            iconBg: 'bg-amber-100',
+            iconColor: 'text-amber-600',
+            borderColor: 'border-amber-200',
+            bgGradient: 'from-amber-50 to-orange-50',
+            href: route('baak.krs.index', { status: 'pending' }),
+        },
+        {
+            condition: alerts.belum_krs > 0,
+            count: alerts.belum_krs,
+            label: 'Mahasiswa Belum KRS',
+            badge: 'Alert',
+            badgeVariant: 'destructive',
+            icon: UserX,
+            iconBg: 'bg-red-100',
+            iconColor: 'text-red-600',
+            borderColor: 'border-red-200',
+            bgGradient: 'from-red-50 to-rose-50',
+        },
+        {
+            condition: alerts.nilai_kosong > 0,
+            count: alerts.nilai_kosong,
+            label: 'Nilai Belum Diinput',
+            badge: 'Action',
+            badgeVariant: 'warning',
+            icon: FileText,
+            iconBg: 'bg-orange-100',
+            iconColor: 'text-orange-600',
+            borderColor: 'border-orange-200',
+            bgGradient: 'from-orange-50 to-amber-50',
+            href: route('baak.nilai.index'),
+        },
+    ];
+
+    const quickActions = [
+        { label: 'Mahasiswa', icon: GraduationCap, route: 'baak.mahasiswa.index' },
+        { label: 'Dosen', icon: Users, route: 'baak.dosen.index' },
+        { label: 'Mata Kuliah', icon: BookOpen, route: 'baak.mata-kuliah.index' },
+        { label: 'Kelas', icon: DoorOpen, route: 'baak.kelas.index' },
+        { label: 'Prodi', icon: University, route: 'baak.prodi.index' },
+        { label: 'Fakultas', icon: Building2, route: 'baak.fakultas.index' },
+    ];
+
     return (
         <BaakLayout title="Dashboard">
             <Head title="Dashboard" />
 
             <div className="p-4 md:p-6 space-y-6">
-                {/* Header dengan Gradient */}
-                <div className="relative overflow-hidden bg-gradient-to-br from-blue-600 via-blue-700 to-indigo-800 rounded-2xl p-6 md:p-8 text-white shadow-xl">
-                    <div className="absolute top-0 right-0 -mt-4 -mr-4 w-40 h-40 bg-white opacity-10 rounded-full blur-3xl"></div>
-                    <div className="absolute bottom-0 left-0 -mb-4 -ml-4 w-32 h-32 bg-white opacity-10 rounded-full blur-3xl"></div>
+                {/* ===== HEADER HERO ===== */}
+                <div className="relative overflow-hidden bg-gradient-to-br from-blue-600 via-blue-700 to-indigo-800 rounded-2xl p-6 md:p-8 text-white shadow-2xl">
+                    {/* Decorative elements */}
+                    <div className="absolute top-0 right-0 -mt-8 -mr-8 w-48 h-48 bg-white opacity-[0.07] rounded-full blur-3xl"></div>
+                    <div className="absolute bottom-0 left-0 -mb-8 -ml-8 w-40 h-40 bg-blue-300 opacity-[0.1] rounded-full blur-3xl"></div>
+                    <div className="absolute top-1/2 right-1/4 w-24 h-24 bg-indigo-400 opacity-[0.08] rounded-full blur-2xl"></div>
 
                     <div className="relative z-10">
-                        <div className="flex items-center gap-3 mb-2">
-                            <div className="w-12 h-12 bg-white bg-opacity-20 rounded-xl flex items-center justify-center backdrop-blur-sm">
-                                <i className="fas fa-chart-line text-2xl"></i>
+                        <div className="flex items-center gap-4 mb-3">
+                            <div className="w-14 h-14 bg-white/15 rounded-2xl flex items-center justify-center backdrop-blur-sm border border-white/20 shadow-lg">
+                                <TrendingUp className="w-7 h-7" />
                             </div>
                             <div>
-                                <h1 className="text-2xl md:text-3xl font-bold">Dashboard BAAK</h1>
-                                <p className="text-blue-100 text-sm md:text-base">Sistem Informasi Akademik - ITB Riau</p>
+                                <h1 className="text-2xl md:text-3xl font-bold tracking-tight">Dashboard BAAK</h1>
+                                <p className="text-blue-100/90 text-sm md:text-base font-medium">Sistem Informasi Akademik — ITB Riau</p>
                             </div>
                         </div>
 
                         {periode_aktif && (
-                            <div className="mt-4 inline-flex items-center gap-2 bg-white bg-opacity-20 backdrop-blur-sm rounded-full px-4 py-2 border border-white border-opacity-30">
-                                <i className="fas fa-calendar-check text-sm"></i>
-                                <span className="text-sm font-medium">
-                                    Periode Aktif: {periode_aktif.tahun_ajaran} - {periode_aktif.jenis_semester}
+                            <div className="mt-5 inline-flex items-center gap-2.5 bg-white/15 backdrop-blur-sm rounded-full px-5 py-2.5 border border-white/25 shadow-sm">
+                                <CalendarCheck className="w-4 h-4" />
+                                <span className="text-sm font-semibold">
+                                    Periode Aktif: {periode_aktif.tahun_ajaran} – {periode_aktif.jenis_semester}
                                 </span>
                             </div>
                         )}
                     </div>
                 </div>
 
-                {/* Alert Cards */}
-                {(alerts.krs_pending > 0 || alerts.belum_krs > 0 || alerts.nilai_kosong > 0 || alerts.mahasiswa_do > 0) && (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                        {alerts.krs_pending > 0 && (
-                            <Link
-                                href={route('baak.krs.index', { status: 'pending' })}
-                                className="group relative overflow-hidden bg-gradient-to-br from-yellow-50 to-yellow-100 border-2 border-yellow-200 rounded-xl p-4 hover:shadow-lg hover:scale-105 transition-all duration-300"
-                            >
-                                <div className="absolute top-0 right-0 -mt-2 -mr-2 w-20 h-20 bg-yellow-300 opacity-20 rounded-full blur-2xl group-hover:scale-150 transition-transform duration-300"></div>
-                                <div className="relative z-10">
-                                    <div className="flex items-start justify-between mb-3">
-                                        <div className="w-12 h-12 bg-yellow-200 rounded-lg flex items-center justify-center group-hover:rotate-12 transition-transform duration-300">
-                                            <i className="fas fa-clock text-yellow-600 text-xl"></i>
+                {/* ===== ALERT CARDS ===== */}
+                {alertCards.some(a => a.condition) && (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                        {alertCards.map((alert, idx) => {
+                            if (!alert.condition) return null;
+                            const Wrapper = alert.href ? Link : 'div';
+                            const wrapperProps = alert.href ? { href: alert.href } : {};
+                            const Icon = alert.icon;
+                            return (
+                                <Wrapper
+                                    key={idx}
+                                    {...wrapperProps}
+                                    className={`group relative overflow-hidden bg-gradient-to-br ${alert.bgGradient} border-2 ${alert.borderColor} rounded-xl p-5 hover:shadow-lg hover:scale-[1.02] transition-all duration-300 cursor-pointer`}
+                                >
+                                    <div className="absolute top-0 right-0 -mt-3 -mr-3 w-24 h-24 bg-current opacity-[0.04] rounded-full blur-2xl group-hover:scale-150 transition-transform duration-500"></div>
+                                    <div className="relative z-10">
+                                        <div className="flex items-start justify-between mb-3">
+                                            <div className={`w-12 h-12 ${alert.iconBg} rounded-xl flex items-center justify-center group-hover:rotate-6 transition-transform duration-300 shadow-sm`}>
+                                                <Icon className={`w-5 h-5 ${alert.iconColor}`} />
+                                            </div>
+                                            <Badge variant={alert.badgeVariant} className="text-[10px] uppercase tracking-wider">
+                                                {alert.badge}
+                                            </Badge>
                                         </div>
-                                        <span className="px-2 py-1 bg-yellow-200 text-yellow-800 text-xs font-bold rounded-full animate-pulse">
-                                            Pending
-                                        </span>
+                                        <p className="text-3xl font-bold text-gray-900 mb-1">{alert.count}</p>
+                                        <p className="text-sm text-gray-600 font-medium">{alert.label}</p>
                                     </div>
-                                    <p className="text-3xl font-bold text-yellow-900 mb-1">{alerts.krs_pending}</p>
-                                    <p className="text-sm text-yellow-700 font-medium">KRS Menunggu Persetujuan</p>
-                                </div>
-                            </Link>
-                        )}
-
-                        {alerts.belum_krs > 0 && (
-                            <div className="group relative overflow-hidden bg-gradient-to-br from-red-50 to-red-100 border-2 border-red-200 rounded-xl p-4 hover:shadow-lg hover:scale-105 transition-all duration-300">
-                                <div className="absolute top-0 right-0 -mt-2 -mr-2 w-20 h-20 bg-red-300 opacity-20 rounded-full blur-2xl group-hover:scale-150 transition-transform duration-300"></div>
-                                <div className="relative z-10">
-                                    <div className="flex items-start justify-between mb-3">
-                                        <div className="w-12 h-12 bg-red-200 rounded-lg flex items-center justify-center group-hover:rotate-12 transition-transform duration-300">
-                                            <i className="fas fa-user-times text-red-600 text-xl"></i>
-                                        </div>
-                                        <span className="px-2 py-1 bg-red-200 text-red-800 text-xs font-bold rounded-full">
-                                            Alert
-                                        </span>
-                                    </div>
-                                    <p className="text-3xl font-bold text-red-900 mb-1">{alerts.belum_krs}</p>
-                                    <p className="text-sm text-red-700 font-medium">Mahasiswa Belum KRS</p>
-                                </div>
-                            </div>
-                        )}
-
-                        {alerts.nilai_kosong > 0 && (
-                            <Link
-                                href={route('baak.nilai.index')}
-                                className="group relative overflow-hidden bg-gradient-to-br from-orange-50 to-orange-100 border-2 border-orange-200 rounded-xl p-4 hover:shadow-lg hover:scale-105 transition-all duration-300"
-                            >
-                                <div className="absolute top-0 right-0 -mt-2 -mr-2 w-20 h-20 bg-orange-300 opacity-20 rounded-full blur-2xl group-hover:scale-150 transition-transform duration-300"></div>
-                                <div className="relative z-10">
-                                    <div className="flex items-start justify-between mb-3">
-                                        <div className="w-12 h-12 bg-orange-200 rounded-lg flex items-center justify-center group-hover:rotate-12 transition-transform duration-300">
-                                            <i className="fas fa-file-alt text-orange-600 text-xl"></i>
-                                        </div>
-                                        <span className="px-2 py-1 bg-orange-200 text-orange-800 text-xs font-bold rounded-full">
-                                            Action
-                                        </span>
-                                    </div>
-                                    <p className="text-3xl font-bold text-orange-900 mb-1">{alerts.nilai_kosong}</p>
-                                    <p className="text-sm text-orange-700 font-medium">Nilai Belum Diinput</p>
-                                </div>
-                            </Link>
-                        )}
+                                </Wrapper>
+                            );
+                        })}
                     </div>
                 )}
 
-                {/* Stats Cards - FIXED! Tambah Status Lulus */}
+                {/* ===== STATS CARDS ===== */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                    {/* Card Mahasiswa - UPDATED 🔥 */}
-                    <div className="group relative overflow-hidden bg-white rounded-xl shadow-md hover:shadow-xl transition-all duration-300 border border-gray-100">
-                        <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-blue-400 to-blue-600 opacity-10 rounded-full -mr-16 -mt-16 group-hover:scale-150 transition-transform duration-500"></div>
+                    {statCards.map((stat, idx) => {
+                        const Icon = stat.icon;
+                        return (
+                            <Card key={idx} className="group relative overflow-hidden hover:shadow-xl transition-all duration-300 border-gray-100/80 animate-fade-in" style={{ animationDelay: `${idx * 100}ms` }}>
+                                <div className={`absolute top-0 right-0 w-36 h-36 bg-gradient-to-br ${stat.gradient} opacity-[0.07] rounded-full -mr-16 -mt-16 group-hover:scale-150 transition-transform duration-700`}></div>
 
-                        <div className="relative p-5">
-                            <div className="flex items-start justify-between mb-4">
-                                <div className="w-14 h-14 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl flex items-center justify-center shadow-lg transform group-hover:scale-110 group-hover:rotate-6 transition-all duration-300">
-                                    <i className="fas fa-user-graduate text-white text-2xl"></i>
-                                </div>
-                                <Link
-                                    href={route('baak.mahasiswa.index')}
-                                    className="text-blue-600 hover:text-blue-700 font-medium text-sm flex items-center gap-1 group-hover:gap-2 transition-all"
-                                >
-                                    Lihat <i className="fas fa-arrow-right text-xs"></i>
-                                </Link>
-                            </div>
+                                <CardContent className="p-5 relative">
+                                    <div className="flex items-start justify-between mb-4">
+                                        <div className={`w-14 h-14 bg-gradient-to-br ${stat.gradient} rounded-xl flex items-center justify-center shadow-lg shadow-blue-500/20 transform group-hover:scale-110 group-hover:rotate-3 transition-all duration-300`}>
+                                            <Icon className="w-6 h-6 text-white" />
+                                        </div>
+                                        <Link
+                                            href={route(stat.route)}
+                                            className={`${stat.textColor} hover:opacity-80 font-medium text-sm flex items-center gap-1 group-hover:gap-2 transition-all`}
+                                        >
+                                            Lihat <ChevronRight className="w-4 h-4" />
+                                        </Link>
+                                    </div>
 
-                            <h3 className="text-gray-500 text-sm font-medium mb-1">Total Mahasiswa</h3>
-                            <p className="text-4xl font-bold text-gray-900 mb-3">{stats.mahasiswa.total}</p>
+                                    <h3 className="text-gray-500 text-sm font-medium mb-1">{stat.title}</h3>
+                                    <p className="text-4xl font-bold text-gray-900 mb-3 tracking-tight">{stat.value}</p>
 
-                            <div className="flex flex-wrap gap-2">
-                                <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-green-100 text-green-700 rounded-lg text-xs font-semibold">
-                                    <i className="fas fa-check-circle"></i>
-                                    {stats.mahasiswa.aktif} Aktif
-                                </span>
-                                <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-blue-100 text-blue-700 rounded-lg text-xs font-semibold">
-                                    <i className="fas fa-graduation-cap"></i>
-                                    {stats.mahasiswa.lulus} Lulus
-                                </span>
-                                <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-yellow-100 text-yellow-700 rounded-lg text-xs font-semibold">
-                                    <i className="fas fa-pause-circle"></i>
-                                    {stats.mahasiswa.cuti} Cuti
-                                </span>
-                                <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-red-100 text-red-700 rounded-lg text-xs font-semibold">
-                                    <i className="fas fa-times-circle"></i>
-                                    {stats.mahasiswa.do} DO
-                                </span>
-                            </div>
-                        </div>
-                    </div>
+                                    {stat.badges && (
+                                        <div className="flex flex-wrap gap-1.5">
+                                            {stat.badges.map((b, i) => (
+                                                <Badge key={i} variant={b.variant} className="text-[10px] font-semibold px-2 py-0.5">
+                                                    {b.label}
+                                                </Badge>
+                                            ))}
+                                        </div>
+                                    )}
 
-                    {/* Card Dosen */}
-                    <div className="group relative overflow-hidden bg-white rounded-xl shadow-md hover:shadow-xl transition-all duration-300 border border-gray-100">
-                        <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-green-400 to-green-600 opacity-10 rounded-full -mr-16 -mt-16 group-hover:scale-150 transition-transform duration-500"></div>
+                                    {stat.progress && (
+                                        <div className="flex items-center gap-2">
+                                            <div className="flex-1 bg-gray-100 rounded-full h-2 overflow-hidden">
+                                                <div
+                                                    className={`bg-gradient-to-r ${stat.gradient} h-full rounded-full transition-all duration-700`}
+                                                    style={{ width: `${(stat.progress.current / stat.progress.total) * 100}%` }}
+                                                ></div>
+                                            </div>
+                                            <span className={`text-xs font-semibold ${stat.textColor}`}>
+                                                {stat.progress.label}
+                                            </span>
+                                        </div>
+                                    )}
 
-                        <div className="relative p-5">
-                            <div className="flex items-start justify-between mb-4">
-                                <div className="w-14 h-14 bg-gradient-to-br from-green-500 to-green-600 rounded-xl flex items-center justify-center shadow-lg transform group-hover:scale-110 group-hover:rotate-6 transition-all duration-300">
-                                    <i className="fas fa-chalkboard-teacher text-white text-2xl"></i>
-                                </div>
-                                <Link
-                                    href={route('baak.dosen.index')}
-                                    className="text-green-600 hover:text-green-700 font-medium text-sm flex items-center gap-1 group-hover:gap-2 transition-all"
-                                >
-                                    Lihat <i className="fas fa-arrow-right text-xs"></i>
-                                </Link>
-                            </div>
-
-                            <h3 className="text-gray-500 text-sm font-medium mb-1">Total Dosen</h3>
-                            <p className="text-4xl font-bold text-gray-900 mb-3">{stats.dosen.total}</p>
-
-                            <div className="flex items-center gap-2">
-                                <div className="flex-1 bg-gray-100 rounded-full h-2 overflow-hidden">
-                                    <div
-                                        className="bg-gradient-to-r from-green-500 to-green-600 h-full rounded-full transition-all duration-500"
-                                        style={{ width: `${(stats.dosen.aktif / stats.dosen.total) * 100}%` }}
-                                    ></div>
-                                </div>
-                                <span className="text-xs font-semibold text-green-600">
-                                    {stats.dosen.aktif} Aktif
-                                </span>
-                            </div>
-                        </div>
-                    </div>
-
-                    {/* Card Mata Kuliah */}
-                    <div className="group relative overflow-hidden bg-white rounded-xl shadow-md hover:shadow-xl transition-all duration-300 border border-gray-100">
-                        <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-purple-400 to-purple-600 opacity-10 rounded-full -mr-16 -mt-16 group-hover:scale-150 transition-transform duration-500"></div>
-
-                        <div className="relative p-5">
-                            <div className="flex items-start justify-between mb-4">
-                                <div className="w-14 h-14 bg-gradient-to-br from-purple-500 to-purple-600 rounded-xl flex items-center justify-center shadow-lg transform group-hover:scale-110 group-hover:rotate-6 transition-all duration-300">
-                                    <i className="fas fa-book text-white text-2xl"></i>
-                                </div>
-                                <Link
-                                    href={route('baak.mata-kuliah.index')}
-                                    className="text-purple-600 hover:text-purple-700 font-medium text-sm flex items-center gap-1 group-hover:gap-2 transition-all"
-                                >
-                                    Lihat <i className="fas fa-arrow-right text-xs"></i>
-                                </Link>
-                            </div>
-
-                            <h3 className="text-gray-500 text-sm font-medium mb-1">Mata Kuliah</h3>
-                            <p className="text-4xl font-bold text-gray-900 mb-3">{stats.mata_kuliah}</p>
-
-                            <div className="flex items-center gap-2 text-sm text-gray-600">
-                                <i className="fas fa-layer-group text-purple-500"></i>
-                                <span>Mata kuliah terdaftar</span>
-                            </div>
-                        </div>
-                    </div>
-
-                    {/* Card Kelas */}
-                    <div className="group relative overflow-hidden bg-white rounded-xl shadow-md hover:shadow-xl transition-all duration-300 border border-gray-100">
-                        <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-orange-400 to-orange-600 opacity-10 rounded-full -mr-16 -mt-16 group-hover:scale-150 transition-transform duration-500"></div>
-
-                        <div className="relative p-5">
-                            <div className="flex items-start justify-between mb-4">
-                                <div className="w-14 h-14 bg-gradient-to-br from-orange-500 to-orange-600 rounded-xl flex items-center justify-center shadow-lg transform group-hover:scale-110 group-hover:rotate-6 transition-all duration-300">
-                                    <i className="fas fa-door-open text-white text-2xl"></i>
-                                </div>
-                                <Link
-                                    href={route('baak.kelas.index')}
-                                    className="text-orange-600 hover:text-orange-700 font-medium text-sm flex items-center gap-1 group-hover:gap-2 transition-all"
-                                >
-                                    Lihat <i className="fas fa-arrow-right text-xs"></i>
-                                </Link>
-                            </div>
-
-                            <h3 className="text-gray-500 text-sm font-medium mb-1">Kelas Aktif</h3>
-                            <p className="text-4xl font-bold text-gray-900 mb-3">{stats.kelas}</p>
-
-                            <div className="flex items-center gap-2 text-sm text-gray-600">
-                                <i className="fas fa-door-open text-orange-500"></i>
-                                <span>Total kelas terdaftar</span>
-                            </div>
-                        </div>
-                    </div>
+                                    {stat.subtitle && (
+                                        <div className="flex items-center gap-2 text-sm text-gray-500">
+                                            <Icon className={`w-4 h-4 ${stat.textColor}`} />
+                                            <span>{stat.subtitle}</span>
+                                        </div>
+                                    )}
+                                </CardContent>
+                            </Card>
+                        );
+                    })}
                 </div>
 
-                {/* Charts Section - FULL WIDTH COMPACT DESIGN 🔥 */}
+                {/* ===== CHARTS SECTION ===== */}
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                    {/* Chart 1: Distribusi Mahasiswa per Prodi (Pie) */}
-                    <div className="bg-white rounded-xl shadow-md border border-gray-100 overflow-hidden hover:shadow-lg transition-shadow">
-                        <div className="flex items-center justify-between p-6 pb-3">
+                    {/* Distribusi Mahasiswa per Prodi (Pie) */}
+                    <Card className="overflow-hidden hover:shadow-lg transition-shadow duration-300">
+                        <CardHeader className="flex flex-row items-center justify-between pb-2">
                             <div>
-                                <h3 className="text-lg font-bold text-gray-900">Distribusi Mahasiswa</h3>
-                                <p className="text-sm text-gray-500">Per Program Studi</p>
+                                <CardTitle className="text-base font-bold text-gray-900">Distribusi Mahasiswa</CardTitle>
+                                <CardDescription>Per Program Studi</CardDescription>
                             </div>
-                            <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
-                                <i className="fas fa-chart-pie text-blue-600"></i>
+                            <div className="w-10 h-10 bg-blue-50 rounded-xl flex items-center justify-center">
+                                <PieChartIcon className="w-5 h-5 text-blue-600" />
                             </div>
-                        </div>
-                        <div className="px-2 pb-2">
+                        </CardHeader>
+                        <CardContent className="px-2 pb-2 pt-0">
                             <ResponsiveContainer width="100%" height={280}>
                                 <PieChart>
                                     <Pie
@@ -280,6 +287,8 @@ export default function Dashboard({ stats, charts, alerts, recent_activities, pe
                                         outerRadius={90}
                                         fill="#8884d8"
                                         dataKey="value"
+                                        stroke="#fff"
+                                        strokeWidth={2}
                                     >
                                         {charts.mahasiswa_per_prodi.map((entry, index) => (
                                             <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
@@ -288,58 +297,58 @@ export default function Dashboard({ stats, charts, alerts, recent_activities, pe
                                     <Tooltip content={<CustomTooltip />} />
                                 </PieChart>
                             </ResponsiveContainer>
-                        </div>
-                    </div>
+                        </CardContent>
+                    </Card>
 
-                    {/* Chart 2: Mahasiswa per Angkatan (Area Chart) - BALANCED MARGIN */}
-                    <div className="bg-white rounded-xl shadow-md border border-gray-100 overflow-hidden hover:shadow-lg transition-shadow">
-                        <div className="flex items-center justify-between p-6 pb-3">
+                    {/* Tren Mahasiswa per Angkatan (Area) */}
+                    <Card className="overflow-hidden hover:shadow-lg transition-shadow duration-300">
+                        <CardHeader className="flex flex-row items-center justify-between pb-2">
                             <div>
-                                <h3 className="text-lg font-bold text-gray-900">Tren Mahasiswa</h3>
-                                <p className="text-sm text-gray-500">Per Angkatan</p>
+                                <CardTitle className="text-base font-bold text-gray-900">Tren Mahasiswa</CardTitle>
+                                <CardDescription>Per Angkatan</CardDescription>
                             </div>
-                            <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
-                                <i className="fas fa-chart-area text-green-600"></i>
+                            <div className="w-10 h-10 bg-sky-50 rounded-xl flex items-center justify-center">
+                                <TrendingUp className="w-5 h-5 text-sky-600" />
                             </div>
-                        </div>
-                        <div className="pb-2">
+                        </CardHeader>
+                        <CardContent className="pb-2 pt-0">
                             <ResponsiveContainer width="100%" height={280}>
                                 <AreaChart data={charts.mahasiswa_per_angkatan} margin={{ top: 5, right: 15, left: -15, bottom: 5 }}>
                                     <defs>
                                         <linearGradient id="colorMahasiswa" x1="0" y1="0" x2="0" y2="1">
-                                            <stop offset="5%" stopColor="#3B82F6" stopOpacity={0.8}/>
-                                            <stop offset="95%" stopColor="#3B82F6" stopOpacity={0}/>
+                                            <stop offset="5%" stopColor="#2563EB" stopOpacity={0.8}/>
+                                            <stop offset="95%" stopColor="#2563EB" stopOpacity={0.05}/>
                                         </linearGradient>
                                     </defs>
                                     <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
-                                    <XAxis dataKey="angkatan" stroke="#6B7280" style={{ fontSize: '12px' }} />
-                                    <YAxis stroke="#6B7280" style={{ fontSize: '12px' }} />
+                                    <XAxis dataKey="angkatan" stroke="#94A3B8" style={{ fontSize: '12px' }} />
+                                    <YAxis stroke="#94A3B8" style={{ fontSize: '12px' }} />
                                     <Tooltip content={<CustomTooltip />} />
-                                    <Area type="monotone" dataKey="total" stroke="#3B82F6" strokeWidth={2} fillOpacity={1} fill="url(#colorMahasiswa)" />
+                                    <Area type="monotone" dataKey="total" stroke="#2563EB" strokeWidth={2.5} fillOpacity={1} fill="url(#colorMahasiswa)" />
                                 </AreaChart>
                             </ResponsiveContainer>
-                        </div>
-                    </div>
+                        </CardContent>
+                    </Card>
 
-                    {/* Chart 3: Rata-rata IPK per Prodi (Bar Chart) - FULL WIDTH */}
-                    <div className="bg-white rounded-xl shadow-md border border-gray-100 overflow-hidden hover:shadow-lg transition-shadow">
-                        <div className="flex items-center justify-between p-6 pb-3">
+                    {/* Rata-rata IPK per Prodi (Bar) */}
+                    <Card className="overflow-hidden hover:shadow-lg transition-shadow duration-300">
+                        <CardHeader className="flex flex-row items-center justify-between pb-2">
                             <div>
-                                <h3 className="text-lg font-bold text-gray-900">Rata-rata IPK</h3>
-                                <p className="text-sm text-gray-500">Per Program Studi</p>
+                                <CardTitle className="text-base font-bold text-gray-900">Rata-rata IPK</CardTitle>
+                                <CardDescription>Per Program Studi</CardDescription>
                             </div>
-                            <div className="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center">
-                                <i className="fas fa-chart-bar text-purple-600"></i>
+                            <div className="w-10 h-10 bg-indigo-50 rounded-xl flex items-center justify-center">
+                                <BarChart3 className="w-5 h-5 text-indigo-600" />
                             </div>
-                        </div>
-                        {charts.rata_ipk_per_prodi && charts.rata_ipk_per_prodi.length > 0 ? (
-                            <div className="pb-2">
+                        </CardHeader>
+                        <CardContent className="pb-2 pt-0">
+                            {charts.rata_ipk_per_prodi && charts.rata_ipk_per_prodi.length > 0 ? (
                                 <ResponsiveContainer width="100%" height={280}>
                                     <BarChart data={charts.rata_ipk_per_prodi} margin={{ top: 5, right: 15, left: -15, bottom: 60 }}>
                                         <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
                                         <XAxis
                                             dataKey="prodi"
-                                            stroke="#6B7280"
+                                            stroke="#94A3B8"
                                             style={{ fontSize: '10px' }}
                                             angle={-45}
                                             textAnchor="end"
@@ -348,7 +357,7 @@ export default function Dashboard({ stats, charts, alerts, recent_activities, pe
                                         />
                                         <YAxis
                                             domain={[0, 4]}
-                                            stroke="#6B7280"
+                                            stroke="#94A3B8"
                                             style={{ fontSize: '12px' }}
                                             ticks={[0, 1, 2, 3, 4]}
                                         />
@@ -360,34 +369,34 @@ export default function Dashboard({ stats, charts, alerts, recent_activities, pe
                                         </Bar>
                                     </BarChart>
                                 </ResponsiveContainer>
-                            </div>
-                        ) : (
-                            <div className="text-center py-12">
-                                <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-3">
-                                    <i className="fas fa-chart-bar text-gray-400 text-2xl"></i>
+                            ) : (
+                                <div className="text-center py-12">
+                                    <div className="w-16 h-16 bg-gray-50 rounded-2xl flex items-center justify-center mx-auto mb-3">
+                                        <BarChart3 className="w-7 h-7 text-gray-300" />
+                                    </div>
+                                    <p className="text-gray-400 text-sm font-medium">Belum ada data IPK</p>
                                 </div>
-                                <p className="text-gray-500 text-sm">Belum ada data IPK</p>
-                            </div>
-                        )}
-                    </div>
+                            )}
+                        </CardContent>
+                    </Card>
 
-                    {/* Chart 4: Distribusi Status Mahasiswa (Bar Chart) - FULL WIDTH */}
-                    <div className="bg-white rounded-xl shadow-md border border-gray-100 overflow-hidden hover:shadow-lg transition-shadow">
-                        <div className="flex items-center justify-between p-6 pb-3">
+                    {/* Distribusi Status Mahasiswa (Bar) */}
+                    <Card className="overflow-hidden hover:shadow-lg transition-shadow duration-300">
+                        <CardHeader className="flex flex-row items-center justify-between pb-2">
                             <div>
-                                <h3 className="text-lg font-bold text-gray-900">Status Mahasiswa</h3>
-                                <p className="text-sm text-gray-500">Distribusi per Status</p>
+                                <CardTitle className="text-base font-bold text-gray-900">Status Mahasiswa</CardTitle>
+                                <CardDescription>Distribusi per Status</CardDescription>
                             </div>
-                            <div className="w-10 h-10 bg-orange-100 rounded-lg flex items-center justify-center">
-                                <i className="fas fa-chart-bar text-orange-600"></i>
+                            <div className="w-10 h-10 bg-violet-50 rounded-xl flex items-center justify-center">
+                                <BarChart3 className="w-5 h-5 text-violet-600" />
                             </div>
-                        </div>
-                        <div className="pb-2">
+                        </CardHeader>
+                        <CardContent className="pb-2 pt-0">
                             <ResponsiveContainer width="100%" height={280}>
                                 <BarChart data={charts.distribusi_status} margin={{ top: 5, right: 15, left: -15, bottom: 5 }}>
                                     <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
-                                    <XAxis dataKey="status" stroke="#6B7280" style={{ fontSize: '12px' }} />
-                                    <YAxis stroke="#6B7280" style={{ fontSize: '12px' }} />
+                                    <XAxis dataKey="status" stroke="#94A3B8" style={{ fontSize: '12px' }} />
+                                    <YAxis stroke="#94A3B8" style={{ fontSize: '12px' }} />
                                     <Tooltip content={<CustomTooltip />} />
                                     <Bar dataKey="total" radius={[8, 8, 0, 0]}>
                                         {charts.distribusi_status.map((entry, index) => (
@@ -396,139 +405,99 @@ export default function Dashboard({ stats, charts, alerts, recent_activities, pe
                                     </Bar>
                                 </BarChart>
                             </ResponsiveContainer>
-                        </div>
-                    </div>
+                        </CardContent>
+                    </Card>
                 </div>
 
-                {/* Recent Activities - WITH SCROLL 🔥 */}
-                <div className="bg-white rounded-xl shadow-md border border-gray-100 p-6 hover:shadow-lg transition-shadow">
-                    <div className="flex items-center justify-between mb-6">
+                {/* ===== RECENT ACTIVITIES ===== */}
+                <Card className="hover:shadow-lg transition-shadow duration-300">
+                    <CardHeader className="flex flex-row items-center justify-between">
                         <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 bg-indigo-100 rounded-lg flex items-center justify-center">
-                                <i className="fas fa-history text-indigo-600"></i>
+                            <div className="w-10 h-10 bg-blue-50 rounded-xl flex items-center justify-center">
+                                <Activity className="w-5 h-5 text-blue-600" />
                             </div>
                             <div>
-                                <h3 className="text-lg font-bold text-gray-900">Aktivitas Terbaru</h3>
-                                <p className="text-sm text-gray-500">10 aktivitas terakhir</p>
+                                <CardTitle className="text-base font-bold text-gray-900">Aktivitas Terbaru</CardTitle>
+                                <CardDescription>10 aktivitas terakhir</CardDescription>
                             </div>
                         </div>
-                    </div>
+                    </CardHeader>
+                    <CardContent>
+                        {recent_activities && recent_activities.length > 0 ? (
+                            <div className="space-y-4 max-h-[320px] overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-blue-200 scrollbar-track-gray-50 hover:scrollbar-thumb-blue-300">
+                                {recent_activities.map((activity, index) => (
+                                    <div key={index} className="relative flex items-start gap-4 group">
+                                        {index !== recent_activities.length - 1 && (
+                                            <div className="absolute left-5 top-12 w-0.5 h-full bg-blue-100"></div>
+                                        )}
 
-                    {recent_activities && recent_activities.length > 0 ? (
-                        <div className="space-y-4 max-h-[300px] overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100 hover:scrollbar-thumb-gray-400">
-                            {recent_activities.map((activity, index) => (
-                                <div key={index} className="relative flex items-start gap-4 group">
-                                    {index !== recent_activities.length - 1 && (
-                                        <div className="absolute left-5 top-12 w-0.5 h-full bg-gray-200"></div>
-                                    )}
-
-                                    <div className={`relative z-10 w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 shadow-md group-hover:scale-110 transition-transform duration-300 ${
-                                        activity.type === 'krs_approved'
-                                            ? 'bg-gradient-to-br from-green-400 to-green-600'
-                                            : 'bg-gradient-to-br from-blue-400 to-blue-600'
-                                    }`}>
-                                        <i className={`fas ${
+                                        <div className={`relative z-10 w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 shadow-md group-hover:scale-110 transition-transform duration-300 ${
                                             activity.type === 'krs_approved'
-                                                ? 'fa-check-circle'
-                                                : 'fa-file-alt'
-                                        } text-white`}></i>
-                                    </div>
+                                                ? 'bg-gradient-to-br from-emerald-400 to-emerald-600'
+                                                : 'bg-gradient-to-br from-blue-500 to-blue-600'
+                                        }`}>
+                                            {activity.type === 'krs_approved' ? (
+                                                <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" /></svg>
+                                            ) : (
+                                                <FileText className="w-4 h-4 text-white" />
+                                            )}
+                                        </div>
 
-                                    <div className="flex-1 bg-gray-50 rounded-lg p-4 group-hover:bg-gray-100 transition-colors duration-200">
-                                        <p className="text-sm text-gray-700 font-medium mb-1">{activity.message}</p>
-                                        <div className="flex items-center gap-2 text-xs text-gray-500">
-                                            <i className="fas fa-clock"></i>
-                                            <span>{activity.time}</span>
+                                        <div className="flex-1 bg-gray-50/80 rounded-xl p-4 group-hover:bg-blue-50/50 transition-colors duration-200 border border-gray-100 group-hover:border-blue-100">
+                                            <p className="text-sm text-gray-700 font-medium mb-1">{activity.message}</p>
+                                            <div className="flex items-center gap-2 text-xs text-gray-400">
+                                                <Clock className="w-3 h-3" />
+                                                <span>{activity.time}</span>
+                                            </div>
                                         </div>
                                     </div>
+                                ))}
+                            </div>
+                        ) : (
+                            <div className="text-center py-14">
+                                <div className="w-20 h-20 bg-blue-50 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                                    <Activity className="w-9 h-9 text-blue-200" />
                                 </div>
-                            ))}
+                                <p className="text-gray-500 font-medium">Belum ada aktivitas</p>
+                                <p className="text-gray-400 text-sm mt-1">Aktivitas akan muncul di sini</p>
+                            </div>
+                        )}
+                    </CardContent>
+                </Card>
+
+                {/* ===== QUICK ACTIONS ===== */}
+                <Card className="bg-gradient-to-br from-blue-50/80 via-indigo-50/50 to-white border-blue-100/50">
+                    <CardHeader>
+                        <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center shadow-lg shadow-blue-600/30">
+                                <Zap className="w-5 h-5 text-white" />
+                            </div>
+                            <div>
+                                <CardTitle className="text-base font-bold text-gray-900">Quick Actions</CardTitle>
+                                <CardDescription>Akses cepat ke fitur utama</CardDescription>
+                            </div>
                         </div>
-                    ) : (
-                        <div className="text-center py-12">
-                            <div className="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                                <i className="fas fa-inbox text-gray-400 text-3xl"></i>
-                            </div>
-                            <p className="text-gray-500 font-medium">Belum ada aktivitas</p>
-                            <p className="text-gray-400 text-sm mt-1">Aktivitas akan muncul di sini</p>
+                    </CardHeader>
+                    <CardContent>
+                        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+                            {quickActions.map((action, idx) => {
+                                const Icon = action.icon;
+                                return (
+                                    <Link
+                                        key={idx}
+                                        href={route(action.route)}
+                                        className="group flex flex-col items-center gap-2.5 p-4 bg-white rounded-xl border-2 border-gray-100 hover:border-blue-400 hover:shadow-lg hover:shadow-blue-500/10 transition-all duration-300 hover:-translate-y-0.5"
+                                    >
+                                        <div className="w-12 h-12 bg-blue-50 rounded-xl flex items-center justify-center group-hover:bg-blue-600 transition-all duration-300 group-hover:shadow-lg group-hover:shadow-blue-600/30">
+                                            <Icon className="w-5 h-5 text-blue-600 group-hover:text-white transition-colors duration-300" />
+                                        </div>
+                                        <span className="text-xs font-semibold text-gray-600 group-hover:text-blue-700 text-center transition-colors">{action.label}</span>
+                                    </Link>
+                                );
+                            })}
                         </div>
-                    )}
-                </div>
-
-                {/* Quick Actions */}
-                <div className="bg-gradient-to-br from-indigo-50 to-purple-50 rounded-xl shadow-md border border-indigo-100 p-6">
-                    <div className="flex items-center gap-3 mb-6">
-                        <div className="w-10 h-10 bg-indigo-600 rounded-lg flex items-center justify-center">
-                            <i className="fas fa-bolt text-white"></i>
-                        </div>
-                        <div>
-                            <h3 className="text-lg font-bold text-gray-900">Quick Actions</h3>
-                            <p className="text-sm text-gray-500">Akses cepat ke fitur utama</p>
-                        </div>
-                    </div>
-
-                    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
-                        <Link
-                            href={route('baak.mahasiswa.index')}
-                            className="group flex flex-col items-center gap-2 p-4 bg-white rounded-lg border-2 border-gray-200 hover:border-blue-500 hover:shadow-md transition-all duration-300"
-                        >
-                            <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center group-hover:bg-blue-500 transition-colors duration-300">
-                                <i className="fas fa-user-graduate text-blue-600 group-hover:text-white transition-colors duration-300"></i>
-                            </div>
-                            <span className="text-xs font-medium text-gray-700 text-center">Mahasiswa</span>
-                        </Link>
-
-                        <Link
-                            href={route('baak.dosen.index')}
-                            className="group flex flex-col items-center gap-2 p-4 bg-white rounded-lg border-2 border-gray-200 hover:border-green-500 hover:shadow-md transition-all duration-300"
-                        >
-                            <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center group-hover:bg-green-500 transition-colors duration-300">
-                                <i className="fas fa-chalkboard-teacher text-green-600 group-hover:text-white transition-colors duration-300"></i>
-                            </div>
-                            <span className="text-xs font-medium text-gray-700 text-center">Dosen</span>
-                        </Link>
-
-                        <Link
-                            href={route('baak.mata-kuliah.index')}
-                            className="group flex flex-col items-center gap-2 p-4 bg-white rounded-lg border-2 border-gray-200 hover:border-purple-500 hover:shadow-md transition-all duration-300"
-                        >
-                            <div className="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center group-hover:bg-purple-500 transition-colors duration-300">
-                                <i className="fas fa-book text-purple-600 group-hover:text-white transition-colors duration-300"></i>
-                            </div>
-                            <span className="text-xs font-medium text-gray-700 text-center">Mata Kuliah</span>
-                        </Link>
-
-                        <Link
-                            href={route('baak.kelas.index')}
-                            className="group flex flex-col items-center gap-2 p-4 bg-white rounded-lg border-2 border-gray-200 hover:border-orange-500 hover:shadow-md transition-all duration-300"
-                        >
-                            <div className="w-12 h-12 bg-orange-100 rounded-full flex items-center justify-center group-hover:bg-orange-500 transition-colors duration-300">
-                                <i className="fas fa-door-open text-orange-600 group-hover:text-white transition-colors duration-300"></i>
-                            </div>
-                            <span className="text-xs font-medium text-gray-700 text-center">Kelas</span>
-                        </Link>
-
-                        <Link
-                            href={route('baak.prodi.index')}
-                            className="group flex flex-col items-center gap-2 p-4 bg-white rounded-lg border-2 border-gray-200 hover:border-pink-500 hover:shadow-md transition-all duration-300"
-                        >
-                            <div className="w-12 h-12 bg-pink-100 rounded-full flex items-center justify-center group-hover:bg-pink-500 transition-colors duration-300">
-                                <i className="fas fa-university text-pink-600 group-hover:text-white transition-colors duration-300"></i>
-                            </div>
-                            <span className="text-xs font-medium text-gray-700 text-center">Prodi</span>
-                        </Link>
-
-                        <Link
-                            href={route('baak.fakultas.index')}
-                            className="group flex flex-col items-center gap-2 p-4 bg-white rounded-lg border-2 border-gray-200 hover:border-indigo-500 hover:shadow-md transition-all duration-300"
-                        >
-                            <div className="w-12 h-12 bg-indigo-100 rounded-full flex items-center justify-center group-hover:bg-indigo-500 transition-colors duration-300">
-                                <i className="fas fa-building text-indigo-600 group-hover:text-white transition-colors duration-300"></i>
-                            </div>
-                            <span className="text-xs font-medium text-gray-700 text-center">Fakultas</span>
-                        </Link>
-                    </div>
-                </div>
+                    </CardContent>
+                </Card>
             </div>
         </BaakLayout>
     );
