@@ -14,14 +14,23 @@ class MataKuliahPeriode extends Model
 
     protected $fillable = [
         'kode_matkul',
-        'id_periode',
-        'semester'
+        'kode_prodi',
+        'tahun_ajaran',
+        'jenis_semester',
+        'semester_ditawarkan',
+        'catatan',
     ];
 
     // RELASI KE MATA KULIAH (WAJIB ADA!)
     public function mataKuliah()
     {
         return $this->belongsTo(MataKuliah::class, 'kode_matkul', 'kode_matkul');
+    }
+
+    // RELASI KE PRODI
+    public function prodi()
+    {
+        return $this->belongsTo(Prodi::class, 'kode_prodi', 'kode_prodi');
     }
 
     // RELASI KE KELAS
