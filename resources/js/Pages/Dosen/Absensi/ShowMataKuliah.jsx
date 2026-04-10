@@ -41,7 +41,7 @@ export default function ShowMataKuliah({ mataKuliah, kelasList }) {
                             <h1 className="text-2xl font-bold mb-2">{namaMatkul}</h1>
                             <div className="flex items-center gap-4 text-blue-100">
                                 <span className="flex items-center">
-                                    <i className="fas fa-code mr-2"></i>
+                                    <i className="fas fa-book mr-2"></i>
                                     {kodeMatkul}
                                 </span>
                                 <span className="flex items-center">
