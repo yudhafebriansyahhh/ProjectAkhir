@@ -31,7 +31,7 @@ export default function Show({ kelasData, mahasiswaList }) {
                                     <span className="px-3 py-1 bg-blue-100 text-blue-800 text-sm font-semibold rounded-lg">
                                         {kelasData.mata_kuliah.kode_matkul}
                                     </span>
-                                    <span className="px-3 py-1 bg-purple-100 text-purple-800 text-sm font-semibold rounded-lg">
+                                    <span className="px-3 py-1 bg-blue-100 text-blue-800 text-sm font-semibold rounded-lg">
                                         Kelas {kelasData.nama_kelas}
                                     </span>
                                 </div>
@@ -89,12 +89,7 @@ export default function Show({ kelasData, mahasiswaList }) {
                                             </td>
                                             <td className="px-6 py-4 text-center">
                                                 {mhs.nilai_huruf ? (
-                                                    <span className={`px-3 py-1.5 rounded-lg text-sm font-bold ${
-                                                        mhs.nilai_huruf.startsWith('A') ? 'bg-green-100 text-green-700' :
-                                                        mhs.nilai_huruf.startsWith('B') ? 'bg-blue-100 text-blue-700' :
-                                                        mhs.nilai_huruf.startsWith('C') ? 'bg-yellow-100 text-yellow-700' :
-                                                        'bg-red-100 text-red-700'
-                                                    }`}>
+                                                    <span className="px-3 py-1.5 rounded-lg text-sm font-bold bg-blue-100 text-blue-700">
                                                         {mhs.nilai_huruf}
                                                     </span>
                                                 ) : <span className="text-gray-400">-</span>}
@@ -106,12 +101,12 @@ export default function Show({ kelasData, mahasiswaList }) {
                                                             <i className="fas fa-lock text-gray-400"></i> Terkunci
                                                         </span>
                                                     ) : (
-                                                        <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-green-600 bg-green-50 px-2.5 py-1 rounded-md border border-green-100">
+                                                        <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-blue-700 bg-blue-100 px-2.5 py-1 rounded-md border border-blue-200">
                                                             <i className="fas fa-check-circle"></i> Dinilai
                                                         </span>
                                                     )
                                                 ) : (
-                                                    <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-amber-600 bg-amber-50 px-2.5 py-1 rounded-md border border-amber-100">
+                                                    <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-blue-500 bg-blue-50 px-2.5 py-1 rounded-md border border-blue-100">
                                                         <i className="fas fa-clock"></i> Menunggu
                                                     </span>
                                                 )}
@@ -133,7 +128,7 @@ export default function Show({ kelasData, mahasiswaList }) {
                                                             {!mhs.is_locked && (
                                                                 <Link
                                                                     href={route('dosen.edit_nilai', mhs.id_nilai)}
-                                                                    className="px-4 py-2 text-xs font-bold bg-amber-500 text-white rounded-lg hover:bg-amber-600 shadow-sm transition-all focus:ring-2 focus:ring-amber-400 focus:ring-offset-1 flex items-center gap-1.5"
+                                                                    className="px-4 py-2 text-xs font-bold bg-blue-500 text-white rounded-lg hover:bg-blue-600 shadow-sm transition-all focus:ring-2 focus:ring-blue-400 focus:ring-offset-1 flex items-center gap-1.5"
                                                                 >
                                                                     <i className="fas fa-pen-to-square"></i> Edit
                                                                 </Link>

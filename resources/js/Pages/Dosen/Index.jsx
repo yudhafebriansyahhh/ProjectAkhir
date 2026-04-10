@@ -23,17 +23,17 @@ export default function Index({ dosen, stats, daftar_kelas, jadwal_hari_ini, gra
                     data: grafik_nilai.data.length > 0 ? grafik_nilai.data : [0],
                     backgroundColor: [
                         'rgba(59, 130, 246, 0.8)',
-                        'rgba(16, 185, 129, 0.8)',
-                        'rgba(139, 92, 246, 0.8)',
-                        'rgba(245, 158, 11, 0.8)',
-                        'rgba(239, 68, 68, 0.8)'
+                        'rgba(37, 99, 235, 0.8)',
+                        'rgba(29, 78, 216, 0.8)',
+                        'rgba(30, 64, 175, 0.8)',
+                        'rgba(30, 58, 138, 0.8)'
                     ],
                     borderColor: [
                         'rgb(59, 130, 246)',
-                        'rgb(16, 185, 129)',
-                        'rgb(139, 92, 246)',
-                        'rgb(245, 158, 11)',
-                        'rgb(239, 68, 68)'
+                        'rgb(37, 99, 235)',
+                        'rgb(29, 78, 216)',
+                        'rgb(30, 64, 175)',
+                        'rgb(30, 58, 138)'
                     ],
                     borderWidth: 2,
                     borderRadius: 8
@@ -94,7 +94,7 @@ export default function Index({ dosen, stats, daftar_kelas, jadwal_hari_ini, gra
                 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
             </Head>
 
-            <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50">
+            <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-blue-100">
                 <div className="container mx-auto px-4 py-8">
                     
                     {/* Header Section */}
@@ -126,26 +126,26 @@ export default function Index({ dosen, stats, daftar_kelas, jadwal_hari_ini, gra
                             </div>
                         </div>
 
-                        <div className="bg-white rounded-xl shadow-md p-5 border-l-4 border-green-600">
+                        <div className="bg-white rounded-xl shadow-md p-5 border-l-4 border-blue-500">
                             <div className="flex items-center justify-between">
                                 <div>
                                     <p className="text-sm text-gray-600 mb-1">Total Mahasiswa</p>
                                     <h2 className="text-3xl font-bold text-gray-800">{stats.total_mahasiswa}</h2>
                                 </div>
-                                <div className="p-3 bg-green-100 rounded-lg">
-                                    <i className="fas fa-users text-green-600 text-xl"></i>
+                                <div className="p-3 bg-blue-50 rounded-lg">
+                                    <i className="fas fa-users text-blue-500 text-xl"></i>
                                 </div>
                             </div>
                         </div>
 
-                        <div className="bg-white rounded-xl shadow-md p-5 border-l-4 border-purple-600">
+                        <div className="bg-white rounded-xl shadow-md p-5 border-l-4 border-blue-700">
                             <div className="flex items-center justify-between">
                                 <div>
                                     <p className="text-sm text-gray-600 mb-1">Pertemuan Minggu Ini</p>
                                     <h2 className="text-3xl font-bold text-gray-800">{stats.pertemuan_minggu_ini}</h2>
                                 </div>
-                                <div className="p-3 bg-purple-100 rounded-lg">
-                                    <i className="fas fa-calendar-check text-purple-600 text-xl"></i>
+                                <div className="p-3 bg-blue-100 rounded-lg">
+                                    <i className="fas fa-calendar-check text-blue-700 text-xl"></i>
                                 </div>
                             </div>
                         </div>
@@ -183,7 +183,7 @@ export default function Index({ dosen, stats, daftar_kelas, jadwal_hari_ini, gra
                                                             <span className="inline-block px-2 py-1 bg-blue-100 text-blue-700 rounded text-xs font-semibold">{kelas.sks} SKS</span>
                                                         </td>
                                                         <td className="px-4 py-3 text-center">
-                                                            <span className="inline-block px-2 py-1 bg-purple-100 text-purple-700 rounded text-xs font-semibold">{kelas.nama_kelas}</span>
+                                                            <span className="inline-block px-2 py-1 bg-blue-100 text-blue-700 rounded text-xs font-semibold">{kelas.nama_kelas}</span>
                                                         </td>
                                                         <td className="px-4 py-3 text-center">
                                                             <div className="text-xs">
@@ -260,7 +260,7 @@ export default function Index({ dosen, stats, daftar_kelas, jadwal_hari_ini, gra
                                                         </div>
                                                     </td>
                                                     <td className="px-6 py-4 text-center">
-                                                        <span className="inline-block px-3 py-1 bg-purple-100 text-purple-700 rounded text-xs font-semibold">{kelas.nama_kelas}</span>
+                                                        <span className="inline-block px-3 py-1 bg-blue-100 text-blue-700 rounded text-xs font-semibold">{kelas.nama_kelas}</span>
                                                     </td>
                                                 </tr>
                                             ))

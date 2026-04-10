@@ -77,27 +77,27 @@ export default function Jadwal() {
                         </div>
 
                         {/* Total SKS */}
-                        <div className="bg-white rounded-lg shadow-md p-5 border-l-4 border-green-600">
+                        <div className="bg-white rounded-lg shadow-md p-5 border-l-4 border-blue-500">
                             <div className="flex items-center justify-between">
                                 <div>
                                     <p className="text-sm text-gray-600 mb-1">Total SKS</p>
                                     <p className="text-3xl font-bold text-gray-800">{totalSKS}</p>
                                 </div>
-                                <div className="p-3 bg-green-100 rounded-lg">
-                                    <i className="fas fa-check-circle text-green-600 text-xl"></i>
+                                <div className="p-3 bg-blue-50 rounded-lg">
+                                    <i className="fas fa-check-circle text-blue-500 text-xl"></i>
                                 </div>
                             </div>
                         </div>
 
                         {/* Total Kelas */}
-                        <div className="bg-white rounded-lg shadow-md p-5 border-l-4 border-purple-600">
+                        <div className="bg-white rounded-lg shadow-md p-5 border-l-4 border-blue-700">
                             <div className="flex items-center justify-between">
                                 <div>
                                     <p className="text-sm text-gray-600 mb-1">Total Kelas</p>
                                     <p className="text-3xl font-bold text-gray-800">{jadwal.length}</p>
                                 </div>
-                                <div className="p-3 bg-purple-100 rounded-lg">
-                                    <i className="fas fa-users text-purple-600 text-xl"></i>
+                                <div className="p-3 bg-blue-100 rounded-lg">
+                                    <i className="fas fa-users text-blue-700 text-xl"></i>
                                 </div>
                             </div>
                         </div>
@@ -208,7 +208,7 @@ export default function Jadwal() {
                                                     {item.nama}
                                                 </td>
                                                 <td className="px-6 py-4 text-sm">
-                                                    <span className="inline-flex items-center px-2 py-1 rounded bg-purple-100 text-purple-700 text-xs font-semibold">
+                                                    <span className="inline-flex items-center px-2 py-1 rounded bg-blue-100 text-blue-700 text-xs font-semibold">
                                                         {item.kelas}
                                                     </span>
                                                 </td>
@@ -224,7 +224,7 @@ export default function Jadwal() {
                                                     {item.ruang}
                                                 </td>
                                                 <td className="px-6 py-4 text-center">
-                                                    <span className="inline-flex items-center px-2 py-1 rounded bg-green-100 text-green-700 text-xs font-semibold">
+                                                    <span className="inline-flex items-center px-2 py-1 rounded bg-blue-100 text-blue-700 text-xs font-semibold">
                                                         {item.sks} SKS
                                                     </span>
                                                 </td>

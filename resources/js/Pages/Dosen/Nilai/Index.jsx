@@ -31,7 +31,7 @@ export default function Nilai({ kelasList }) {
                                                 {kelas.mata_kuliah.nama_matkul}
                                             </h3>
                                         </div>
-                                        <span className="inline-block px-2 py-1 bg-purple-100 text-purple-800 text-xs font-semibold rounded">
+                                        <span className="inline-block px-2 py-1 bg-blue-100 text-blue-800 text-xs font-semibold rounded">
                                             {kelas.mata_kuliah.sks} SKS
                                         </span>
                                     </div>
@@ -73,8 +73,8 @@ export default function Nilai({ kelasList }) {
                         ))}
                     </div>
                 ) : (
-                    <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-8 text-center text-gray-700 mt-6 shadow-sm">
-                        <i className="fas fa-chalkboard text-4xl text-yellow-500 mb-4 opacity-75"></i>
+                    <div className="bg-blue-50 border border-blue-200 rounded-xl p-8 text-center text-gray-700 mt-6 shadow-sm">
+                        <i className="fas fa-chalkboard text-4xl text-blue-500 mb-4 opacity-75"></i>
                         <h3 className="text-lg font-bold mb-2">Belum Mengampu Kelas</h3>
                         <p>Anda belum memiliki jadwal mengajar pada semester ini.</p>
                     </div>
