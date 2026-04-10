@@ -1,9 +1,23 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { Head, Link, router } from '@inertiajs/react';
 import DosenLayout from '@/Layouts/DosenLayout';
 
 export default function AbsensiIndex({ tahunAjaranList, selectedTahunAjaran, mataKuliahList }) {
     const [tahunAjaran, setTahunAjaran] = useState(selectedTahunAjaran);
+    const [searchQuery, setSearchQuery] = useState('');
+
+    const filteredMataKuliah = useMemo(() => {
+        if (!mataKuliahList) return [];
+        if (!searchQuery.trim()) return mataKuliahList;
+
+        const lowerQuery = searchQuery.toLowerCase();
+        return mataKuliahList.filter((mk) => 
+            mk.kode_matkul.toLowerCase().includes(lowerQuery) ||
+            mk.nama_matkul.toLowerCase().includes(lowerQuery)
+        );
+    }, [mataKuliahList, searchQuery]);
+
+    const hasAnyMataKuliah = mataKuliahList && mataKuliahList.length > 0;
 
     const handleTahunAjaranChange = (e) => {
         const value = e.target.value;
@@ -26,34 +40,58 @@ export default function AbsensiIndex({ tahunAjaranList, selectedTahunAjaran, mat
                     </p>
                 </div>
 
-                {/* Filter Tahun Ajaran */}
+                {/* Filter & Search */}
                 <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
-                    <div className="max-w-md">
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                            <i className="fas fa-calendar-alt mr-2 text-blue-600"></i>
-                            Tahun Ajaran
-                        </label>
-                        <select
-                            value={tahunAjaran}
-                            onChange={handleTahunAjaranChange}
-                            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-700"
-                        >
-                            {tahunAjaranList.map((ta) => (
-                                <option key={ta} value={ta}>{ta}</option>
-                            ))}
-                        </select>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-2">
+                                <i className="fas fa-calendar-alt mr-2 text-blue-600"></i>
+                                Tahun Ajaran
+                            </label>
+                            <select
+                                value={tahunAjaran}
+                                onChange={handleTahunAjaranChange}
+                                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-700 text-sm"
+                            >
+                                {tahunAjaranList.map((ta) => (
+                                    <option key={ta} value={ta}>{ta}</option>
+                                ))}
+                            </select>
+                        </div>
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-2">
+                                <i className="fas fa-search mr-2 text-blue-600"></i>
+                                Cari Mata Kuliah
+                            </label>
+                            <div className="relative">
+                                <input
+                                    type="text"
+                                    placeholder="Ketik kode atau nama..."
+                                    value={searchQuery}
+                                    onChange={(e) => setSearchQuery(e.target.value)}
+                                    className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+                                />
+                                <i className="fas fa-search absolute left-3.5 top-3 text-gray-400"></i>
+                            </div>
+                        </div>
                     </div>
                 </div>
 
                 {/* List Mata Kuliah */}
                 <div className="bg-white rounded-lg shadow-sm overflow-hidden">
-                    <div className="px-6 py-4 border-b bg-gray-50">
+                    <div className="px-6 py-4 border-b bg-gray-50 flex justify-between items-center">
                         <h2 className="text-lg font-semibold text-gray-700">
                             Daftar Mata Kuliah
                         </h2>
+                        {searchQuery && (
+                            <span className="text-sm text-gray-500">
+                                Menemukan {filteredMataKuliah.length} hasil
+                            </span>
+                        )}
                     </div>
 
-                    {mataKuliahList.length > 0 ? (
+                    {hasAnyMataKuliah ? (
+                        filteredMataKuliah.length > 0 ? (
                         <div className="overflow-x-auto">
                             <table className="w-full">
                                 <thead className="bg-gray-50 border-b">
@@ -66,7 +104,7 @@ export default function AbsensiIndex({ tahunAjaranList, selectedTahunAjaran, mat
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y divide-gray-200">
-                                    {mataKuliahList.map((mk, index) => (
+                                    {filteredMataKuliah.map((mk, index) => (
                                         <tr key={mk.id_mk_periode} className="hover:bg-gray-50 transition-colors">
                                             <td className="px-6 py-4 text-sm text-gray-600">{index + 1}</td>
                                             <td className="px-6 py-4">
@@ -99,6 +137,13 @@ export default function AbsensiIndex({ tahunAjaranList, selectedTahunAjaran, mat
                                 </tbody>
                             </table>
                         </div>
+                        ) : (
+                            <div className="text-center py-12">
+                                <i className="fas fa-search text-gray-400 text-4xl mb-4"></i>
+                                <p className="text-gray-500 text-lg font-medium">Pencarian Tidak Ditemukan</p>
+                                <p className="text-gray-400 text-sm mt-2">Tidak ada mata kuliah yang cocok dengan "{searchQuery}"</p>
+                            </div>
+                        )
                     ) : (
                         <div className="text-center py-12">
                             <i className="fas fa-inbox text-gray-400 text-5xl mb-4"></i>

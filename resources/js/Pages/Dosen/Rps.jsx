@@ -1,7 +1,22 @@
+import { useState, useMemo } from 'react';
 import { Head, Link, router } from '@inertiajs/react';
 import DosenLayout from '@/Layouts/DosenLayout';
 
 export default function Rps({ rps }) {
+    const [searchQuery, setSearchQuery] = useState('');
+
+    const filteredRps = useMemo(() => {
+        if (!rps) return [];
+        if (!searchQuery.trim()) return rps;
+        
+        const lowerQuery = searchQuery.toLowerCase();
+        return rps.filter((item) => 
+            (item.kode_matkul && item.kode_matkul.toLowerCase().includes(lowerQuery)) ||
+            (item.judul && item.judul.toLowerCase().includes(lowerQuery))
+        );
+    }, [rps, searchQuery]);
+
+    const hasAnyRps = rps && rps.length > 0;
 
     const handleDelete = (id, nama) => {
         if (window.Swal) {
@@ -47,25 +62,43 @@ export default function Rps({ rps }) {
                 </div>
 
                 {/* Action Bar */}
-                <div className="mb-4 flex justify-between items-center">
-                    <div className="bg-blue-50 px-4 py-2 rounded-lg border border-blue-200">
+                <div className="mb-4 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                    <div className="bg-blue-50 px-4 py-2 rounded-lg border border-blue-200 w-full md:w-auto text-center md:text-left">
                         <span className="text-sm font-medium text-blue-800">Semester Aktif:</span>
                         <span className="text-sm text-blue-600 ml-1">Ganjil 2024/2025</span>
                     </div>
 
-                    <Link
-                        href={route('dosen.rps.create')}
-                        className="inline-flex items-center px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg shadow-sm transition-colors"
-                    >
-                        <i className="fas fa-plus mr-2"></i>
-                        Tambah RPS
-                    </Link>
+                    <div className="flex flex-col sm:flex-row items-center gap-3 w-full md:w-auto">
+                        <div className="relative w-full sm:w-64">
+                            <input
+                                type="text"
+                                placeholder="Cari RPS..."
+                                value={searchQuery}
+                                onChange={(e) => setSearchQuery(e.target.value)}
+                                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+                            />
+                            <i className="fas fa-search absolute left-3.5 top-3 text-gray-400"></i>
+                        </div>
+
+                        <Link
+                            href={route('dosen.rps.create')}
+                            className="inline-flex justify-center items-center px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg shadow-sm transition-colors w-full sm:w-auto flex-shrink-0"
+                        >
+                            <i className="fas fa-plus mr-2"></i>
+                            Tambah RPS
+                        </Link>
+                    </div>
                 </div>
 
                 {/* Main Content Card */}
                 <div className="bg-white rounded-lg shadow-sm overflow-hidden border border-gray-200">
-                    <div className="px-6 py-4 border-b border-gray-200">
+                    <div className="px-6 py-4 border-b border-gray-200 flex justify-between items-center">
                         <h3 className="text-lg font-semibold text-gray-700">Daftar RPS</h3>
+                        {searchQuery && (
+                            <span className="text-sm text-gray-500">
+                                Menemukan {filteredRps.length} hasil
+                            </span>
+                        )}
                     </div>
 
                     <div className="overflow-x-auto">
@@ -81,17 +114,9 @@ export default function Rps({ rps }) {
                             </thead>
 
                             <tbody className="bg-white divide-y divide-gray-200">
-                                {rps.length === 0 ? (
-                                    <tr>
-                                        <td colSpan="5" className="px-6 py-12 text-center">
-                                            <div className="flex flex-col items-center">
-                                                <i className="fas fa-inbox text-gray-300 text-3xl mb-2"></i>
-                                                <p className="text-gray-500 text-sm">Belum ada RPS</p>
-                                            </div>
-                                        </td>
-                                    </tr>
-                                ) : (
-                                    rps.map((item, index) => (
+                                {hasAnyRps ? (
+                                    filteredRps.length > 0 ? (
+                                        filteredRps.map((item, index) => (
                                         <tr key={item.id_rps} className="hover:bg-gray-50 transition-colors">
                                             <td className="px-6 py-4 text-sm">{index + 1}</td>
                                             <td className="px-6 py-4 text-sm">{item.kode_matkul}</td>
@@ -132,6 +157,26 @@ export default function Rps({ rps }) {
                                             </td>
                                         </tr>
                                     ))
+                                ) : (
+                                    <tr>
+                                        <td colSpan="5" className="px-6 py-12 text-center">
+                                            <div className="flex flex-col items-center">
+                                                <i className="fas fa-search text-gray-300 text-3xl mb-2"></i>
+                                                <p className="text-gray-500 text-sm">Pencarian Tidak Ditemukan</p>
+                                                <p className="text-gray-400 text-xs mt-1">Tidak menemukan RPS yang mirip "{searchQuery}"</p>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                )
+                                ) : (
+                                    <tr>
+                                        <td colSpan="5" className="px-6 py-12 text-center">
+                                            <div className="flex flex-col items-center">
+                                                <i className="fas fa-inbox text-gray-300 text-3xl mb-2"></i>
+                                                <p className="text-gray-500 text-sm">Belum ada RPS</p>
+                                            </div>
+                                        </td>
+                                    </tr>
                                 )}
                             </tbody>
                         </table>
