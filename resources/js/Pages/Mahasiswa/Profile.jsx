@@ -73,8 +73,18 @@ export default function Profile({ mahasiswa }) {
                                     className="flex-1 px-4 py-2 border border-gray-200 rounded-lg bg-white text-gray-700 focus:outline-none" />
                             </div>
                             <div className="flex items-center">
+                                <label className="w-32 text-gray-700 font-medium">No Telp Ayah</label>
+                                <input type="text" value={mahasiswa.no_telp_ayah} disabled
+                                    className="flex-1 px-4 py-2 border border-gray-200 rounded-lg bg-white text-gray-700 focus:outline-none" />
+                            </div>
+                            <div className="flex items-center">
                                 <label className="w-32 text-gray-700 font-medium">Nama Ibu</label>
                                 <input type="text" value={mahasiswa.nama_ibu} disabled
+                                    className="flex-1 px-4 py-2 border border-gray-200 rounded-lg bg-white text-gray-700 focus:outline-none" />
+                            </div>
+                            <div className="flex items-center">
+                                <label className="w-32 text-gray-700 font-medium">No Telp Ibu</label>
+                                <input type="text" value={mahasiswa.no_telp_ibu} disabled
                                     className="flex-1 px-4 py-2 border border-gray-200 rounded-lg bg-white text-gray-700 focus:outline-none" />
                             </div>
                         </div>

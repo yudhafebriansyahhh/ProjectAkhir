@@ -288,6 +288,8 @@ class AbsensiController extends Controller
                 'id_kelas' => $request->id_kelas,
                 'pertemuan_ke' => $request->pertemuan_ke,
                 'tanggal' => $request->tanggal,
+                'jam_mulai' => $request->jam_mulai,
+                'jam_selesai' => $request->jam_selesai,
                 'topik_pembahasan' => $request->topik_pembahasan,
             ]);
 

@@ -16,16 +16,6 @@ export default function GantiPassword() {
                     <form action="">
                         <div className="space-y-4">
                             <div className="flex items-center">
-                                <label className="w-52 text-gray-700 font-medium">Nama</label>
-                                <input type="text" value="Muhammad Raihan" disabled
-                                    className="flex-1 px-4 py-2 border border-gray-200 focus:border-blue-600 rounded-lg bg-white text-gray-700 focus:outline-none" />
-                            </div>
-                            <div className="flex items-center">
-                                <label className="w-52 text-gray-700 font-medium">Email</label>
-                                <input type="text" value="raihan@gmail.com" disabled
-                                    className="flex-1 px-4 py-2 border border-gray-200 focus:border-blue-600 rounded-lg bg-white text-gray-700 focus:outline-none" />
-                            </div>
-                            <div className="flex items-center">
                                 <label className="w-52 text-gray-700 font-medium">Password Baru</label>
                                 <input type="password"
                                     className="flex-1 px-4 py-2 border border-gray-200 focus:border-blue-600 rounded-lg bg-white text-gray-700 focus:outline-none" />

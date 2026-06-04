@@ -5,9 +5,10 @@ export default function FormProfile({ mahasiswa }) {
     const { data, setData, patch, processing, errors } = useForm({
         alamat: mahasiswa?.alamat || '',
         no_hp: mahasiswa?.no_hp || '',
-        // fields like ayah/ibu are ready in form state but disabled in controller saving for now
         nama_ayah: mahasiswa?.nama_ayah || '',
         nama_ibu: mahasiswa?.nama_ibu || '',
+        no_telp_ayah: mahasiswa?.no_telp_ayah || '',
+        no_telp_ibu: mahasiswa?.no_telp_ibu || '',
     });
 
     const submit = (e) => {
@@ -73,23 +74,45 @@ export default function FormProfile({ mahasiswa }) {
                                 </div>
                             </div>
                             
-                            {/* Parent Info - Made visually distinctive but disabled practically for safety */}
-                            <div className="flex flex-col md:flex-row md:items-start">
+                            {/* Parent Info */}
+                            <div className="flex flex-col md:flex-row md:items-start group">
                                 <label className="w-32 text-gray-700 font-medium mt-2 mb-1 md:mb-0">Nama Ayah</label>
                                 <div className="flex-1">
                                     <input type="text" 
                                         value={data.nama_ayah}
                                         onChange={e => setData('nama_ayah', e.target.value)}
-                                        className="w-full px-4 py-2 border border-gray-200 rounded-lg bg-white text-gray-700 focus:outline-none" />
+                                        className="w-full px-4 py-2 border border-blue-200 focus:border-blue-600 rounded-lg bg-blue-50/30 text-gray-800 focus:outline-none transition-colors" />
+                                    {errors.nama_ayah && <p className="text-red-500 text-xs mt-1">{errors.nama_ayah}</p>}
                                 </div>
                             </div>
-                            <div className="flex flex-col md:flex-row md:items-start">
+                            <div className="flex flex-col md:flex-row md:items-start group">
+                                <label className="w-32 text-gray-700 font-medium mt-2 mb-1 md:mb-0">No Telp Ayah</label>
+                                <div className="flex-1">
+                                    <input type="text" 
+                                        value={data.no_telp_ayah}
+                                        onChange={e => setData('no_telp_ayah', e.target.value)}
+                                        className="w-full px-4 py-2 border border-blue-200 focus:border-blue-600 rounded-lg bg-blue-50/30 text-gray-800 focus:outline-none transition-colors" />
+                                    {errors.no_telp_ayah && <p className="text-red-500 text-xs mt-1">{errors.no_telp_ayah}</p>}
+                                </div>
+                            </div>
+                            <div className="flex flex-col md:flex-row md:items-start group">
                                 <label className="w-32 text-gray-700 font-medium mt-2 mb-1 md:mb-0">Nama Ibu</label>
                                 <div className="flex-1">
                                     <input type="text" 
                                         value={data.nama_ibu}
                                         onChange={e => setData('nama_ibu', e.target.value)}
-                                        className="w-full px-4 py-2 border border-gray-200 rounded-lg bg-white text-gray-700 focus:outline-none" />
+                                        className="w-full px-4 py-2 border border-blue-200 focus:border-blue-600 rounded-lg bg-blue-50/30 text-gray-800 focus:outline-none transition-colors" />
+                                    {errors.nama_ibu && <p className="text-red-500 text-xs mt-1">{errors.nama_ibu}</p>}
+                                </div>
+                            </div>
+                            <div className="flex flex-col md:flex-row md:items-start group">
+                                <label className="w-32 text-gray-700 font-medium mt-2 mb-1 md:mb-0">No Telp Ibu</label>
+                                <div className="flex-1">
+                                    <input type="text" 
+                                        value={data.no_telp_ibu}
+                                        onChange={e => setData('no_telp_ibu', e.target.value)}
+                                        className="w-full px-4 py-2 border border-blue-200 focus:border-blue-600 rounded-lg bg-blue-50/30 text-gray-800 focus:outline-none transition-colors" />
+                                    {errors.no_telp_ibu && <p className="text-red-500 text-xs mt-1">{errors.no_telp_ibu}</p>}
                                 </div>
                             </div>
 

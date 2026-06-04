@@ -16,6 +16,8 @@ class Pertemuan extends Model
         'id_kelas',
         'pertemuan_ke',
         'tanggal',
+        'jam_mulai',
+        'jam_selesai',
         'topik_pembahasan',
         'materi',
     ];

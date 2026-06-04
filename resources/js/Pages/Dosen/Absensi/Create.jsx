@@ -14,8 +14,15 @@ export default function AbsensiCreate({ kelas, mahasiswa, totalPertemuan }) {
     const namaKelas = kelas?.nama_kelas || '-';
     const idMkPeriode = kelas?.id_mk_periode || '';
     const idKelas = kelas?.id_kelas || '';
-    const jamMulai = kelas?.jam_mulai || '08:00';
-    const jamSelesai = kelas?.jam_selesai || '10:00';
+
+    // Format time from kelas schedule (strip seconds if present, e.g. "08:00:00" -> "08:00")
+    const formatTime = (time) => {
+        if (!time) return '';
+        return time.substring(0, 5);
+    };
+
+    const defaultJamMulai = formatTime(kelas?.jam_mulai) || '08:00';
+    const defaultJamSelesai = formatTime(kelas?.jam_selesai) || '10:00';
 
     // Safely handle mahasiswa array
     const mahasiswaList = Array.isArray(mahasiswa) ? mahasiswa : [];
@@ -24,6 +31,8 @@ export default function AbsensiCreate({ kelas, mahasiswa, totalPertemuan }) {
         id_kelas: idKelas,
         pertemuan_ke: (totalPertemuan || 0) + 1,
         tanggal: new Date().toISOString().split('T')[0],
+        jam_mulai: defaultJamMulai,
+        jam_selesai: defaultJamSelesai,
         topik_pembahasan: '',
         mahasiswa: mahasiswaList.map(mhs => ({
             id_mahasiswa: mhs?.id_mahasiswa || '',
@@ -248,9 +257,9 @@ export default function AbsensiCreate({ kelas, mahasiswa, totalPertemuan }) {
                                         </label>
                                         <input
                                             type="time"
-                                            value={jamMulai}
-                                            readOnly
-                                            className="w-full px-4 py-2 border border-gray-300 rounded-lg bg-gray-100 cursor-not-allowed"
+                                            value={data.jam_mulai}
+                                            onChange={(e) => setData('jam_mulai', e.target.value)}
+                                            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                                         />
                                     </div>
                                     <div className="space-y-2">
@@ -259,9 +268,9 @@ export default function AbsensiCreate({ kelas, mahasiswa, totalPertemuan }) {
                                         </label>
                                         <input
                                             type="time"
-                                            value={jamSelesai}
-                                            readOnly
-                                            className="w-full px-4 py-2 border border-gray-300 rounded-lg bg-gray-100 cursor-not-allowed"
+                                            value={data.jam_selesai}
+                                            onChange={(e) => setData('jam_selesai', e.target.value)}
+                                            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                                         />
                                     </div>
                                 </div>

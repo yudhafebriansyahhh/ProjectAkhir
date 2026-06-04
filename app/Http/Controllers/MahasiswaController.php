@@ -418,9 +418,10 @@ class MahasiswaController extends Controller
                 'jurusan' => ($mahasiswa->prodi && $mahasiswa->prodi->fakultas) ? $mahasiswa->prodi->fakultas->nama_fakultas : '-',
                 'no_hp' => $mahasiswa->no_hp ?? '-',
                 'foto' => $mahasiswa->foto_url ?? '/profile.png',
-                // Assuming ayah/ibu not available in DB fields for now
-                'nama_ayah' => '-',
-                'nama_ibu' => '-'
+                'nama_ayah' => $mahasiswa->nama_ayah ?? '-',
+                'nama_ibu' => $mahasiswa->nama_ibu ?? '-',
+                'no_telp_ayah' => $mahasiswa->no_telp_ayah ?? '-',
+                'no_telp_ibu' => $mahasiswa->no_telp_ibu ?? '-'
             ]
         ]);
     }
@@ -446,8 +447,10 @@ class MahasiswaController extends Controller
                 'prodi' => $mahasiswa->prodi ? $mahasiswa->prodi->nama_prodi : '',
                 'jurusan' => ($mahasiswa->prodi && $mahasiswa->prodi->fakultas) ? $mahasiswa->prodi->fakultas->nama_fakultas : '',
                 'no_hp' => $mahasiswa->no_hp ?? '',
-                'nama_ayah' => '',
-                'nama_ibu' => ''
+                'nama_ayah' => $mahasiswa->nama_ayah ?? '',
+                'nama_ibu' => $mahasiswa->nama_ibu ?? '',
+                'no_telp_ayah' => $mahasiswa->no_telp_ayah ?? '',
+                'no_telp_ibu' => $mahasiswa->no_telp_ibu ?? ''
             ]
         ]);
     }
@@ -462,7 +465,10 @@ class MahasiswaController extends Controller
         $validated = $request->validate([
             'alamat' => 'nullable|string|max:255',
             'no_hp' => 'nullable|string|max:20',
-            // fields like ayah/ibu can be added here if DB implements them later
+            'nama_ayah' => 'nullable|string|max:255',
+            'nama_ibu' => 'nullable|string|max:255',
+            'no_telp_ayah' => 'nullable|string|max:15',
+            'no_telp_ibu' => 'nullable|string|max:15',
         ]);
 
         $mahasiswa = $user->mahasiswa;
@@ -470,6 +476,10 @@ class MahasiswaController extends Controller
             $mahasiswa->update([
                 'alamat' => $validated['alamat'],
                 'no_hp' => $validated['no_hp'],
+                'nama_ayah' => $validated['nama_ayah'],
+                'nama_ibu' => $validated['nama_ibu'],
+                'no_telp_ayah' => $validated['no_telp_ayah'],
+                'no_telp_ibu' => $validated['no_telp_ibu'],
             ]);
         }
 
