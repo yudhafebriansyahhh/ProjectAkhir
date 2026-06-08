@@ -3,10 +3,9 @@
 namespace App\Http\Controllers\Baak;
 
 use App\Http\Controllers\Controller;
-use App\Models\Prodi;
-use App\Models\Fakultas;
 use App\Http\Requests\StoreProdiRequest;
 use App\Http\Requests\UpdateProdiRequest;
+use App\Models\Prodi;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 
@@ -15,39 +14,38 @@ class ProdiController extends Controller
     public function index(Request $request)
     {
         $search = $request->input('search');
-        $fakultas_filter = $request->input('fakultas');
 
-        $prodi = Prodi::query()
-            ->with('fakultas')
-            ->withCount('mahasiswa')
+        $baseQuery = Prodi::query()
             ->when($search, function ($query, $search) {
                 $query->where('kode_prodi', 'like', "%{$search}%")
                     ->orWhere('nama_prodi', 'like', "%{$search}%");
-            })
-            ->when($fakultas_filter, function ($query, $fakultas_filter) {
-                $query->where('kode_fakultas', $fakultas_filter);
-            })
-            ->orderBy('kode_fakultas', 'asc')
+            });
+
+        $statRows = (clone $baseQuery)
+            ->withCount('mahasiswa')
+            ->get();
+
+        $prodi = (clone $baseQuery)
+            ->withCount('mahasiswa')
             ->orderBy('kode_prodi', 'asc')
             ->paginate(10)
             ->withQueryString();
 
-        $fakultas_list = Fakultas::orderBy('nama_fakultas')->get();
-
         return Inertia::render('Baak/Prodi/Index', [
             'prodi' => $prodi,
-            'fakultas_list' => $fakultas_list,
-            'filters' => $request->only(['search', 'fakultas']),
+            'stats' => [
+                'total' => $statRows->count(),
+                'total_mahasiswa' => $statRows->sum('mahasiswa_count'),
+                's1' => $statRows->where('jenjang', 'S1')->count(),
+                'diploma' => $statRows->whereIn('jenjang', ['D3', 'D4'])->count(),
+            ],
+            'filters' => $request->only(['search']),
         ]);
     }
 
     public function create()
     {
-        $fakultas = Fakultas::orderBy('nama_fakultas')->get();
-
-        return Inertia::render('Baak/Prodi/Create', [
-            'fakultas' => $fakultas,
-        ]);
+        return Inertia::render('Baak/Prodi/Create');
     }
 
     public function store(StoreProdiRequest $request)
@@ -62,11 +60,9 @@ class ProdiController extends Controller
     public function edit(string $kode_prodi)
     {
         $prodi = Prodi::where('kode_prodi', $kode_prodi)->firstOrFail();
-        $fakultas = Fakultas::orderBy('nama_fakultas')->get();
 
         return Inertia::render('Baak/Prodi/Edit', [
             'prodi' => $prodi,
-            'fakultas' => $fakultas,
         ]);
     }
 
@@ -83,11 +79,10 @@ class ProdiController extends Controller
     public function show($kode_prodi)
     {
         $prodi = Prodi::with([
-            'fakultas',
             'dosen',
             'mahasiswa' => function ($query) {
                 $query->where('status', 'aktif');
-            }
+            },
         ])->findOrFail($kode_prodi);
 
         // Statistik

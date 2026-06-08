@@ -4,7 +4,6 @@ use Illuminate\Support\Facades\Route;
 
 // BAAK
 use App\Http\Controllers\Baak\DashboardController;
-use App\Http\Controllers\Baak\FakultasController;
 use App\Http\Controllers\Baak\JadwalKrsController;
 use App\Http\Controllers\Baak\KelasController;
 use App\Http\Controllers\Baak\KrsController;
@@ -17,6 +16,7 @@ use App\Http\Controllers\Baak\ProdiController;
 use App\Http\Controllers\Baak\MahasiswaController as BaakMahasiswaController;
 use App\Http\Controllers\Baak\DosenController as BaakDosenController;
 use App\Http\Controllers\Baak\NilaiController;
+use App\Http\Controllers\Baak\RuanganController;
 
 // DOSEN
 use App\Http\Controllers\Dosen\DosenController;
@@ -62,11 +62,19 @@ Route::middleware(['auth', 'role:baak'])
         Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
 
         // Mahasiswa
+        Route::get('mahasiswa/export', [BaakMahasiswaController::class, 'exportExcel'])->name('mahasiswa.export');
+        Route::get('mahasiswa/export-template', [BaakMahasiswaController::class, 'exportTemplate'])->name('mahasiswa.export-template');
+        Route::post('mahasiswa/import', [BaakMahasiswaController::class, 'importExcel'])->name('mahasiswa.import');
+        Route::post('mahasiswa/generate-nim', [BaakMahasiswaController::class, 'generateNim'])
+            ->name('mahasiswa.generate-nim');
         Route::resource('mahasiswa', BaakMahasiswaController::class);
         Route::post('mahasiswa/{mahasiswa}/reset-password', [BaakMahasiswaController::class, 'resetPassword'])
             ->name('mahasiswa.reset-password');
 
         // Dosen
+        Route::get('dosen/export', [BaakDosenController::class, 'exportExcel'])->name('dosen.export');
+        Route::get('dosen/export-template', [BaakDosenController::class, 'exportTemplate'])->name('dosen.export-template');
+        Route::post('dosen/import', [BaakDosenController::class, 'importExcel'])->name('dosen.import');
         Route::resource('dosen', BaakDosenController::class);
 
         // Kelas
@@ -74,9 +82,8 @@ Route::middleware(['auth', 'role:baak'])
         Route::post('kelas/get-mata-kuliah-by-periode', [KelasController::class, 'getMataKuliahByPeriode'])
             ->name('kelas.get-mata-kuliah-by-periode');
 
-        // Fakultas
-        Route::resource('fakultas', FakultasController::class)
-            ->parameters(['fakultas' => 'kode_fakultas']);
+        // Ruangan
+        Route::resource('ruangan', RuanganController::class);
 
         // Prodi
         Route::resource('prodi', ProdiController::class)
@@ -89,6 +96,11 @@ Route::middleware(['auth', 'role:baak'])
         });
 
         // Mata Kuliah
+        Route::get('mata-kuliah/export', [MataKuliahController::class, 'exportExcel'])->name('mata-kuliah.export');
+        Route::get('mata-kuliah/export-template', [MataKuliahController::class, 'exportTemplate'])->name('mata-kuliah.export-template');
+        Route::post('mata-kuliah/import', [MataKuliahController::class, 'importExcel'])->name('mata-kuliah.import');
+        Route::post('mata-kuliah/{kode_matkul}/toggle-status', [MataKuliahController::class, 'toggleStatus'])
+            ->name('mata-kuliah.toggle-status');
         Route::resource('mata-kuliah', MataKuliahController::class)
             ->parameters(['mata-kuliah' => 'kode_matkul']);
 

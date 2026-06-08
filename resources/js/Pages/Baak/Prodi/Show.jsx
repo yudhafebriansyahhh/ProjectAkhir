@@ -1,326 +1,386 @@
 import { Head, Link } from '@inertiajs/react';
 import { useState } from 'react';
+import { ArrowLeft, BookOpen, GraduationCap, IdCard, Pencil, Phone, Users, UserCheck } from 'lucide-react';
 import BaakLayout from '@/Layouts/BaakLayout';
+import { Badge } from '@/Components/ui/badge';
+import { Button } from '@/Components/ui/button';
+import { Card, CardContent } from '@/Components/ui/card';
+import { CardGrid, ClientPagination, DataTable, EmptyState, PageHeader, SearchInput, SummaryCard } from '@/Components/ui/data-display';
+import { SelectDropdown } from '@/Components/ui/select-dropdown';
+
+const ITEMS_PER_PAGE = 10;
+
+const getStatusBadge = (status) => {
+    const badges = {
+        aktif: 'bg-emerald-50 text-emerald-700 border-emerald-200',
+        cuti: 'bg-amber-50 text-amber-700 border-amber-200',
+        lulus: 'bg-blue-50 text-blue-700 border-blue-200',
+        DO: 'bg-red-50 text-red-700 border-red-200',
+    };
+
+    return badges[status] || 'bg-slate-50 text-slate-700 border-slate-200';
+};
 
 export default function Show({ prodi, stats }) {
     const [activeTab, setActiveTab] = useState('info');
+    const [dosenSearch, setDosenSearch] = useState('');
+    const [dosenPage, setDosenPage] = useState(1);
+    const [mahasiswaSearch, setMahasiswaSearch] = useState('');
+    const [mahasiswaAngkatan, setMahasiswaAngkatan] = useState('');
+    const [mahasiswaPage, setMahasiswaPage] = useState(1);
+    const mahasiswaPerStatus = stats.mahasiswa_per_status || {};
+    const totalMahasiswa = Object.values(mahasiswaPerStatus).reduce((total, value) => total + value, 0);
+    const dosenData = prodi.dosen || [];
+    const mahasiswaData = prodi.mahasiswa || [];
 
-    const getStatusBadge = (status) => {
-        const badges = {
-            'aktif': 'bg-green-100 text-green-700',
-            'cuti': 'bg-yellow-100 text-yellow-700',
-            'lulus': 'bg-blue-100 text-blue-700',
-            'DO': 'bg-red-100 text-red-700',
-        };
-        return badges[status] || 'bg-gray-100 text-gray-700';
-    };
+    const getAngkatan = (mahasiswa) => (mahasiswa.nim ? `20${mahasiswa.nim.substring(0, 2)}` : '-');
+    const angkatanOptions = [...new Set(mahasiswaData.map(getAngkatan).filter((item) => item !== '-'))].sort((a, b) => b.localeCompare(a));
+
+    const filteredDosen = dosenData.filter((dosen) => {
+        const keyword = dosenSearch.toLowerCase();
+
+        return [dosen.nama, dosen.nip, dosen.no_hp, dosen.jenis_kelamin]
+            .filter(Boolean)
+            .some((value) => value.toLowerCase().includes(keyword));
+    });
+
+    const filteredMahasiswa = mahasiswaData.filter((mahasiswa) => {
+        const keyword = mahasiswaSearch.toLowerCase();
+        const angkatan = getAngkatan(mahasiswa);
+        const matchesSearch = [mahasiswa.nama, mahasiswa.nim, mahasiswa.status, angkatan]
+            .filter(Boolean)
+            .some((value) => value.toLowerCase().includes(keyword));
+        const matchesAngkatan = mahasiswaAngkatan ? angkatan === mahasiswaAngkatan : true;
+
+        return matchesSearch && matchesAngkatan;
+    });
+
+    const paginate = (items, page) => items.slice((page - 1) * ITEMS_PER_PAGE, page * ITEMS_PER_PAGE);
+    const paginatedDosen = paginate(filteredDosen, dosenPage);
+    const paginatedMahasiswa = paginate(filteredMahasiswa, mahasiswaPage);
+
+    const tabs = [
+        { key: 'info', label: 'Informasi' },
+        { key: 'dosen', label: `Dosen (${stats.total_dosen || 0})` },
+        { key: 'mahasiswa', label: `Mahasiswa (${stats.total_mahasiswa || 0})` },
+    ];
+
+    const summaryCards = [
+        { title: 'Total Dosen', value: stats.total_dosen, icon: UserCheck, tone: 'blue' },
+        { title: 'Mahasiswa Aktif', value: stats.total_mahasiswa, icon: GraduationCap, tone: 'emerald' },
+        { title: 'Mata Kuliah', value: stats.total_mata_kuliah, icon: BookOpen, tone: 'violet' },
+        { title: 'Total Mahasiswa', value: totalMahasiswa, icon: Users, tone: 'amber' },
+    ];
+
+    const dosenColumns = [
+        {
+            key: 'number',
+            header: 'No',
+            headerClassName: 'w-[56px]',
+            cellClassName: 'font-medium text-slate-500',
+            render: (_item, index) => (dosenPage - 1) * ITEMS_PER_PAGE + index + 1,
+        },
+        { key: 'nip', header: 'NIP', render: (item) => item.nip || '-' },
+        { key: 'nama', header: 'Nama', render: (item) => <span className="font-semibold text-slate-800">{item.nama}</span> },
+        {
+            key: 'jenis_kelamin',
+            header: 'Jenis Kelamin',
+            render: (item) => (
+                <Badge variant="outline" className={item.jenis_kelamin === 'Laki-laki' ? 'bg-blue-50 text-blue-700' : 'bg-pink-50 text-pink-700'}>
+                    {item.jenis_kelamin || '-'}
+                </Badge>
+            ),
+        },
+        { key: 'no_hp', header: 'No HP', render: (item) => item.no_hp || '-' },
+        {
+            key: 'actions',
+            header: 'Aksi',
+            headerClassName: 'text-center w-[96px]',
+            cellClassName: 'text-center',
+            render: (item) => (
+                <Link href={route('baak.dosen.show', item.id_dosen)} className="text-sm font-semibold text-blue-600 hover:text-blue-700">
+                    Detail
+                </Link>
+            ),
+        },
+    ];
+
+    const mahasiswaColumns = [
+        {
+            key: 'number',
+            header: 'No',
+            headerClassName: 'w-[56px]',
+            cellClassName: 'font-medium text-slate-500',
+            render: (_item, index) => (mahasiswaPage - 1) * ITEMS_PER_PAGE + index + 1,
+        },
+        { key: 'nim', header: 'NIM', render: (item) => <span className="font-mono font-semibold text-slate-800">{item.nim}</span> },
+        { key: 'nama', header: 'Nama', render: (item) => <span className="font-semibold text-slate-800">{item.nama}</span> },
+        { key: 'angkatan', header: 'Angkatan', render: getAngkatan },
+        {
+            key: 'status',
+            header: 'Status',
+            headerClassName: 'text-center',
+            cellClassName: 'text-center',
+            render: (item) => (
+                <Badge variant="outline" className={getStatusBadge(item.status)}>
+                    {item.status?.toUpperCase() || '-'}
+                </Badge>
+            ),
+        },
+        {
+            key: 'actions',
+            header: 'Aksi',
+            headerClassName: 'text-center w-[96px]',
+            cellClassName: 'text-center',
+            render: (item) => (
+                <Link href={route('baak.mahasiswa.show', item.id_mahasiswa)} className="text-sm font-semibold text-blue-600 hover:text-blue-700">
+                    Detail
+                </Link>
+            ),
+        },
+    ];
+
+    const renderDosenCard = (dosen, _index, key) => (
+        <Card key={key} className="rounded-lg border-slate-200 shadow-sm">
+            <CardContent className="space-y-3 p-4">
+                <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                        <p className="break-words font-semibold text-slate-900">{dosen.nama}</p>
+                        <p className="mt-0.5 font-mono text-xs text-slate-400">{dosen.nip || '-'}</p>
+                    </div>
+                    <Badge variant="outline" className={dosen.jenis_kelamin === 'Laki-laki' ? 'shrink-0 bg-blue-50 text-blue-700' : 'shrink-0 bg-pink-50 text-pink-700'}>
+                        {dosen.jenis_kelamin || '-'}
+                    </Badge>
+                </div>
+                <div className="flex items-center gap-2 rounded-lg bg-slate-50 px-3 py-2 text-sm text-slate-600">
+                    <Phone className="h-4 w-4 text-slate-400" />
+                    <span>{dosen.no_hp || '-'}</span>
+                </div>
+                <Link href={route('baak.dosen.show', dosen.id_dosen)}>
+                    <Button variant="outline" size="sm" className="w-full border-blue-200 text-blue-600 hover:bg-blue-50">
+                        Detail
+                    </Button>
+                </Link>
+            </CardContent>
+        </Card>
+    );
+
+    const renderMahasiswaCard = (mahasiswa, _index, key) => (
+        <Card key={key} className="rounded-lg border-slate-200 shadow-sm">
+            <CardContent className="space-y-3 p-4">
+                <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                        <p className="break-words font-semibold text-slate-900">{mahasiswa.nama}</p>
+                        <p className="mt-0.5 font-mono text-xs text-slate-400">{mahasiswa.nim}</p>
+                    </div>
+                    <Badge variant="outline" className={`shrink-0 ${getStatusBadge(mahasiswa.status)}`}>
+                        {mahasiswa.status?.toUpperCase() || '-'}
+                    </Badge>
+                </div>
+                <div className="flex items-center gap-2 rounded-lg bg-slate-50 px-3 py-2 text-sm text-slate-600">
+                    <IdCard className="h-4 w-4 text-slate-400" />
+                    <span>Angkatan 20{mahasiswa.nim?.substring(0, 2) || '-'}</span>
+                </div>
+                <Link href={route('baak.mahasiswa.show', mahasiswa.id_mahasiswa)}>
+                    <Button variant="outline" size="sm" className="w-full border-blue-200 text-blue-600 hover:bg-blue-50">
+                        Detail
+                    </Button>
+                </Link>
+            </CardContent>
+        </Card>
+    );
 
     return (
-        <BaakLayout>
+        <BaakLayout title="Detail Program Studi">
             <Head title={`Detail ${prodi.nama_prodi}`} />
 
-            <div className="p-4 md:p-6">
-                {/* Header */}
-                <div className="mb-6">
-                    <Link
-                        href={route('baak.prodi.index')}
-                        className="text-blue-600 hover:text-blue-700 text-sm font-medium mb-3 inline-flex items-center gap-1"
-                    >
-                        <i className="fas fa-arrow-left"></i>
-                        <span>Kembali ke Daftar Prodi</span>
-                    </Link>
-                    <h1 className="text-2xl font-bold text-gray-700 mt-2">Detail Program Studi</h1>
-                </div>
-
-                {/* Info Card */}
-                <div className="bg-white rounded-lg border border-gray-200 p-6 mb-6">
-                    <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-6">
-                        <div>
-                            <h2 className="text-2xl font-bold text-gray-900">{prodi.nama_prodi}</h2>
-                            <p className="text-gray-600 mt-1">{prodi.fakultas.nama_fakultas}</p>
-                        </div>
-                        <div className="mt-4 md:mt-0">
-                            <span className="inline-block px-4 py-2 bg-blue-100 text-blue-800 rounded-lg font-semibold">
-                                {prodi.jenjang}
-                            </span>
-                        </div>
+            <div className="min-h-screen bg-slate-50 px-3 py-4 sm:px-4 sm:py-5 md:px-6 lg:px-8">
+                <div className="mx-auto w-full max-w-[1440px] space-y-4 md:space-y-5">
+                    <div>
+                        <Link href={route('baak.prodi.index')} className="mb-3 inline-flex items-center gap-2 text-sm font-semibold text-blue-600 hover:text-blue-700">
+                            <ArrowLeft className="h-4 w-4" />
+                            Kembali ke Daftar Prodi
+                        </Link>
+                        <PageHeader
+                            title="Detail Program Studi"
+                            description={`${prodi.nama_prodi} (${prodi.kode_prodi})`}
+                            actionHref={route('baak.prodi.edit', prodi.kode_prodi)}
+                            actionLabel="Edit Prodi"
+                            actionIcon={Pencil}
+                        />
                     </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div>
-                            <p className="text-sm text-gray-500">Kode Prodi</p>
-                            <p className="font-semibold text-gray-900">{prodi.kode_prodi}</p>
-                        </div>
-                        <div>
-                            <p className="text-sm text-gray-500">Kode Fakultas</p>
-                            <p className="font-semibold text-gray-900">{prodi.kode_fakultas}</p>
-                        </div>
-                    </div>
-                </div>
+                    <Card className="rounded-lg border-slate-200 shadow-sm">
+                        <CardContent className="grid gap-4 p-4 sm:p-5 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center">
+                            <div className="min-w-0">
+                                <h2 className="break-words text-xl font-bold text-slate-950 sm:text-2xl">{prodi.nama_prodi}</h2>
+                                <p className="mt-1 text-sm text-slate-500">Kode Prodi {prodi.kode_prodi}</p>
+                            </div>
+                            <Badge variant="outline" className="w-fit rounded-lg bg-blue-50 px-3 py-1.5 text-sm font-semibold text-blue-700">
+                                {prodi.jenjang || '-'}
+                            </Badge>
+                        </CardContent>
+                    </Card>
 
-                {/* Stats Cards */}
-                <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-                    <div className="bg-white rounded-lg border border-gray-200 p-4">
-                        <div className="flex items-center justify-between">
-                            <div>
-                                <p className="text-sm text-gray-500">Total Dosen</p>
-                                <p className="text-2xl font-bold text-gray-900 mt-1">{stats.total_dosen}</p>
-                            </div>
-                            <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
-                                <i className="fas fa-chalkboard-teacher text-blue-600 text-xl"></i>
-                            </div>
-                        </div>
-                    </div>
+                    <section className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
+                        {summaryCards.map((card) => (
+                            <SummaryCard key={card.title} {...card} />
+                        ))}
+                    </section>
 
-                    <div className="bg-white rounded-lg border border-gray-200 p-4">
-                        <div className="flex items-center justify-between">
-                            <div>
-                                <p className="text-sm text-gray-500">Mahasiswa Aktif</p>
-                                <p className="text-2xl font-bold text-gray-900 mt-1">{stats.total_mahasiswa}</p>
-                            </div>
-                            <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
-                                <i className="fas fa-user-graduate text-green-600 text-xl"></i>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div className="bg-white rounded-lg border border-gray-200 p-4">
-                        <div className="flex items-center justify-between">
-                            <div>
-                                <p className="text-sm text-gray-500">Mata Kuliah</p>
-                                <p className="text-2xl font-bold text-gray-900 mt-1">{stats.total_mata_kuliah}</p>
-                            </div>
-                            <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center">
-                                <i className="fas fa-book text-purple-600 text-xl"></i>
+                    <section className="overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm">
+                        <div className="border-b border-slate-100 p-0">
+                            <div className="flex overflow-x-auto">
+                                {tabs.map((tab) => (
+                                    <button
+                                        key={tab.key}
+                                        type="button"
+                                        onClick={() => setActiveTab(tab.key)}
+                                        className={`min-w-max border-b-2 px-4 py-3 text-sm font-semibold transition sm:px-5 ${
+                                            activeTab === tab.key
+                                                ? 'border-blue-600 bg-blue-50/60 text-blue-700'
+                                                : 'border-transparent text-slate-500 hover:bg-slate-50 hover:text-slate-700'
+                                        }`}
+                                    >
+                                        {tab.label}
+                                    </button>
+                                ))}
                             </div>
                         </div>
-                    </div>
 
-                    <div className="bg-white rounded-lg border border-gray-200 p-4">
-                        <div className="flex items-center justify-between">
-                            <div>
-                                <p className="text-sm text-gray-500">Total Mahasiswa</p>
-                                <p className="text-2xl font-bold text-gray-900 mt-1">
-                                    {Object.values(stats.mahasiswa_per_status).reduce((a, b) => a + b, 0)}
-                                </p>
-                            </div>
-                            <div className="w-12 h-12 bg-orange-100 rounded-lg flex items-center justify-center">
-                                <i className="fas fa-users text-orange-600 text-xl"></i>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                {/* Tabs */}
-                <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
-                    <div className="border-b border-gray-200">
-                        <nav className="flex">
-                            <button
-                                onClick={() => setActiveTab('info')}
-                                className={`px-6 py-3 text-sm font-medium ${
-                                    activeTab === 'info'
-                                        ? 'border-b-2 border-blue-600 text-blue-600'
-                                        : 'text-gray-500 hover:text-gray-700'
-                                }`}
-                            >
-                                <i className="fas fa-info-circle mr-2"></i>
-                                Informasi
-                            </button>
-                            <button
-                                onClick={() => setActiveTab('dosen')}
-                                className={`px-6 py-3 text-sm font-medium ${
-                                    activeTab === 'dosen'
-                                        ? 'border-b-2 border-blue-600 text-blue-600'
-                                        : 'text-gray-500 hover:text-gray-700'
-                                }`}
-                            >
-                                <i className="fas fa-chalkboard-teacher mr-2"></i>
-                                Dosen ({stats.total_dosen})
-                            </button>
-                            <button
-                                onClick={() => setActiveTab('mahasiswa')}
-                                className={`px-6 py-3 text-sm font-medium ${
-                                    activeTab === 'mahasiswa'
-                                        ? 'border-b-2 border-blue-600 text-blue-600'
-                                        : 'text-gray-500 hover:text-gray-700'
-                                }`}
-                            >
-                                <i className="fas fa-user-graduate mr-2"></i>
-                                Mahasiswa ({stats.total_mahasiswa})
-                            </button>
-                        </nav>
-                    </div>
-
-                    <div className="p-6">
-                        {/* Tab Info */}
-                        {activeTab === 'info' && (
-                            <div className="space-y-6">
-                                <div>
-                                    <h3 className="text-lg font-semibold text-gray-900 mb-4">Statistik Mahasiswa per Status</h3>
-                                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                                        {Object.entries(stats.mahasiswa_per_status).map(([status, total]) => (
-                                            <div key={status} className="text-center p-4 bg-gray-50 rounded-lg border border-gray-200">
-                                                <p className={`text-2xl font-bold mb-1 ${
-                                                    status === 'aktif' ? 'text-green-600' :
-                                                    status === 'cuti' ? 'text-yellow-600' :
-                                                    status === 'lulus' ? 'text-blue-600' : 'text-red-600'
-                                                }`}>
-                                                    {total}
-                                                </p>
-                                                <p className="text-sm text-gray-600 capitalize">{status}</p>
+                        <div className="p-4 sm:p-5">
+                            {activeTab === 'info' ? (
+                                <div className="space-y-5">
+                                    <section>
+                                        <h3 className="mb-3 text-base font-bold text-slate-950">Statistik Mahasiswa per Status</h3>
+                                        {Object.keys(mahasiswaPerStatus).length > 0 ? (
+                                            <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+                                                {Object.entries(mahasiswaPerStatus).map(([status, total]) => (
+                                                    <div key={status} className="rounded-lg border border-slate-200 bg-slate-50 p-4 text-center">
+                                                        <p className="text-2xl font-bold text-slate-950">{total}</p>
+                                                        <p className="mt-1 text-sm font-medium capitalize text-slate-500">{status}</p>
+                                                    </div>
+                                                ))}
                                             </div>
-                                        ))}
-                                    </div>
-                                </div>
+                                        ) : (
+                                            <EmptyState title="Belum ada statistik" description="Data status mahasiswa belum tersedia" compact />
+                                        )}
+                                    </section>
 
-                                <div>
-                                    <h3 className="text-lg font-semibold text-gray-900 mb-4">Informasi Program Studi</h3>
-                                    <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <section>
+                                        <h3 className="mb-3 text-base font-bold text-slate-950">Informasi Program Studi</h3>
+                                        <div className="grid gap-3 rounded-lg border border-blue-100 bg-blue-50 p-4 sm:grid-cols-3">
                                             <div>
-                                                <p className="text-sm text-gray-600">Nama Program Studi</p>
-                                                <p className="font-semibold text-gray-900">{prodi.nama_prodi}</p>
+                                                <p className="text-xs font-medium text-slate-500">Nama Program Studi</p>
+                                                <p className="mt-1 font-semibold text-slate-900">{prodi.nama_prodi}</p>
                                             </div>
                                             <div>
-                                                <p className="text-sm text-gray-600">Jenjang</p>
-                                                <p className="font-semibold text-gray-900">{prodi.jenjang}</p>
+                                                <p className="text-xs font-medium text-slate-500">Kode Prodi</p>
+                                                <p className="mt-1 font-mono font-semibold text-slate-900">{prodi.kode_prodi}</p>
                                             </div>
                                             <div>
-                                                <p className="text-sm text-gray-600">Fakultas</p>
-                                                <p className="font-semibold text-gray-900">{prodi.fakultas.nama_fakultas}</p>
-                                            </div>
-                                            <div>
-                                                <p className="text-sm text-gray-600">Kode Prodi</p>
-                                                <p className="font-semibold text-gray-900">{prodi.kode_prodi}</p>
+                                                <p className="text-xs font-medium text-slate-500">Jenjang</p>
+                                                <p className="mt-1 font-semibold text-slate-900">{prodi.jenjang}</p>
                                             </div>
                                         </div>
-                                    </div>
+                                    </section>
                                 </div>
-                            </div>
-                        )}
+                            ) : null}
 
-                        {/* Tab Dosen */}
-                        {activeTab === 'dosen' && (
-                            <div>
-                                {prodi.dosen && prodi.dosen.length > 0 ? (
-                                    <div className="overflow-x-auto">
-                                        <table className="w-full">
-                                            <thead className="bg-gray-50">
-                                                <tr className="text-gray-600 text-xs font-semibold uppercase">
-                                                    <th className="px-4 py-3 text-left">No</th>
-                                                    <th className="px-4 py-3 text-left">NIP</th>
-                                                    <th className="px-4 py-3 text-left">Nama</th>
-                                                    <th className="px-4 py-3 text-left">Jenis Kelamin</th>
-                                                    <th className="px-4 py-3 text-left">No HP</th>
-                                                    <th className="px-4 py-3 text-center">Aksi</th>
-                                                </tr>
-                                            </thead>
-                                            <tbody className="divide-y divide-gray-200">
-                                                {prodi.dosen.map((dosen, index) => (
-                                                    <tr key={dosen.id_dosen} className="hover:bg-gray-50">
-                                                        <td className="px-4 py-3 text-sm">{index + 1}</td>
-                                                        <td className="px-4 py-3 text-sm font-medium">{dosen.nip}</td>
-                                                        <td className="px-4 py-3 text-sm">{dosen.nama}</td>
-                                                        <td className="px-4 py-3 text-sm">
-                                                            <span className={`inline-flex items-center px-2 py-1 rounded text-xs font-medium ${
-                                                                dosen.jenis_kelamin === 'Laki-laki'
-                                                                    ? 'bg-blue-100 text-blue-700'
-                                                                    : 'bg-pink-100 text-pink-700'
-                                                            }`}>
-                                                                <i className={`fas ${dosen.jenis_kelamin === 'Laki-laki' ? 'fa-mars' : 'fa-venus'} mr-1`}></i>
-                                                                {dosen.jenis_kelamin}
-                                                            </span>
-                                                        </td>
-                                                        <td className="px-4 py-3 text-sm">{dosen.no_hp || '-'}</td>
-                                                        <td className="px-4 py-3 text-center">
-                                                            <Link
-                                                                href={route('baak.dosen.show', dosen.id_dosen)}
-                                                                className="text-blue-600 hover:text-blue-800 text-sm"
-                                                            >
-                                                                Detail
-                                                            </Link>
-                                                        </td>
-                                                    </tr>
-                                                ))}
-                                            </tbody>
-                                        </table>
-                                    </div>
-                                ) : (
-                                    <div className="text-center py-12">
-                                        <i className="fas fa-users text-4xl text-gray-400 mb-3"></i>
-                                        <p className="text-gray-500">Belum ada dosen di program studi ini</p>
-                                    </div>
-                                )}
-                            </div>
-                        )}
+                            {activeTab === 'dosen' ? (
+                                <div className="space-y-4">
+                                    <SearchInput
+                                        value={dosenSearch}
+                                        onChange={(value) => {
+                                            setDosenSearch(value);
+                                            setDosenPage(1);
+                                        }}
+                                        onClear={() => {
+                                            setDosenSearch('');
+                                            setDosenPage(1);
+                                        }}
+                                        placeholder="Cari nama, NIP, jenis kelamin, atau nomor HP dosen..."
+                                    />
+                                    <DataTable
+                                        columns={dosenColumns}
+                                        data={paginatedDosen}
+                                        getRowKey={(item) => item.id_dosen}
+                                        emptyState={<EmptyState title="Belum ada dosen" description="Belum ada dosen di program studi ini" />}
+                                        className="hidden lg:block"
+                                        asCard={false}
+                                    />
+                                    <CardGrid
+                                        data={paginatedDosen}
+                                        getCardKey={(item) => item.id_dosen}
+                                        renderCard={renderDosenCard}
+                                        emptyState={<EmptyState title="Belum ada dosen" description="Belum ada dosen di program studi ini" compact />}
+                                        className="grid gap-3 md:grid-cols-2 lg:hidden"
+                                        emptyClassName="lg:hidden"
+                                    />
+                                    <ClientPagination
+                                        page={dosenPage}
+                                        perPage={ITEMS_PER_PAGE}
+                                        total={filteredDosen.length}
+                                        onPageChange={setDosenPage}
+                                    />
+                                </div>
+                            ) : null}
 
-                        {/* Tab Mahasiswa */}
-                        {activeTab === 'mahasiswa' && (
-                            <div>
-                                {prodi.mahasiswa && prodi.mahasiswa.length > 0 ? (
-                                    <div className="overflow-x-auto">
-                                        <table className="w-full">
-                                            <thead className="bg-gray-50">
-                                                <tr className="text-gray-600 text-xs font-semibold uppercase">
-                                                    <th className="px-4 py-3 text-left">No</th>
-                                                    <th className="px-4 py-3 text-left">NIM</th>
-                                                    <th className="px-4 py-3 text-left">Nama</th>
-                                                    <th className="px-4 py-3 text-left">Angkatan</th>
-                                                    <th className="px-4 py-3 text-center">Status</th>
-                                                    <th className="px-4 py-3 text-center">Aksi</th>
-                                                </tr>
-                                            </thead>
-                                            <tbody className="divide-y divide-gray-200">
-                                                {prodi.mahasiswa.map((mhs, index) => (
-                                                    <tr key={mhs.id_mahasiswa} className="hover:bg-gray-50">
-                                                        <td className="px-4 py-3 text-sm">{index + 1}</td>
-                                                        <td className="px-4 py-3 text-sm font-medium">{mhs.nim}</td>
-                                                        <td className="px-4 py-3 text-sm">{mhs.nama}</td>
-                                                        <td className="px-4 py-3 text-sm">20{mhs.nim.substring(0, 2)}</td>
-                                                        <td className="px-4 py-3 text-center">
-                                                            <span className={`px-2 py-1 text-xs font-semibold rounded-lg ${getStatusBadge(mhs.status)}`}>
-                                                                {mhs.status.toUpperCase()}
-                                                            </span>
-                                                        </td>
-                                                        <td className="px-4 py-3 text-center">
-                                                            <Link
-                                                                href={route('baak.mahasiswa.show', mhs.id_mahasiswa)}
-                                                                className="text-blue-600 hover:text-blue-800 text-sm"
-                                                            >
-                                                                Detail
-                                                            </Link>
-                                                        </td>
-                                                    </tr>
-                                                ))}
-                                            </tbody>
-                                        </table>
+                            {activeTab === 'mahasiswa' ? (
+                                <div className="space-y-4">
+                                    <div className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_220px]">
+                                        <SearchInput
+                                            value={mahasiswaSearch}
+                                            onChange={(value) => {
+                                                setMahasiswaSearch(value);
+                                                setMahasiswaPage(1);
+                                            }}
+                                            onClear={() => {
+                                                setMahasiswaSearch('');
+                                                setMahasiswaPage(1);
+                                            }}
+                                            placeholder="Cari nama, NIM, status, atau angkatan mahasiswa..."
+                                        />
+                                        <div className="w-full">
+                                            <SelectDropdown
+                                                value={mahasiswaAngkatan}
+                                                onChange={(selected) => {
+                                                    setMahasiswaAngkatan(selected ? selected.value : '');
+                                                    setMahasiswaPage(1);
+                                                }}
+                                                options={angkatanOptions.map(a => ({ value: a, label: a }))}
+                                                placeholder="Semua Angkatan"
+                                                isSearchable={false}
+                                            />
+                                        </div>
                                     </div>
-                                ) : (
-                                    <div className="text-center py-12">
-                                        <i className="fas fa-user-graduate text-4xl text-gray-400 mb-3"></i>
-                                        <p className="text-gray-500">Belum ada mahasiswa aktif di program studi ini</p>
-                                    </div>
-                                )}
-                            </div>
-                        )}
-                    </div>
-                </div>
+                                    <DataTable
+                                        columns={mahasiswaColumns}
+                                        data={paginatedMahasiswa}
+                                        getRowKey={(item) => item.id_mahasiswa}
+                                        emptyState={<EmptyState title="Belum ada mahasiswa" description="Belum ada mahasiswa aktif di program studi ini" />}
+                                        className="hidden lg:block"
+                                        asCard={false}
+                                    />
+                                    <CardGrid
+                                        data={paginatedMahasiswa}
+                                        getCardKey={(item) => item.id_mahasiswa}
+                                        renderCard={renderMahasiswaCard}
+                                        emptyState={<EmptyState title="Belum ada mahasiswa" description="Belum ada mahasiswa aktif di program studi ini" compact />}
+                                        className="grid gap-3 md:grid-cols-2 lg:hidden"
+                                        emptyClassName="lg:hidden"
+                                    />
+                                    <ClientPagination
+                                        page={mahasiswaPage}
+                                        perPage={ITEMS_PER_PAGE}
+                                        total={filteredMahasiswa.length}
+                                        onPageChange={setMahasiswaPage}
+                                    />
+                                </div>
+                            ) : null}
+                        </div>
+                    </section>
 
-                {/* Action Buttons */}
-                <div className="mt-6 flex gap-3">
-                    <Link
-                        href={route('baak.prodi.edit', prodi.kode_prodi)}
-                        className="px-6 py-2 bg-yellow-500 hover:bg-yellow-600 text-white rounded-lg text-sm font-medium transition-colors"
-                    >
-                        <i className="fas fa-edit mr-2"></i>
-                        Edit Prodi
-                    </Link>
-                    <Link
-                        href={route('baak.prodi.index')}
-                        className="px-6 py-2 border border-gray-300 hover:bg-gray-50 text-gray-700 rounded-lg text-sm font-medium transition-colors"
-                    >
-                        Kembali
-                    </Link>
                 </div>
             </div>
         </BaakLayout>

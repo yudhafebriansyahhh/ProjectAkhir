@@ -1,443 +1,305 @@
 import { useState } from 'react';
 import { Head, Link, router } from '@inertiajs/react';
+import { ArrowLeft, BookOpen, GraduationCap, KeyRound, Mail, Pencil, Phone, UserCheck, UserCircle, UsersRound } from 'lucide-react';
 import BaakLayout from '@/Layouts/BaakLayout';
+import { Badge } from '@/Components/ui/badge';
+import { Button } from '@/Components/ui/button';
+import { Card, CardContent } from '@/Components/ui/card';
+import { CardGrid, DataTable, EmptyState, PageHeader, SummaryCard } from '@/Components/ui/data-display';
+
+const getGenderBadge = (gender) => {
+    if (gender === 'Laki-laki') return 'bg-blue-50 text-blue-700 border-blue-200';
+    if (gender === 'Perempuan') return 'bg-rose-50 text-rose-700 border-rose-200';
+    return 'bg-slate-50 text-slate-700 border-slate-200';
+};
+
+const getStatusBadge = (status) => {
+    const badges = {
+        aktif: 'bg-emerald-50 text-emerald-700 border-emerald-200',
+        lulus: 'bg-blue-50 text-blue-700 border-blue-200',
+        keluar: 'bg-amber-50 text-amber-700 border-amber-200',
+        DO: 'bg-red-50 text-red-700 border-red-200',
+    };
+
+    return badges[status] || 'bg-slate-50 text-slate-700 border-slate-200';
+};
+
+const formatTime = (time) => (time ? time.substring(0, 5) : '-');
+
+const InfoItem = ({ label, value, className = '' }) => (
+    <div className={`min-w-0 ${className}`}>
+        <p className="text-xs font-medium text-slate-500">{label}</p>
+        <p className="mt-1 break-words text-sm font-semibold text-slate-900">{value || '-'}</p>
+    </div>
+);
 
 export default function Show({ dosen }) {
     const [activeTab, setActiveTab] = useState('biodata');
 
     const handleResetPassword = () => {
+        const resetPassword = () => {
+            router.post(route('baak.dosen.reset-password', dosen.id_dosen), {}, { preserveScroll: true });
+        };
+
         if (window.Swal) {
             window.Swal.fire({
                 title: 'Reset Password?',
-                text: `Password akan direset ke NIP: ${dosen.nip}`,
+                text: `Password akan direset ke NIP: ${dosen.nip || '-'}`,
                 icon: 'warning',
                 showCancelButton: true,
                 confirmButtonText: 'Ya, Reset!',
                 cancelButtonText: 'Batal',
                 confirmButtonColor: '#3b82f6',
             }).then((result) => {
-                if (result.isConfirmed) {
-                    router.post(route('baak.dosen.reset-password', dosen.id_dosen), {}, {
-                        preserveScroll: true,
-                        onSuccess: () => {
-                            window.Swal.fire('Berhasil!', 'Password berhasil direset ke NIP', 'success');
-                        }
-                    });
-                }
+                if (result.isConfirmed) resetPassword();
             });
-        } else {
-            if (confirm(`Reset password ke NIP: ${dosen.nip}?`)) {
-                router.post(route('baak.dosen.reset-password', dosen.id_dosen), {}, {
-                    preserveScroll: true,
-                });
-            }
+            return;
         }
+
+        if (confirm(`Reset password ke NIP: ${dosen.nip || '-'}?`)) resetPassword();
     };
+
+    const tabs = [
+        { key: 'biodata', label: 'Biodata' },
+        { key: 'kelas', label: 'Kelas Diampu' },
+        { key: 'mahasiswa', label: 'Mahasiswa Bimbingan' },
+    ];
+
+    const summaryCards = [
+        { title: 'Kelas Diampu', value: dosen.kelas_count || 0, icon: BookOpen, tone: 'blue' },
+        { title: 'Mahasiswa Bimbingan', value: dosen.mahasiswa_bimbingan_count || 0, icon: UsersRound, tone: 'violet' },
+        { title: 'Program Studi', value: dosen.prodi ? 1 : 0, icon: GraduationCap, tone: 'emerald' },
+        { title: 'Status Akun', value: dosen.user ? 1 : 0, icon: UserCheck, tone: 'amber' },
+    ];
+
+    const biodataItems = [
+        { label: 'NIP', value: dosen.nip || '-' },
+        { label: 'Nama Lengkap', value: dosen.nama || '-' },
+        { label: 'Email', value: dosen.user?.email || '-' },
+        { label: 'Nomor HP', value: dosen.no_hp || '-' },
+        { label: 'Jenis Kelamin', value: dosen.jenis_kelamin || '-' },
+        { label: 'Program Studi', value: dosen.prodi?.nama_prodi || '-' },
+        { label: 'Jenjang', value: dosen.prodi?.jenjang || '-' },
+        { label: 'Alamat', value: dosen.alamat || '-', className: 'md:col-span-2' },
+    ];
+
+    const kelasColumns = [
+        { key: 'number', header: 'No', headerClassName: 'w-[64px]', cellClassName: 'font-medium text-slate-500', render: (_item, index) => index + 1 },
+        { key: 'kode', header: 'Kode MK', render: (item) => <span className="font-mono font-semibold text-blue-700">{item.mata_kuliah_periode?.mata_kuliah?.kode_matkul || '-'}</span> },
+        { key: 'mata_kuliah', header: 'Mata Kuliah', render: (item) => <span className="font-semibold text-slate-900">{item.mata_kuliah_periode?.mata_kuliah?.nama_matkul || '-'}</span> },
+        { key: 'kelas', header: 'Kelas', headerClassName: 'text-center', cellClassName: 'text-center', render: (item) => item.nama_kelas || '-' },
+        { key: 'sks', header: 'SKS', headerClassName: 'text-center', cellClassName: 'text-center', render: (item) => item.mata_kuliah_periode?.mata_kuliah?.sks || 0 },
+        { key: 'hari', header: 'Hari', headerClassName: 'text-center', cellClassName: 'text-center', render: (item) => item.hari || '-' },
+        { key: 'jam', header: 'Jam', headerClassName: 'text-center', cellClassName: 'text-center', render: (item) => `${formatTime(item.jam_mulai)} - ${formatTime(item.jam_selesai)}` },
+        { key: 'ruang', header: 'Ruang', headerClassName: 'text-center', cellClassName: 'text-center', render: (item) => item.ruang_kelas || '-' },
+    ];
+
+    const mahasiswaColumns = [
+        { key: 'number', header: 'No', headerClassName: 'w-[64px]', cellClassName: 'font-medium text-slate-500', render: (_item, index) => index + 1 },
+        { key: 'nim', header: 'NIM', render: (item) => <span className="font-mono font-semibold text-blue-700">{item.nim || '-'}</span> },
+        { key: 'nama', header: 'Nama Mahasiswa', render: (item) => <span className="font-semibold text-slate-900">{item.nama || '-'}</span> },
+        { key: 'angkatan', header: 'Angkatan', headerClassName: 'text-center', cellClassName: 'text-center', render: (item) => (item.nim ? `20${item.nim.substring(0, 2)}` : '-') },
+        {
+            key: 'status',
+            header: 'Status',
+            headerClassName: 'text-center',
+            cellClassName: 'text-center',
+            render: (item) => (
+                <Badge variant="outline" className={getStatusBadge(item.status)}>
+                    {item.status?.toUpperCase() || '-'}
+                </Badge>
+            ),
+        },
+    ];
+
+    const renderKelasCard = (kelas, index, key) => (
+        <Card key={key} className="rounded-lg border-slate-200 shadow-sm">
+            <CardContent className="space-y-3 p-4">
+                <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                        <p className="text-xs font-semibold text-slate-400">#{index + 1}</p>
+                        <p className="break-words font-semibold text-slate-950">{kelas.mata_kuliah_periode?.mata_kuliah?.nama_matkul || '-'}</p>
+                        <p className="mt-0.5 font-mono text-xs text-blue-700">{kelas.mata_kuliah_periode?.mata_kuliah?.kode_matkul || '-'}</p>
+                    </div>
+                    <Badge variant="outline" className="shrink-0 bg-violet-50 text-violet-700 border-violet-200">
+                        {kelas.mata_kuliah_periode?.mata_kuliah?.sks || 0} SKS
+                    </Badge>
+                </div>
+                <div className="grid grid-cols-2 gap-2 rounded-lg bg-slate-50 p-3 text-sm">
+                    <InfoItem label="Kelas" value={kelas.nama_kelas} />
+                    <InfoItem label="Hari" value={kelas.hari} />
+                    <InfoItem label="Jam" value={`${formatTime(kelas.jam_mulai)} - ${formatTime(kelas.jam_selesai)}`} />
+                    <InfoItem label="Ruang" value={kelas.ruang_kelas} />
+                </div>
+            </CardContent>
+        </Card>
+    );
+
+    const renderMahasiswaCard = (mhs, index, key) => (
+        <Card key={key} className="rounded-lg border-slate-200 shadow-sm">
+            <CardContent className="space-y-3 p-4">
+                <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                        <p className="text-xs font-semibold text-slate-400">#{index + 1}</p>
+                        <p className="break-words font-semibold text-slate-950">{mhs.nama || '-'}</p>
+                        <p className="mt-0.5 font-mono text-xs text-blue-700">{mhs.nim || '-'}</p>
+                    </div>
+                    <Badge variant="outline" className={`shrink-0 ${getStatusBadge(mhs.status)}`}>
+                        {mhs.status?.toUpperCase() || '-'}
+                    </Badge>
+                </div>
+                <div className="rounded-lg bg-slate-50 p-3">
+                    <InfoItem label="Angkatan" value={mhs.nim ? `20${mhs.nim.substring(0, 2)}` : '-'} />
+                </div>
+            </CardContent>
+        </Card>
+    );
 
     return (
         <BaakLayout title="Detail Dosen">
-            <Head title={`Detail - ${dosen.nama}`} />
+            <Head title={`Detail ${dosen.nama}`} />
 
-            <div className="container mx-auto px-4 py-8">
-                {/* Header */}
-                <div className="mb-6">
-                    <Link
-                        href={route('baak.dosen.index')}
-                        className="text-blue-600 hover:text-blue-700 text-sm font-medium mb-3 inline-flex items-center gap-1"
-                    >
-                        <i className="fas fa-arrow-left"></i>
-                        <span>Kembali ke Daftar Dosen</span>
-                    </Link>
-                    <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-4 mt-3">
-                        <div>
-                            <h1 className="text-xl md:text-2xl font-bold text-gray-700">Detail Dosen</h1>
-                            <p className="text-sm text-gray-600 mt-1">Informasi lengkap dosen</p>
-                        </div>
-                        <div className="flex flex-col sm:flex-row gap-2">
-                            <Link
-                                href={route('baak.dosen.edit', dosen.id_dosen)}
-                                className="bg-yellow-500 hover:bg-yellow-600 text-white px-4 py-2 rounded-lg text-sm font-medium flex items-center justify-center gap-2 transition-colors"
-                            >
-                                <i className="fas fa-edit"></i>
-                                <span>Edit Data</span>
-                            </Link>
-                            <button
-                                onClick={handleResetPassword}
-                                className="bg-orange-500 hover:bg-orange-600 text-white px-4 py-2 rounded-lg text-sm font-medium flex items-center justify-center gap-2 transition-colors"
-                            >
-                                <i className="fas fa-key"></i>
-                                <span>Reset Password</span>
-                            </button>
-                        </div>
+            <div className="min-h-screen min-w-0 bg-slate-50 px-3 py-4 sm:px-4 sm:py-5 md:px-6 lg:px-8">
+                <div className="mx-auto w-full min-w-0 max-w-[1440px] space-y-4 md:space-y-5">
+                    <div className="min-w-0">
+                        <Link href={route('baak.dosen.index')} className="mb-3 inline-flex items-center gap-2 text-sm font-semibold text-blue-600 hover:text-blue-700">
+                            <ArrowLeft className="h-4 w-4" />
+                            Kembali ke Daftar Dosen
+                        </Link>
+                        <PageHeader
+                            title="Detail Dosen"
+                            description="Informasi lengkap dosen dan aktivitas akademik."
+                            actionHref={route('baak.dosen.edit', dosen.id_dosen)}
+                            actionLabel="Edit Data"
+                            actionIcon={Pencil}
+                        />
                     </div>
-                </div>
 
-                {/* Profile Card */}
-                <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 md:p-6 mb-6">
-                    <div className="flex flex-col md:flex-row gap-6">
-                        {/* Photo */}
-                        <div className="flex-shrink-0 mx-auto md:mx-0">
-                            <div className="w-32 h-32 md:w-40 md:h-40 rounded-full overflow-hidden bg-gradient-to-br from-blue-100 to-blue-200 border-4 border-white shadow-md">
+                    <Card className="rounded-lg border-slate-200 shadow-sm">
+                        <CardContent className="grid gap-5 p-4 sm:p-5 lg:grid-cols-[auto_minmax(0,1fr)_auto] lg:items-center">
+                            <div className="mx-auto h-28 w-28 overflow-hidden rounded-full border-4 border-white bg-blue-50 shadow-sm lg:mx-0">
                                 {dosen.foto ? (
-                                    <img
-                                        src={`/storage/${dosen.foto}`}
-                                        alt={dosen.nama}
-                                        className="w-full h-full object-cover"
+                                    <img src={`/storage/${dosen.foto}`} alt={dosen.nama} className="h-full w-full object-cover" />
+                                ) : (
+                                    <div className="flex h-full w-full items-center justify-center text-blue-400">
+                                        <UserCircle className="h-14 w-14" />
+                                    </div>
+                                )}
+                            </div>
+
+                            <div className="min-w-0 text-center lg:text-left">
+                                <div className="mb-2 flex flex-wrap justify-center gap-1.5 lg:justify-start">
+                                    <Badge variant="outline" className="bg-blue-50 font-mono text-blue-700">
+                                        {dosen.nip || '-'}
+                                    </Badge>
+                                    <Badge variant="outline" className={getGenderBadge(dosen.jenis_kelamin)}>
+                                        {dosen.jenis_kelamin || '-'}
+                                    </Badge>
+                                </div>
+                                <h2 className="break-words text-xl font-bold text-slate-950 sm:text-2xl">{dosen.nama}</h2>
+                                <div className="mt-2 grid gap-1 text-sm text-slate-500">
+                                    <p className="flex min-w-0 items-center justify-center gap-1.5 lg:justify-start">
+                                        <GraduationCap className="h-4 w-4 shrink-0 text-slate-400" />
+                                        <span className="break-words">{dosen.prodi?.nama_prodi || '-'}</span>
+                                    </p>
+                                    <p className="flex min-w-0 items-center justify-center gap-1.5 lg:justify-start">
+                                        <Mail className="h-4 w-4 shrink-0 text-slate-400" />
+                                        <span className="break-all">{dosen.user?.email || '-'}</span>
+                                    </p>
+                                    {dosen.no_hp ? (
+                                        <p className="flex items-center justify-center gap-1.5 lg:justify-start">
+                                            <Phone className="h-4 w-4 shrink-0 text-slate-400" />
+                                            <span>{dosen.no_hp}</span>
+                                        </p>
+                                    ) : null}
+                                </div>
+                            </div>
+
+                            <Button type="button" variant="outline" className="w-full gap-2 border-amber-200 text-amber-700 hover:bg-amber-50 lg:w-auto" onClick={handleResetPassword}>
+                                <KeyRound className="h-4 w-4" />
+                                Reset Password
+                            </Button>
+                        </CardContent>
+                    </Card>
+
+                    <section className="grid min-w-0 grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
+                        {summaryCards.map((card) => (
+                            <SummaryCard key={card.title} {...card} />
+                        ))}
+                    </section>
+
+                    <section className="min-w-0 max-w-full overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm">
+                        <div className="min-w-0 max-w-full border-b border-slate-100">
+                            <div className="flex min-w-0 max-w-full snap-x overflow-x-auto overscroll-x-contain scroll-smooth [scrollbar-width:thin]">
+                                {tabs.map((tab) => (
+                                    <button
+                                        key={tab.key}
+                                        type="button"
+                                        onClick={() => setActiveTab(tab.key)}
+                                        className={`shrink-0 snap-start whitespace-nowrap border-b-2 px-4 py-3 text-sm font-semibold transition sm:px-5 ${
+                                            activeTab === tab.key
+                                                ? 'border-blue-600 bg-blue-50/60 text-blue-700'
+                                                : 'border-transparent text-slate-500 hover:bg-slate-50 hover:text-slate-700'
+                                        }`}
+                                    >
+                                        {tab.label}
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+
+                        <div className="p-4 sm:p-5">
+                            {activeTab === 'biodata' ? (
+                                <div className="grid gap-3 rounded-lg border border-blue-100 bg-blue-50 p-4 sm:grid-cols-2 lg:grid-cols-4">
+                                    {biodataItems.map((item) => (
+                                        <InfoItem key={item.label} label={item.label} value={item.value} className={item.className} />
+                                    ))}
+                                </div>
+                            ) : null}
+
+                            {activeTab === 'kelas' ? (
+                                <div className="space-y-4">
+                                    <DataTable
+                                        columns={kelasColumns}
+                                        data={dosen.kelas || []}
+                                        getRowKey={(item, index) => item.id_kelas || index}
+                                        emptyState={<EmptyState title="Belum ada kelas" description="Dosen belum mengampu kelas semester ini." />}
+                                        className="hidden lg:block"
+                                        asCard={false}
                                     />
-                                ) : (
-                                    <div className="w-full h-full flex items-center justify-center text-blue-400">
-                                        <i className="fas fa-user text-4xl md:text-5xl"></i>
-                                    </div>
-                                )}
-                            </div>
+                                    <CardGrid
+                                        data={dosen.kelas || []}
+                                        getCardKey={(item, index) => item.id_kelas || index}
+                                        renderCard={renderKelasCard}
+                                        emptyState={<EmptyState title="Belum ada kelas" description="Dosen belum mengampu kelas semester ini." compact />}
+                                        className="grid gap-3 md:grid-cols-2 lg:hidden"
+                                        emptyClassName="lg:hidden"
+                                    />
+                                </div>
+                            ) : null}
+
+                            {activeTab === 'mahasiswa' ? (
+                                <div className="space-y-4">
+                                    <DataTable
+                                        columns={mahasiswaColumns}
+                                        data={dosen.mahasiswa_bimbingan || []}
+                                        getRowKey={(item, index) => item.id_mahasiswa || index}
+                                        emptyState={<EmptyState title="Belum ada mahasiswa bimbingan" description="Dosen belum menjadi dosen wali mahasiswa." />}
+                                        className="hidden lg:block"
+                                        asCard={false}
+                                    />
+                                    <CardGrid
+                                        data={dosen.mahasiswa_bimbingan || []}
+                                        getCardKey={(item, index) => item.id_mahasiswa || index}
+                                        renderCard={renderMahasiswaCard}
+                                        emptyState={<EmptyState title="Belum ada mahasiswa bimbingan" description="Dosen belum menjadi dosen wali mahasiswa." compact />}
+                                        className="grid gap-3 md:grid-cols-2 lg:hidden"
+                                        emptyClassName="lg:hidden"
+                                    />
+                                </div>
+                            ) : null}
                         </div>
-
-                        {/* Info */}
-                        <div className="flex-1">
-                            <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-3">
-                                <div className="text-center md:text-left">
-                                    <h2 className="text-xl md:text-2xl font-bold text-gray-800">{dosen.nama}</h2>
-                                    <div className="flex items-center justify-center md:justify-start gap-2 mt-2">
-                                        <i className="fas fa-id-card text-gray-400 text-sm"></i>
-                                        <p className="text-gray-600 text-sm md:text-base">NIP: {dosen.nip}</p>
-                                    </div>
-                                    <div className="flex items-center justify-center md:justify-start gap-2 mt-1">
-                                        <i className="fas fa-envelope text-gray-400 text-sm"></i>
-                                        <p className="text-gray-600 text-sm break-all">{dosen.user?.email || '-'}</p>
-                                    </div>
-                                    {dosen.no_hp && (
-                                        <div className="flex items-center justify-center md:justify-start gap-2 mt-1">
-                                            <i className="fas fa-phone text-gray-400 text-sm"></i>
-                                            <p className="text-gray-600 text-sm">{dosen.no_hp}</p>
-                                        </div>
-                                    )}
-                                </div>
-                                {dosen.jenis_kelamin === 'Laki-laki' ? (
-                                    <span className="px-4 py-1.5 rounded-full text-sm font-semibold bg-blue-100 text-blue-800 whitespace-nowrap mx-auto sm:mx-0">
-                                        <i className="fas fa-mars mr-1"></i>
-                                        Laki-laki
-                                    </span>
-                                ) : (
-                                    <span className="px-4 py-1.5 rounded-full text-sm font-semibold bg-pink-100 text-pink-800 whitespace-nowrap mx-auto sm:mx-0">
-                                        <i className="fas fa-venus mr-1"></i>
-                                        Perempuan
-                                    </span>
-                                )}
-                            </div>
-
-                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-4 mt-4 md:mt-6">
-                                <div className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-lg p-3 md:p-4 border border-blue-200">
-                                    <div className="flex items-center gap-2 mb-2">
-                                        <i className="fas fa-graduation-cap text-blue-600 text-sm"></i>
-                                        <p className="text-xs md:text-sm text-gray-600 font-medium">Program Studi</p>
-                                    </div>
-                                    <p className="font-semibold text-gray-800 text-sm md:text-base">{dosen.prodi?.nama_prodi || '-'}</p>
-                                    <p className="text-xs text-gray-600 mt-1">{dosen.prodi?.fakultas?.nama_fakultas || ''}</p>
-                                </div>
-                                <div className="bg-gradient-to-br from-purple-50 to-purple-100 rounded-lg p-3 md:p-4 border border-purple-200">
-                                    <div className="flex items-center gap-2 mb-2">
-                                        <i className="fas fa-chalkboard text-purple-600 text-sm"></i>
-                                        <p className="text-xs md:text-sm text-gray-600 font-medium">Jumlah Kelas</p>
-                                    </div>
-                                    <p className="font-bold text-gray-800 text-lg md:text-xl">{dosen.kelas_count || 0} Kelas</p>
-                                    <p className="text-xs text-gray-600 mt-1">Mengampu semester ini</p>
-                                </div>
-                                <div className="bg-gradient-to-br from-green-50 to-green-100 rounded-lg p-3 md:p-4 border border-green-200 sm:col-span-2 lg:col-span-1">
-                                    <div className="flex items-center gap-2 mb-2">
-                                        <i className="fas fa-users text-green-600 text-sm"></i>
-                                        <p className="text-xs md:text-sm text-gray-600 font-medium">Mahasiswa Bimbingan</p>
-                                    </div>
-                                    <p className="font-bold text-gray-800 text-lg md:text-xl">{dosen.mahasiswa_bimbingan_count || 0} Mahasiswa</p>
-                                    <p className="text-xs text-gray-600 mt-1">Sebagai dosen wali</p>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                {/* Tabs */}
-                <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
-                    {/* Tab Headers */}
-                    <div className="border-b border-gray-200 bg-gray-50">
-                        <div className="flex overflow-x-auto">
-                            <button
-                                onClick={() => setActiveTab('biodata')}
-                                className={`flex-1 sm:flex-none px-4 md:px-6 py-3 text-xs md:text-sm font-medium whitespace-nowrap transition-colors ${
-                                    activeTab === 'biodata'
-                                        ? 'text-blue-600 border-b-2 border-blue-600 bg-white'
-                                        : 'text-gray-600 hover:text-gray-800 hover:bg-gray-100'
-                                }`}
-                            >
-                                <i className="fas fa-user mr-1 md:mr-2"></i>
-                                <span>Biodata</span>
-                            </button>
-                            <button
-                                onClick={() => setActiveTab('kelas')}
-                                className={`flex-1 sm:flex-none px-4 md:px-6 py-3 text-xs md:text-sm font-medium whitespace-nowrap transition-colors ${
-                                    activeTab === 'kelas'
-                                        ? 'text-blue-600 border-b-2 border-blue-600 bg-white'
-                                        : 'text-gray-600 hover:text-gray-800 hover:bg-gray-100'
-                                }`}
-                            >
-                                <i className="fas fa-chalkboard mr-1 md:mr-2"></i>
-                                <span>Kelas Diampu</span>
-                            </button>
-                            <button
-                                onClick={() => setActiveTab('mahasiswa')}
-                                className={`flex-1 sm:flex-none px-4 md:px-6 py-3 text-xs md:text-sm font-medium whitespace-nowrap transition-colors ${
-                                    activeTab === 'mahasiswa'
-                                        ? 'text-blue-600 border-b-2 border-blue-600 bg-white'
-                                        : 'text-gray-600 hover:text-gray-800 hover:bg-gray-100'
-                                }`}
-                            >
-                                <i className="fas fa-user-graduate mr-1 md:mr-2"></i>
-                                <span>Mahasiswa Bimbingan</span>
-                            </button>
-                        </div>
-                    </div>
-
-                    {/* Tab Content */}
-                    <div className="p-4 md:p-6">
-                        {/* Biodata Tab */}
-                        {activeTab === 'biodata' && (
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
-                                <div>
-                                    <label className="text-xs md:text-sm font-semibold text-gray-600">NIP</label>
-                                    <p className="text-gray-800 text-sm md:text-lg mt-1">{dosen.nip || '-'}</p>
-                                </div>
-                                <div>
-                                    <label className="text-xs md:text-sm font-semibold text-gray-600">Nama Lengkap</label>
-                                    <p className="text-gray-800 text-sm md:text-lg mt-1">{dosen.nama || '-'}</p>
-                                </div>
-                                <div>
-                                    <label className="text-xs md:text-sm font-semibold text-gray-600">Email</label>
-                                    <p className="text-gray-800 text-sm break-all mt-1">{dosen.user?.email || '-'}</p>
-                                </div>
-                                <div>
-                                    <label className="text-xs md:text-sm font-semibold text-gray-600">Nomor HP</label>
-                                    <p className="text-gray-800 text-sm mt-1">{dosen.no_hp || '-'}</p>
-                                </div>
-                                <div>
-                                    <label className="text-xs md:text-sm font-semibold text-gray-600">Jenis Kelamin</label>
-                                    <p className="text-gray-800 text-sm mt-1">{dosen.jenis_kelamin || '-'}</p>
-                                </div>
-                                <div>
-                                    <label className="text-xs md:text-sm font-semibold text-gray-600">Program Studi</label>
-                                    <p className="text-gray-800 text-sm mt-1">{dosen.prodi?.nama_prodi || '-'}</p>
-                                </div>
-                                <div>
-                                    <label className="text-xs md:text-sm font-semibold text-gray-600">Fakultas</label>
-                                    <p className="text-gray-800 text-sm mt-1">{dosen.prodi?.fakultas?.nama_fakultas || '-'}</p>
-                                </div>
-                                <div>
-                                    <label className="text-xs md:text-sm font-semibold text-gray-600">Jenjang</label>
-                                    <p className="text-gray-800 text-sm mt-1">{dosen.prodi?.jenjang || '-'}</p>
-                                </div>
-                                <div className="md:col-span-2">
-                                    <label className="text-xs md:text-sm font-semibold text-gray-600">Alamat</label>
-                                    <p className="text-gray-800 text-sm mt-1">{dosen.alamat || '-'}</p>
-                                </div>
-                            </div>
-                        )}
-
-                        {/* Kelas Tab */}
-                        {activeTab === 'kelas' && (
-                            <div>
-                                {dosen.kelas && dosen.kelas.length > 0 ? (
-                                    <>
-                                        {/* Desktop Table */}
-                                        <div className="hidden md:block overflow-x-auto rounded-lg border border-gray-200">
-                                            <table className="w-full">
-                                                <thead className="bg-gray-50">
-                                                    <tr className="text-gray-600 font-semibold text-xs">
-                                                        <th className="px-6 py-4 text-left uppercase tracking-wider">No</th>
-                                                        <th className="px-6 py-3 text-left uppercase tracking-wider">Kode MK</th>
-                                                        <th className="px-6 py-3 text-left uppercase tracking-wider">Mata Kuliah</th>
-                                                        <th className="px-6 py-3 text-center uppercase tracking-wider">Kelas</th>
-                                                        <th className="px-6 py-3 text-center uppercase tracking-wider">SKS</th>
-                                                        <th className="px-6 py-3 text-center uppercase tracking-wider">Hari</th>
-                                                        <th className="px-6 py-3 text-center uppercase tracking-wider">Jam</th>
-                                                        <th className="px-6 py-3 text-center uppercase tracking-wider">Ruang</th>
-                                                    </tr>
-                                                </thead>
-                                                <tbody className="bg-white divide-y divide-gray-200">
-                                                    {dosen.kelas.map((kelas, index) => (
-                                                    <tr key={kelas.id_kelas} className="hover:bg-gray-50">
-                                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
-                                                            {index + 1}
-                                                        </td>
-                                                        <td className="px-6 py-4 whitespace-nowrap">
-                                                            <span className="px-2 py-1 text-xs font-semibold text-blue-800 bg-blue-100 rounded-lg">
-                                                                {kelas.mata_kuliah_periode?.mata_kuliah?.kode_matkul || '-'}
-                                                            </span>
-                                                        </td>
-                                                        <td className="px-6 py-4 text-sm text-gray-700 font-medium">
-                                                            {kelas.mata_kuliah_periode?.mata_kuliah?.nama_matkul || '-'}
-                                                        </td>
-                                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700 text-center">
-                                                            {kelas.nama_kelas}
-                                                        </td>
-                                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700 text-center font-medium">
-                                                            {kelas.mata_kuliah_periode?.mata_kuliah?.sks || 0}
-                                                        </td>
-                                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700 text-center">
-                                                            {kelas.hari}
-                                                        </td>
-                                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700 text-center">
-                                                            {kelas.jam_mulai?.substring(0, 5)} - {kelas.jam_selesai?.substring(0, 5)}
-                                                        </td>
-                                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700 text-center">
-                                                            {kelas.ruang_kelas}
-                                                        </td>
-                                                    </tr>
-                                                ))}
-                                                </tbody>
-                                            </table>
-                                        </div>
-
-                                        {/* Mobile Cards */}
-                                        <div className="md:hidden space-y-4">
-                                            {dosen.kelas.map((kelas, index) => (
-                                                <div key={kelas.id_kelas} className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm">
-                                                    <div className="flex justify-between items-start mb-3">
-                                                        <div className="flex-1">
-                                                            <div className="flex items-center gap-2 mb-1">
-                                                                <span className="text-xs font-semibold text-gray-500">#{index + 1}</span>
-                                                                <span className="px-2 py-0.5 text-xs font-semibold text-blue-800 bg-blue-100 rounded">
-                                                                    {kelas.mata_kuliah_periode?.mata_kuliah?.kode_matkul}
-                                                                </span>
-                                                            </div>
-                                                            <h4 className="font-semibold text-gray-800 text-sm mb-1">
-                                                                {kelas.mata_kuliah_periode?.mata_kuliah?.nama_matkul}
-                                                            </h4>
-                                                            <p className="text-xs text-gray-600">Kelas {kelas.nama_kelas}</p>
-                                                        </div>
-                                                        <span className="px-2 py-1 rounded text-xs font-semibold bg-purple-100 text-purple-800">
-                                                            {kelas.mata_kuliah_periode?.mata_kuliah?.sks || 0} SKS
-                                                        </span>
-                                                    </div>
-                                                    <div className="grid grid-cols-2 gap-2 pt-3 border-t border-gray-100">
-                                                        <div>
-                                                            <p className="text-xs text-gray-500 mb-1">Hari</p>
-                                                            <p className="text-sm font-semibold text-gray-800">{kelas.hari}</p>
-                                                        </div>
-                                                        <div>
-                                                            <p className="text-xs text-gray-500 mb-1">Jam</p>
-                                                            <p className="text-sm font-semibold text-gray-800">
-                                                                {kelas.jam_mulai?.substring(0, 5)} - {kelas.jam_selesai?.substring(0, 5)}
-                                                            </p>
-                                                        </div>
-                                                        <div className="col-span-2">
-                                                            <p className="text-xs text-gray-500 mb-1">Ruang</p>
-                                                            <p className="text-sm font-semibold text-gray-800">{kelas.ruang_kelas}</p>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            ))}
-                                        </div>
-                                    </>
-                                ) : (
-                                    <div className="text-center py-12 text-gray-500 bg-gray-50 rounded-lg border-2 border-dashed border-gray-300">
-                                        <i className="fas fa-chalkboard text-4xl md:text-5xl mb-4 text-gray-400"></i>
-                                        <p className="text-base md:text-lg font-medium">Belum ada kelas yang diampu</p>
-                                        <p className="text-xs md:text-sm mt-1">Dosen belum mengampu kelas semester ini</p>
-                                    </div>
-                                )}
-                            </div>
-                        )}
-
-                        {/* Mahasiswa Bimbingan Tab */}
-                        {activeTab === 'mahasiswa' && (
-                            <div>
-                                {dosen.mahasiswa_bimbingan && dosen.mahasiswa_bimbingan.length > 0 ? (
-                                    <>
-                                        {/* Desktop Table */}
-                                        <div className="hidden md:block overflow-x-auto rounded-lg border border-gray-200">
-                                            <table className="w-full">
-                                                <thead className="bg-gray-50">
-                                                    <tr className="text-gray-600 font-semibold text-xs">
-                                                        <th className="px-6 py-4 text-left uppercase tracking-wider">No</th>
-                                                        <th className="px-6 py-3 text-left uppercase tracking-wider">NIM</th>
-                                                        <th className="px-6 py-3 text-left uppercase tracking-wider">Nama Mahasiswa</th>
-                                                        <th className="px-6 py-3 text-center uppercase tracking-wider">Angkatan</th>
-                                                        <th className="px-6 py-3 text-center uppercase tracking-wider">Status</th>
-                                                    </tr>
-                                                </thead>
-                                                <tbody className="bg-white divide-y divide-gray-200">
-                                                    {dosen.mahasiswa_bimbingan.map((mhs, index) => (
-                                                        <tr key={mhs.id_mahasiswa} className="hover:bg-gray-50">
-                                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
-                                                                {index + 1}
-                                                            </td>
-                                                            <td className="px-6 py-4 whitespace-nowrap">
-                                                                <span className="px-2 py-1 text-xs font-semibold text-blue-800 bg-blue-100 rounded-lg">
-                                                                    {mhs.nim}
-                                                                </span>
-                                                            </td>
-                                                            <td className="px-6 py-4 text-sm text-gray-700 font-medium">
-                                                                {mhs.nama}
-                                                            </td>
-                                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700 text-center">
-                                                                20{mhs.nim?.substring(0, 2)}
-                                                            </td>
-                                                            <td className="px-6 py-4 whitespace-nowrap text-center">
-                                                                <span className={`px-2 py-1 rounded-full text-xs font-semibold ${
-                                                                    mhs.status === 'aktif' ? 'bg-green-100 text-green-700' :
-                                                                    mhs.status === 'lulus' ? 'bg-blue-100 text-blue-700' :
-                                                                    mhs.status === 'keluar' ? 'bg-yellow-100 text-yellow-700' :
-                                                                    'bg-red-100 text-red-700'
-                                                                }`}>
-                                                                    {mhs.status?.toUpperCase()}
-                                                                </span>
-                                                            </td>
-                                                        </tr>
-                                                    ))}
-                                                </tbody>
-                                            </table>
-                                        </div>
-
-                                        {/* Mobile Cards */}
-                                        <div className="md:hidden space-y-4">
-                                            {dosen.mahasiswa_bimbingan.map((mhs, index) => (
-                                                <div key={mhs.id_mahasiswa} className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm">
-                                                    <div className="flex justify-between items-start mb-2">
-                                                        <div className="flex-1">
-                                                            <div className="flex items-center gap-2 mb-1">
-                                                                <span className="text-xs font-semibold text-gray-500">#{index + 1}</span>
-                                                                <span className="px-2 py-0.5 text-xs font-semibold text-blue-800 bg-blue-100 rounded">
-                                                                    {mhs.nim}
-                                                                </span>
-                                                            </div>
-                                                            <h4 className="font-semibold text-gray-800 text-sm">
-                                                                {mhs.nama}
-                                                            </h4>
-                                                        </div>
-                                                        <span className={`px-2 py-1 rounded-full text-xs font-semibold whitespace-nowrap ${
-                                                            mhs.status === 'aktif' ? 'bg-green-100 text-green-700' :
-                                                            mhs.status === 'lulus' ? 'bg-blue-100 text-blue-700' :
-                                                            mhs.status === 'keluar' ? 'bg-yellow-100 text-yellow-700' :
-                                                            'bg-red-100 text-red-700'
-                                                        }`}>
-                                                            {mhs.status?.toUpperCase()}
-                                                        </span>
-                                                    </div>
-                                                    <p className="text-xs text-gray-600 mt-2">
-                                                        <span className="font-medium">Angkatan:</span> 20{mhs.nim?.substring(0, 2)}
-                                                    </p>
-                                                </div>
-                                            ))}
-                                        </div>
-                                    </>
-                                ) : (
-                                    <div className="text-center py-12 text-gray-500 bg-gray-50 rounded-lg border-2 border-dashed border-gray-300">
-                                        <i className="fas fa-user-graduate text-4xl md:text-5xl mb-4 text-gray-400"></i>
-                                        <p className="text-base md:text-lg font-medium">Belum ada mahasiswa bimbingan</p>
-                                        <p className="text-xs md:text-sm mt-1">Dosen belum menjadi dosen wali mahasiswa</p>
-                                    </div>
-                                )}
-                            </div>
-                        )}
-                    </div>
+                    </section>
                 </div>
             </div>
         </BaakLayout>

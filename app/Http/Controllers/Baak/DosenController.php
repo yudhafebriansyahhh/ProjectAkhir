@@ -8,10 +8,13 @@ use App\Http\Requests\UpdateDosenRequest;
 use App\Models\Dosen;
 use App\Models\Prodi;
 use App\Models\User;
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Str;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Http\Request;
+use Maatwebsite\Excel\Facades\Excel;
+use App\Exports\DosenExport;
+use App\Exports\DosenTemplateExport;
+use App\Imports\DosenImport;
 use Inertia\Inertia;
 
 class DosenController extends Controller
@@ -21,24 +24,31 @@ class DosenController extends Controller
         $search = request('search');
         $kodeProdi = request('prodi');
 
-        $dosen = Dosen::with(['prodi.fakultas', 'user'])
+        $dosen = Dosen::with(['prodi', 'user'])
             ->withCount(['kelas', 'mahasiswaBimbingan'])
-            ->when($search, fn($query) =>
-                $query->where('nip', 'like', '%' . $search . '%')
-                      ->orWhere('nama', 'like', '%' . $search . '%')
+            ->when($search, fn ($query) => $query->where(function ($query) use ($search) {
+                $query->where('nip', 'like', '%'.$search.'%')
+                    ->orWhere('nama', 'like', '%'.$search.'%');
+            })
             )
-            ->when($kodeProdi, fn($query) =>
-                $query->where('kode_prodi', $kodeProdi)
+            ->when($kodeProdi, fn ($query) => $query->where('kode_prodi', $kodeProdi)
             )
             ->orderBy('nama', 'asc')
             ->paginate(10)
             ->withQueryString();
 
-        $prodi_list = Prodi::with('fakultas')->orderBy('nama_prodi')->get();
+        $prodi_list = Prodi::orderBy('nama_prodi')->get();
+        $stats = [
+            'total' => Dosen::count(),
+            'total_prodi' => Dosen::distinct('kode_prodi')->count('kode_prodi'),
+            'total_kelas' => Dosen::withCount('kelas')->get()->sum('kelas_count'),
+            'total_bimbingan' => Dosen::withCount('mahasiswaBimbingan')->get()->sum('mahasiswa_bimbingan_count'),
+        ];
 
         return Inertia::render('Baak/Dosen/Index', [
             'dosen' => $dosen,
             'prodi_list' => $prodi_list,
+            'stats' => $stats,
             'filters' => [
                 'search' => $search,
                 'prodi' => $kodeProdi,
@@ -48,7 +58,7 @@ class DosenController extends Controller
 
     public function create()
     {
-        $prodi = Prodi::with('fakultas')->orderBy('nama_prodi')->get();
+        $prodi = Prodi::orderBy('nama_prodi')->get();
 
         return Inertia::render('Baak/Dosen/Create', [
             'prodi' => $prodi,
@@ -61,12 +71,12 @@ class DosenController extends Controller
 
         // Generate email
         $emailUsername = strtolower(str_replace(' ', '', $data['nama']));
-        $data['email'] = $emailUsername . '@itbriau.ac.id';
+        $data['email'] = $emailUsername.'@itbriau.ac.id';
 
         // Ensure unique email
         $counter = 1;
         while (User::where('email', $data['email'])->exists()) {
-            $data['email'] = $emailUsername . $counter . '@itbriau.ac.id';
+            $data['email'] = $emailUsername.$counter.'@itbriau.ac.id';
             $counter++;
         }
 
@@ -96,10 +106,10 @@ class DosenController extends Controller
     public function show(Dosen $dosen)
     {
         $dosen->load([
-            'prodi.fakultas',
+            'prodi',
             'user',
             'kelas.mataKuliahPeriode.mataKuliah', // ✅ FIX: Load via mataKuliahPeriode
-            'mahasiswaBimbingan'
+            'mahasiswaBimbingan',
         ]);
 
         $dosen->loadCount(['kelas', 'mahasiswaBimbingan']);
@@ -112,7 +122,7 @@ class DosenController extends Controller
     public function edit(Dosen $dosen)
     {
         $dosen->load('prodi');
-        $prodi = Prodi::with('fakultas')->orderBy('nama_prodi')->get();
+        $prodi = Prodi::orderBy('nama_prodi')->get();
 
         return Inertia::render('Baak/Dosen/Edit', [
             'dosen' => $dosen,
@@ -178,14 +188,38 @@ class DosenController extends Controller
 
     public function resetPassword(Dosen $dosen)
     {
-        if (!$dosen->user) {
+        if (! $dosen->user) {
             return back()->withErrors(['error' => 'User tidak ditemukan']);
         }
 
         $dosen->user->update([
-            'password' => Hash::make($dosen->nip)
+            'password' => Hash::make($dosen->nip),
         ]);
 
-        return back()->with('success', 'Password berhasil direset ke NIP: ' . $dosen->nip);
+        return back()->with('success', 'Password berhasil direset ke NIP: '.$dosen->nip);
+    }
+
+    public function exportExcel()
+    {
+        return Excel::download(new DosenExport, 'data_dosen.xlsx');
+    }
+
+    public function exportTemplate()
+    {
+        return Excel::download(new DosenTemplateExport, 'template_import_dosen.xlsx');
+    }
+
+    public function importExcel(Request $request)
+    {
+        $request->validate([
+            'file' => 'required|mimes:xlsx,xls,csv|max:2048',
+        ]);
+
+        try {
+            Excel::import(new DosenImport, $request->file('file'));
+            return redirect()->back()->with('success', 'Data dosen berhasil diimport!');
+        } catch (\Exception $e) {
+            return redirect()->back()->with('error', 'Terjadi kesalahan saat import: ' . $e->getMessage());
+        }
     }
 }

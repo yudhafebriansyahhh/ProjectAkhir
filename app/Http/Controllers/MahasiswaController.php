@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
 use Inertia\Inertia;
 
 class MahasiswaController extends Controller
@@ -10,7 +9,7 @@ class MahasiswaController extends Controller
     public function dashboard()
     {
         $user = auth()->user();
-        if (!$user || !$user->isMahasiswa()) {
+        if (! $user || ! $user->isMahasiswa()) {
             abort(403, 'Unauthorized access');
         }
 
@@ -26,8 +25,8 @@ class MahasiswaController extends Controller
         $sksData = [];
         $totalSksKumulatif = 0;
         $totalBobotKumulatif = 0;
-        
-        $currentIpk = "0.00";
+
+        $currentIpk = '0.00';
 
         foreach ($krsList as $krs) {
             $totalBobotSemester = 0;
@@ -41,31 +40,32 @@ class MahasiswaController extends Controller
                     $nilai = \App\Models\NilaiMahasiswa::where('id_mahasiswa', $krs->id_mahasiswa)
                         ->where('id_kelas', $detail->id_kelas)
                         ->first();
-                        
+
+                    $nilaiHuruf = $nilai ? ($nilai->nilai_huruf ?: '-') : '-';
+                    
+                    if ($nilaiHuruf === '-' || $nilaiHuruf === null) {
+                        continue; // Lewati kalkulasi jika belum ada nilai
+                    }
+
                     // Kalkulasi bobot (dari Baak\MahasiswaController)
                     $bobotMap = [
                         'A' => 4.00, 'A-' => 3.75, 'B+' => 3.50,
                         'B' => 3.00, 'B-' => 2.75, 'C+' => 2.50,
                         'C' => 2.00, 'D' => 1.00, 'E' => 0.00,
                     ];
-                    $bobot = $nilai ? ($bobotMap[$nilai->nilai_huruf] ?? 0) : 0;
-                    
-                    if ($bobot > 0 && $mk->sks) {
+                    $bobot = $bobotMap[$nilaiHuruf] ?? 0;
+
+                    if ($mk->sks) {
                         $totalBobotSemester += $bobot * $mk->sks;
                         $totalSksSemester += $mk->sks;
-                        
+
                         $totalBobotKumulatif += $bobot * $mk->sks;
                         $totalSksKumulatif += $mk->sks;
-                    } elseif ($mk->sks) {
-                        // Even if grade is E (bobot 0), SKS is still counted attempt on Baak logic
-                        // Need to check the BAAK logic carefully. Usually SKS is counted if taking.
-                         $totalSksSemester += $mk->sks;
-                         $totalSksKumulatif += $mk->sks;
                     }
                 }
             }
 
-            $ips = $totalSksSemester > 0 ? number_format($totalBobotSemester / $totalSksSemester, 2) : "0.00";
+            $ips = $totalSksSemester > 0 ? number_format($totalBobotSemester / $totalSksSemester, 2) : '0.00';
             $ipData[] = floatval($ips);
             $sksData[] = $totalSksSemester;
         }
@@ -82,7 +82,7 @@ class MahasiswaController extends Controller
                 'detailKrs.kelas.mataKuliahPeriode.mataKuliah',
                 'detailKrs.kelas.pertemuans.absensis' => function ($query) use ($mahasiswa) {
                     $query->where('id_mahasiswa', $mahasiswa->id_mahasiswa);
-                }
+                },
             ])
             ->first();
 
@@ -90,30 +90,32 @@ class MahasiswaController extends Controller
         if ($latestKrs) {
             foreach ($latestKrs->detailKrs as $detail) {
                 $kelas = $detail->kelas;
-                if (!$kelas) continue;
+                if (! $kelas) {
+                    continue;
+                }
 
                 $mkp = $kelas->mataKuliahPeriode;
                 $mk = $mkp ? $mkp->mataKuliah : null;
-                
+
                 $pertemuans = $kelas->pertemuans;
                 $total_pertemuan = $pertemuans->count();
                 $hadir_count = 0;
-                
+
                 foreach ($pertemuans as $pertemuan) {
                     $absensi = $pertemuan->absensis->first();
                     if ($absensi && strtolower($absensi->status) === 'hadir') {
                         $hadir_count++;
                     }
                 }
-                
+
                 $persentase = $total_pertemuan > 0 ? round(($hadir_count / $total_pertemuan) * 100) : 0;
-                
+
                 if ($mk) {
                     $attendanceData[] = [
                         'mataKuliah' => $mk->nama_matkul,
                         'sks' => $mk->sks,
                         'kelas' => $kelas->nama_kelas,
-                        'persentase' => $persentase
+                        'persentase' => $persentase,
                     ];
                 }
             }
@@ -123,14 +125,14 @@ class MahasiswaController extends Controller
             'ipData' => $ipData,
             'sksData' => $sksData,
             'currentIpk' => $currentIpk,
-            'attendanceData' => $attendanceData
+            'attendanceData' => $attendanceData,
         ]);
     }
 
     public function nilai()
     {
         $user = auth()->user();
-        if (!$user || !$user->isMahasiswa()) {
+        if (! $user || ! $user->isMahasiswa()) {
             abort(403, 'Unauthorized access');
         }
 
@@ -169,18 +171,17 @@ class MahasiswaController extends Controller
                         ->where('id_kelas', $detail->id_kelas)
                         ->first();
 
-                    $nilaiHuruf = $nilai ? $nilai->nilai_huruf : '-';
+                    $nilaiHuruf = $nilai ? ($nilai->nilai_huruf ?: '-') : '-';
                     $bobot = $bobotMap[$nilaiHuruf] ?? 0;
-                    
-                    if ($bobot > 0 && $mk->sks) {
-                        $totalBobotSemester += $bobot * $mk->sks;
-                        $totalSksSemester += $mk->sks;
-                        
-                        $totalBobotKumulatif += $bobot * $mk->sks;
-                        $totalSksKumulatif += $mk->sks;
-                    } elseif ($mk->sks) {
-                        $totalSksSemester += $mk->sks;
-                        $totalSksKumulatif += $mk->sks;
+
+                    if ($nilaiHuruf !== '-' && $nilaiHuruf !== null) {
+                        if ($mk->sks) {
+                            $totalBobotSemester += $bobot * $mk->sks;
+                            $totalSksSemester += $mk->sks;
+
+                            $totalBobotKumulatif += $bobot * $mk->sks;
+                            $totalSksKumulatif += $mk->sks;
+                        }
                     }
 
                     $mataKuliahArr[] = [
@@ -190,13 +191,13 @@ class MahasiswaController extends Controller
                         'uts' => $nilai ? floatval($nilai->nilai_uts) : 0,
                         'uas' => $nilai ? floatval($nilai->nilai_uas) : 0,
                         'total' => $nilai ? floatval($nilai->nilai_akhir) : 0,
-                        'grade' => $nilaiHuruf
+                        'grade' => $nilaiHuruf,
                     ];
                 }
             }
 
-            $ipkSemester = $totalSksSemester > 0 ? number_format($totalBobotSemester / $totalSksSemester, 2) : "0.00";
-            $ipkKumulatif = $totalSksKumulatif > 0 ? number_format($totalBobotKumulatif / $totalSksKumulatif, 2) : "0.00";
+            $ipkSemester = $totalSksSemester > 0 ? number_format($totalBobotSemester / $totalSksSemester, 2) : '0.00';
+            $ipkKumulatif = $totalSksKumulatif > 0 ? number_format($totalBobotKumulatif / $totalSksKumulatif, 2) : '0.00';
 
             if (count($mataKuliahArr) > 0) {
                 $semesters[] = [
@@ -204,20 +205,20 @@ class MahasiswaController extends Controller
                     'ipkSemester' => $ipkSemester,
                     'ipkKumulatif' => $ipkKumulatif,
                     'totalSks' => $totalSksSemester,
-                    'mata_kuliah' => $mataKuliahArr
+                    'mata_kuliah' => $mataKuliahArr,
                 ];
             }
         }
 
         return Inertia::render('Mahasiswa/Nilai', [
-            'semesters' => $semesters
+            'semesters' => $semesters,
         ]);
     }
 
     public function penjadwalan()
     {
         $user = auth()->user();
-        if (!$user || !$user->isMahasiswa()) {
+        if (! $user || ! $user->isMahasiswa()) {
             abort(403, 'Unauthorized access');
         }
 
@@ -240,7 +241,7 @@ class MahasiswaController extends Controller
                     $kelas = $detail->kelas;
                     $mk = $kelas->mataKuliahPeriode->mataKuliah;
 
-                    // Parse the time or use fallback 
+                    // Parse the time or use fallback
                     $jamMulai = $kelas->jam_mulai ? \Carbon\Carbon::parse($kelas->jam_mulai)->format('H:i') : '-';
                     $jamSelesai = $kelas->jam_selesai ? \Carbon\Carbon::parse($kelas->jam_selesai)->format('H:i') : '-';
                     $jadwalJam = ($jamMulai !== '-' && $jamSelesai !== '-') ? "{$jamMulai}-{$jamSelesai}" : '-';
@@ -254,7 +255,7 @@ class MahasiswaController extends Controller
                         'ruang' => $kelas->ruangan ?? '-',
                         'sks' => $mk->sks,
                         'kelas' => $kelas->nama_kelas,
-                        'rps' => false // Hardcoded for now unless rps is added to model
+                        'rps' => false, // Hardcoded for now unless rps is added to model
                     ];
                 }
             }
@@ -267,20 +268,20 @@ class MahasiswaController extends Controller
                 $semesters[] = [
                     'id' => intval($krs->semester),
                     'label' => $semesterLabel,
-                    'mata_kuliah' => $jadwalArr
+                    'mata_kuliah' => $jadwalArr,
                 ];
             }
         }
 
         return Inertia::render('Mahasiswa/Penjadwalan', [
-            'semesters' => $semesters
+            'semesters' => $semesters,
         ]);
     }
 
     public function krs()
     {
         $user = auth()->user();
-        if (!$user || !$user->isMahasiswa()) {
+        if (! $user || ! $user->isMahasiswa()) {
             abort(403, 'Unauthorized access');
         }
 
@@ -297,7 +298,7 @@ class MahasiswaController extends Controller
 
         if ($latestKrs) {
             $jenisSemester = ($latestKrs->semester % 2 == 0) ? 'Genap' : 'Ganjil';
-            $semesterAktif = "Semester {$latestKrs->semester} ({$jenisSemester} {$latestKrs->tahun_ajaran}) - Status: " . ucfirst($latestKrs->status);
+            $semesterAktif = "Semester {$latestKrs->semester} ({$jenisSemester} {$latestKrs->tahun_ajaran}) - Status: ".ucfirst($latestKrs->status);
 
             foreach ($latestKrs->detailKrs as $detail) {
                 if ($detail->kelas && $detail->kelas->mataKuliahPeriode && $detail->kelas->mataKuliahPeriode->mataKuliah) {
@@ -316,7 +317,7 @@ class MahasiswaController extends Controller
                         'hari' => $kelas->hari ?? '-',
                         'jam' => $jadwalJam,
                         'ruang' => $kelas->ruangan ?? '-',
-                        'sks' => $mk->sks
+                        'sks' => $mk->sks,
                     ];
                 }
             }
@@ -325,14 +326,14 @@ class MahasiswaController extends Controller
         return Inertia::render('Mahasiswa/Krs', [
             'semesterAktif' => $semesterAktif,
             'krsStatus' => $latestKrs ? clone $latestKrs : null,
-            'mataKuliah' => $mataKuliahArr
+            'mataKuliah' => $mataKuliahArr,
         ]);
     }
 
     public function absensi()
     {
         $user = auth()->user();
-        if (!$user || !$user->isMahasiswa()) {
+        if (! $user || ! $user->isMahasiswa()) {
             abort(403, 'Unauthorized access');
         }
 
@@ -346,7 +347,7 @@ class MahasiswaController extends Controller
                 'detailKrs.kelas.dosen',
                 'detailKrs.kelas.pertemuans.absensis' => function ($query) use ($mahasiswa) {
                     $query->where('id_mahasiswa', $mahasiswa->id_mahasiswa);
-                }
+                },
             ])
             ->get();
 
@@ -354,60 +355,61 @@ class MahasiswaController extends Controller
 
         foreach ($krsList as $krs) {
             $mata_kuliah = [];
-            
+
             foreach ($krs->detailKrs as $detail) {
                 $kelas = $detail->kelas;
-                if (!$kelas) continue;
+                if (! $kelas) {
+                    continue;
+                }
 
                 $mkp = $kelas->mataKuliahPeriode;
                 $mk = $mkp ? $mkp->mataKuliah : null;
                 $dosen = $kelas->dosen;
-                
+
                 $pertemuans = $kelas->pertemuans;
                 $total_pertemuan = $pertemuans->count();
                 $hadir_count = 0;
-                
+
                 foreach ($pertemuans as $pertemuan) {
                     $absensi = $pertemuan->absensis->first();
                     if ($absensi && strtolower($absensi->status) === 'hadir') {
                         $hadir_count++;
                     }
                 }
-                
+
                 $persen = $total_pertemuan > 0 ? round(($hadir_count / $total_pertemuan) * 100) : 0;
-                
+
                 if ($mk) {
                     $mata_kuliah[] = [
                         'nama' => $mk->nama_matkul,
                         'sks' => $mk->sks,
                         'kelas' => $kelas->nama_kelas,
                         'dosen' => $dosen ? $dosen->nama : 'Belum Ditentukan',
-                        'persen' => $persen
+                        'persen' => $persen,
                     ];
                 }
             }
-            
+
             $semesters[] = [
                 'id' => $krs->semester,
                 'totalSks' => $krs->total_sks,
-                'mata_kuliah' => $mata_kuliah
+                'mata_kuliah' => $mata_kuliah,
             ];
         }
 
         return Inertia::render('Mahasiswa/Absensi', [
-            'semesters' => $semesters
+            'semesters' => $semesters,
         ]);
     }
-
 
     public function profile()
     {
         $user = auth()->user();
-        if (!$user || !$user->isMahasiswa()) {
+        if (! $user || ! $user->isMahasiswa()) {
             abort(403, 'Unauthorized access');
         }
 
-        $mahasiswa = $user->mahasiswa()->with('prodi.fakultas')->first();
+        $mahasiswa = $user->mahasiswa()->with('prodi')->first();
 
         return Inertia::render('Mahasiswa/Profile', [
             'mahasiswa' => [
@@ -415,7 +417,7 @@ class MahasiswaController extends Controller
                 'nim' => $mahasiswa->nim ?? '-',
                 'alamat' => $mahasiswa->alamat ?? '-',
                 'prodi' => $mahasiswa->prodi ? $mahasiswa->prodi->nama_prodi : '-',
-                'jurusan' => ($mahasiswa->prodi && $mahasiswa->prodi->fakultas) ? $mahasiswa->prodi->fakultas->nama_fakultas : '-',
+                'jurusan' => $mahasiswa->prodi ? $mahasiswa->prodi->nama_prodi : '-',
                 'no_hp' => $mahasiswa->no_hp ?? '-',
                 'foto' => $mahasiswa->foto_url ?? '/profile.png',
                 'nama_ayah' => $mahasiswa->nama_ayah ?? '-',
@@ -430,14 +432,15 @@ class MahasiswaController extends Controller
     {
         return Inertia::render('Mahasiswa/FormKrs');
     }
+
     public function perbarui_data()
     {
         $user = auth()->user();
-        if (!$user || !$user->isMahasiswa()) {
+        if (! $user || ! $user->isMahasiswa()) {
             abort(403, 'Unauthorized access');
         }
 
-        $mahasiswa = $user->mahasiswa()->with('prodi.fakultas')->first();
+        $mahasiswa = $user->mahasiswa()->with('prodi')->first();
 
         return Inertia::render('Mahasiswa/FormProfile', [
             'mahasiswa' => [
@@ -445,7 +448,7 @@ class MahasiswaController extends Controller
                 'nim' => $mahasiswa->nim ?? '',
                 'alamat' => $mahasiswa->alamat ?? '',
                 'prodi' => $mahasiswa->prodi ? $mahasiswa->prodi->nama_prodi : '',
-                'jurusan' => ($mahasiswa->prodi && $mahasiswa->prodi->fakultas) ? $mahasiswa->prodi->fakultas->nama_fakultas : '',
+                'jurusan' => $mahasiswa->prodi ? $mahasiswa->prodi->nama_prodi : '',
                 'no_hp' => $mahasiswa->no_hp ?? '',
                 'nama_ayah' => $mahasiswa->nama_ayah ?? '',
                 'nama_ibu' => $mahasiswa->nama_ibu ?? '',
@@ -458,7 +461,7 @@ class MahasiswaController extends Controller
     public function update_profile(\Illuminate\Http\Request $request)
     {
         $user = auth()->user();
-        if (!$user || !$user->isMahasiswa()) {
+        if (! $user || ! $user->isMahasiswa()) {
             abort(403, 'Unauthorized access');
         }
 
@@ -485,6 +488,7 @@ class MahasiswaController extends Controller
 
         return redirect()->route('mahasiswa.profile')->with('success', 'Profil berhasil diperbarui!');
     }
+
     public function ganti_password()
     {
         return Inertia::render('Mahasiswa/GantiPassword');

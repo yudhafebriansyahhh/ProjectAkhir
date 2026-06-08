@@ -1,7 +1,23 @@
 import { Head, Link, useForm } from '@inertiajs/react';
 import BaakLayout from '@/Layouts/BaakLayout';
+import { Button } from '@/Components/ui/button';
+import { Input } from '@/Components/ui/input';
+import { FormCard, FormField } from '@/Components/ui/form-card';
+import { PageHeader } from '@/Components/ui/data-display';
+import { SelectDropdown } from '@/Components/ui/select-dropdown';
 
-export default function Edit({ mata_kuliah, prodi }) {
+const kategoriOptions = [
+    { value: 'wajib', label: 'Mata Kuliah Wajib' },
+    { value: 'pilihan', label: 'Mata Kuliah Pilihan' },
+    { value: 'umum', label: 'Mata Kuliah Umum (Semua Prodi)' },
+];
+
+const statusOptions = [
+    { value: true, label: 'Aktif' },
+    { value: false, label: 'Nonaktif' },
+];
+
+export default function Edit({ mata_kuliah, prodi = [] }) {
     const { data, setData, put, processing, errors } = useForm({
         kode_matkul: mata_kuliah.kode_matkul || '',
         nama_matkul: mata_kuliah.nama_matkul || '',
@@ -12,241 +28,152 @@ export default function Edit({ mata_kuliah, prodi }) {
         deskripsi: mata_kuliah.deskripsi || '',
     });
 
-    const kategoriList = [
-        { value: 'wajib', label: 'Mata Kuliah Wajib' },
-        { value: 'pilihan', label: 'Mata Kuliah Pilihan' },
-        { value: 'umum', label: 'Mata Kuliah Umum (Semua Prodi)' }
-    ];
+    const prodiOptions = prodi.map((item) => ({ value: item.kode_prodi, label: item.nama_prodi }));
+    const isUmum = data.kategori === 'umum';
 
-    const handleSubmit = (e) => {
-        e.preventDefault();
+    const handleKategoriChange = (selected) => {
+        const value = selected ? selected.value : '';
+        setData('kategori', value);
+
+        if (value === 'umum') {
+            setData('kode_prodi', '');
+        }
+    };
+
+    const handleSubmit = (event) => {
+        event.preventDefault();
         put(route('baak.mata-kuliah.update', mata_kuliah.kode_matkul));
     };
 
     return (
         <BaakLayout title="Edit Mata Kuliah">
-            <Head title="Edit Mata Kuliah" />
+            <Head title={`Edit ${mata_kuliah.nama_matkul}`} />
 
-            <div className="p-4 md:p-6">
-                {/* Header */}
-                <div className="mb-6">
-                    <Link
-                        href={route('baak.mata-kuliah.index')}
-                        className="text-blue-600 hover:text-blue-700 text-sm font-medium mb-3 inline-flex items-center gap-1"
-                    >
-                        <i className="fas fa-arrow-left"></i>
-                        <span>Kembali ke Daftar Mata Kuliah</span>
-                    </Link>
-                    <h1 className="text-2xl font-bold text-gray-700 mt-2">Edit Data Mata Kuliah</h1>
-                    <p className="text-sm text-gray-600 mt-1">Ubah data mata kuliah yang sudah ada</p>
-                </div>
+            <div className="min-h-screen bg-slate-50 px-3 py-4 sm:px-4 sm:py-5 md:px-6 lg:px-8">
+                <div className="mx-auto w-full max-w-[1440px] space-y-4 md:space-y-5">
+                    <PageHeader
+                        title="Edit Mata Kuliah"
+                        description="Ubah data mata kuliah yang sudah terdaftar."
+                    />
 
-                {/* Form */}
-                <form onSubmit={handleSubmit}>
-                    <div className="bg-white rounded-lg border border-gray-200 p-6">
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            {/* Kode Mata Kuliah */}
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-2">
-                                    Kode Mata Kuliah <span className="text-red-500">*</span>
-                                </label>
-                                <input
-                                    type="text"
-                                    value={data.kode_matkul}
-                                    onChange={(e) => setData('kode_matkul', e.target.value.toUpperCase())}
-                                    placeholder="Contoh: TIF101, SI201"
-                                    className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm ${
-                                        errors.kode_matkul ? 'border-red-500' : 'border-gray-300'
-                                    }`}
-                                    maxLength="10"
-                                />
-                                {errors.kode_matkul && (
-                                    <p className="text-red-500 text-xs mt-1">
-                                        <i className="fas fa-exclamation-circle mr-1"></i>
-                                        {errors.kode_matkul}
-                                    </p>
-                                )}
-                            </div>
-
-                            {/* Nama Mata Kuliah */}
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-2">
-                                    Nama Mata Kuliah <span className="text-red-500">*</span>
-                                </label>
-                                <input
-                                    type="text"
-                                    value={data.nama_matkul}
-                                    onChange={(e) => setData('nama_matkul', e.target.value)}
-                                    placeholder="Nama lengkap mata kuliah"
-                                    className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm ${
-                                        errors.nama_matkul ? 'border-red-500' : 'border-gray-300'
-                                    }`}
-                                    maxLength="100"
-                                />
-                                {errors.nama_matkul && (
-                                    <p className="text-red-500 text-xs mt-1">
-                                        <i className="fas fa-exclamation-circle mr-1"></i>
-                                        {errors.nama_matkul}
-                                    </p>
-                                )}
-                            </div>
-
-                            {/* SKS */}
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-2">
-                                    SKS (Satuan Kredit Semester) <span className="text-red-500">*</span>
-                                </label>
-                                <input
-                                    type="number"
-                                    value={data.sks}
-                                    onChange={(e) => setData('sks', e.target.value)}
-                                    min="1"
-                                    max="6"
-                                    className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm ${
-                                        errors.sks ? 'border-red-500' : 'border-gray-300'
-                                    }`}
-                                />
-                                {errors.sks && (
-                                    <p className="text-red-500 text-xs mt-1">
-                                        <i className="fas fa-exclamation-circle mr-1"></i>
-                                        {errors.sks}
-                                    </p>
-                                )}
-                                <p className="text-xs text-gray-500 mt-1">
-                                    Minimal 1 SKS, maksimal 6 SKS
-                                </p>
-                            </div>
-
-                            {/* Kategori */}
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-2">
-                                    Kategori Mata Kuliah <span className="text-red-500">*</span>
-                                </label>
-                                <select
-                                    value={data.kategori}
-                                    onChange={(e) => {
-                                        setData('kategori', e.target.value);
-                                        // Jika kategori umum, reset kode_prodi
-                                        if (e.target.value === 'umum') {
-                                            setData('kode_prodi', '');
-                                        }
-                                    }}
-                                    className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm ${
-                                        errors.kategori ? 'border-red-500' : 'border-gray-300'
-                                    }`}
+                    <form onSubmit={handleSubmit}>
+                        <FormCard
+                            footer={
+                                <div className="grid gap-2 sm:flex sm:justify-end">
+                                    <Link href={route('baak.mata-kuliah.index')} className="order-2 sm:order-1">
+                                        <Button type="button" variant="outline" className="w-full sm:w-auto">
+                                            Batal
+                                        </Button>
+                                    </Link>
+                                    <Button type="submit" disabled={processing} className="order-1 w-full sm:order-2 sm:w-auto">
+                                        {processing ? 'Menyimpan...' : 'Update Data'}
+                                    </Button>
+                                </div>
+                            }
+                        >
+                            <div className="grid gap-5 md:grid-cols-2">
+                                <FormField
+                                    label="Kode Mata Kuliah"
+                                    required
+                                    error={errors.kode_matkul}
+                                    hint="Maksimal 10 karakter."
                                 >
-                                    {kategoriList.map((item) => (
-                                        <option key={item.value} value={item.value}>
-                                            {item.label}
-                                        </option>
-                                    ))}
-                                </select>
-                                {errors.kategori && (
-                                    <p className="text-red-500 text-xs mt-1">
-                                        <i className="fas fa-exclamation-circle mr-1"></i>
-                                        {errors.kategori}
-                                    </p>
-                                )}
-                            </div>
-
-                            {/* Program Studi */}
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-2">
-                                    Program Studi {data.kategori !== 'umum' && <span className="text-red-500">*</span>}
-                                </label>
-                                <select
-                                    value={data.kode_prodi}
-                                    onChange={(e) => setData('kode_prodi', e.target.value)}
-                                    disabled={data.kategori === 'umum'}
-                                    className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm ${
-                                        data.kategori === 'umum' ? 'bg-gray-100 cursor-not-allowed' : ''
-                                    } ${errors.kode_prodi ? 'border-red-500' : 'border-gray-300'}`}
-                                >
-                                    <option value="">
-                                        {data.kategori === 'umum' ? 'Semua Program Studi' : '-- Pilih Program Studi --'}
-                                    </option>
-                                    {prodi.map((item) => (
-                                        <option key={item.kode_prodi} value={item.kode_prodi}>
-                                            {item.nama_prodi} - {item.fakultas?.nama_fakultas}
-                                        </option>
-                                    ))}
-                                </select>
-                                {errors.kode_prodi && (
-                                    <p className="text-red-500 text-xs mt-1">
-                                        <i className="fas fa-exclamation-circle mr-1"></i>
-                                        {errors.kode_prodi}
-                                    </p>
-                                )}
-                                {data.kategori === 'umum' && (
-                                    <p className="text-xs text-gray-500 mt-1">
-                                        Mata kuliah umum bisa diambil oleh semua program studi
-                                    </p>
-                                )}
-                            </div>
-
-                            {/* Status Aktif */}
-                            <div className="md:col-span-2">
-                                <label className="flex items-center cursor-pointer">
-                                    <input
-                                        type="checkbox"
-                                        checked={data.is_active}
-                                        onChange={(e) => setData('is_active', e.target.checked)}
-                                        className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                                    <Input
+                                        type="text"
+                                        value={data.kode_matkul}
+                                        onChange={(event) => setData('kode_matkul', event.target.value.toUpperCase())}
+                                        placeholder="Contoh: TIF101"
+                                        className={errors.kode_matkul ? 'border-red-300 focus-visible:ring-red-500' : ''}
+                                        maxLength="10"
                                     />
-                                    <span className="ml-2 text-sm font-medium text-gray-700">
-                                        Aktifkan mata kuliah ini
-                                    </span>
-                                </label>
-                                <p className="text-xs text-gray-500 mt-1 ml-6">
-                                    Hanya mata kuliah aktif yang bisa diambil mahasiswa saat KRS
-                                </p>
-                            </div>
+                                </FormField>
 
-                            {/* Deskripsi */}
-                            <div className="md:col-span-2">
-                                <label className="block text-sm font-medium text-gray-700 mb-2">
-                                    Deskripsi Mata Kuliah
-                                </label>
-                                <textarea
-                                    value={data.deskripsi}
-                                    onChange={(e) => setData('deskripsi', e.target.value)}
-                                    rows="4"
-                                    placeholder="Deskripsi singkat tentang mata kuliah (opsional)"
-                                    className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm ${
-                                        errors.deskripsi ? 'border-red-500' : 'border-gray-300'
-                                    }`}
-                                    maxLength="500"
-                                />
-                                {errors.deskripsi && (
-                                    <p className="text-red-500 text-xs mt-1">
-                                        <i className="fas fa-exclamation-circle mr-1"></i>
-                                        {errors.deskripsi}
-                                    </p>
-                                )}
-                                <p className="text-xs text-gray-500 mt-1">
-                                    {data.deskripsi.length}/500 karakter
-                                </p>
-                            </div>
-                        </div>
+                                <FormField
+                                    label="Nama Mata Kuliah"
+                                    required
+                                    error={errors.nama_matkul}
+                                    hint="Maksimal 100 karakter."
+                                >
+                                    <Input
+                                        type="text"
+                                        value={data.nama_matkul}
+                                        onChange={(event) => setData('nama_matkul', event.target.value)}
+                                        placeholder="Contoh: Algoritma dan Pemrograman"
+                                        className={errors.nama_matkul ? 'border-red-300 focus-visible:ring-red-500' : ''}
+                                        maxLength="100"
+                                    />
+                                </FormField>
 
-                        {/* Buttons */}
-                        <div className="flex flex-col sm:flex-row justify-end gap-3 mt-6 pt-6 border-t border-gray-200">
-                            <Link
-                                href={route('baak.mata-kuliah.index')}
-                                className="px-6 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 text-center transition-colors"
-                            >
-                                Batal
-                            </Link>
-                            <button
-                                type="submit"
-                                disabled={processing}
-                                className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium disabled:opacity-50 transition-colors"
-                            >
-                                {processing ? 'Menyimpan...' : 'Update Data'}
-                            </button>
-                        </div>
-                    </div>
-                </form>
+                                <FormField label="SKS" required error={errors.sks} hint="Minimal 1 SKS, maksimal 6 SKS.">
+                                    <Input
+                                        type="number"
+                                        value={data.sks}
+                                        onChange={(event) => setData('sks', event.target.value)}
+                                        min="1"
+                                        max="6"
+                                        className={errors.sks ? 'border-red-300 focus-visible:ring-red-500' : ''}
+                                    />
+                                </FormField>
+
+                                <FormField label="Kategori Mata Kuliah" required error={errors.kategori}>
+                                    <SelectDropdown
+                                        value={data.kategori}
+                                        onChange={handleKategoriChange}
+                                        options={kategoriOptions}
+                                        placeholder="Pilih Kategori"
+                                        isSearchable={false}
+                                        isClearable={false}
+                                    />
+                                </FormField>
+
+                                <FormField
+                                    label="Program Studi"
+                                    required={!isUmum}
+                                    error={errors.kode_prodi}
+                                    hint={isUmum ? 'Mata kuliah umum bisa diambil oleh semua program studi.' : null}
+                                >
+                                    <SelectDropdown
+                                        value={data.kode_prodi}
+                                        onChange={(selected) => setData('kode_prodi', selected ? selected.value : '')}
+                                        options={prodiOptions}
+                                        placeholder={isUmum ? 'Semua Program Studi' : 'Pilih Program Studi'}
+                                        isDisabled={isUmum}
+                                    />
+                                </FormField>
+
+                                <FormField label="Status" required error={errors.is_active} hint="Hanya mata kuliah aktif yang bisa diambil mahasiswa saat KRS.">
+                                    <SelectDropdown
+                                        value={data.is_active}
+                                        onChange={(selected) => setData('is_active', selected ? selected.value : false)}
+                                        options={statusOptions}
+                                        placeholder="Pilih Status"
+                                        isSearchable={false}
+                                        isClearable={false}
+                                    />
+                                </FormField>
+
+                                <div className="md:col-span-2">
+                                    <FormField
+                                        label="Deskripsi Mata Kuliah"
+                                        error={errors.deskripsi}
+                                        hint={`${data.deskripsi.length}/500 karakter`}
+                                    >
+                                        <textarea
+                                            value={data.deskripsi}
+                                            onChange={(event) => setData('deskripsi', event.target.value)}
+                                            rows="4"
+                                            placeholder="Deskripsi singkat tentang mata kuliah (opsional)"
+                                            className={`min-h-28 w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm placeholder:text-gray-400 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-1 ${
+                                                errors.deskripsi ? 'border-red-300 focus-visible:ring-red-500' : ''
+                                            }`}
+                                            maxLength="500"
+                                        />
+                                    </FormField>
+                                </div>
+                            </div>
+                        </FormCard>
+                    </form>
+                </div>
             </div>
         </BaakLayout>
     );

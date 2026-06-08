@@ -1,9 +1,54 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Head, Link, router, usePage } from '@inertiajs/react';
 
 export default function MahasiswaLayout({ children, title }) {
-    const { auth } = usePage().props;
+    const { auth, flash, errors } = usePage().props;
     const [sidebarOpen, setSidebarOpen] = useState(false);
+
+    useEffect(() => {
+        if (flash?.success) {
+            window.Swal?.fire({
+                title: "Berhasil!",
+                text: flash.success,
+                icon: "success",
+                confirmButtonColor: "#10b981",
+                confirmButtonText: "Tutup",
+                timer: 3000,
+                timerProgressBar: true
+            });
+        }
+        if (flash?.error) {
+            window.Swal?.fire({
+                title: "Gagal!",
+                text: flash.error,
+                icon: "error",
+                confirmButtonColor: "#dc2626",
+                confirmButtonText: "Tutup",
+            });
+        }
+
+        if (errors && Object.keys(errors).length > 0) {
+            const errorValues = Object.values(errors);
+            if (errorValues.length === 1) {
+                window.Swal?.fire({
+                    title: "Peringatan!",
+                    text: errorValues[0],
+                    icon: "warning",
+                    confirmButtonColor: "#dc2626",
+                    confirmButtonText: "Tutup",
+                });
+            } else {
+                const errorList = errorValues.map(msg => `<li>${msg}</li>`).join('');
+                window.Swal?.fire({
+                    title: "Peringatan!",
+                    html: `<ul class="list-disc pl-5 text-left text-sm text-slate-700 space-y-1">${errorList}</ul>`,
+                    icon: "warning",
+                    confirmButtonColor: "#dc2626",
+                    confirmButtonText: "Tutup",
+                });
+            }
+        }
+    }, [flash, errors]);
 
     const handleLogout = () => {
         if (window.Swal) {

@@ -2,7 +2,10 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { Head, Link, useForm } from '@inertiajs/react';
+import { ArrowLeft } from 'lucide-react';
 import BaakLayout from '@/Layouts/BaakLayout';
+import { Button } from '@/Components/ui/button';
+import { PageHeader } from '@/Components/ui/data-display';
 import axios from 'axios';
 
 // Komponen Searchable Select
@@ -82,7 +85,7 @@ function SearchableSelect({ options, value, onChange, placeholder, displayKey, v
     );
 }
 
-export default function Create({ periodes, prodis, dosen }) {
+export default function Create({ periodes, prodis, dosen, ruangan = [] }) {
     const { data, setData, post, processing, errors } = useForm({
         tahun_ajaran: '',
         jenis_semester: '',
@@ -91,7 +94,7 @@ export default function Create({ periodes, prodis, dosen }) {
         nama_kelas: '',
         id_mk_periode: '',
         id_dosen: '',
-        ruang_kelas: '',
+        id_ruangan: '',
         hari: '',
         jam_mulai: '',
         jam_selesai: '',
@@ -134,7 +137,7 @@ export default function Create({ periodes, prodis, dosen }) {
     // Handle pilih mata kuliah
     const handleMataKuliahChange = (idMkPeriode) => {
         setData('id_mk_periode', idMkPeriode);
-        const mkp = mataKuliahPeriode.find(mk => mk.id_mk_periodo == idMkPeriode);
+        const mkp = mataKuliahPeriode.find(mk => mk.id_mk_periode == idMkPeriode);
         setSelectedMkPeriode(mkp);
     };
 
@@ -173,6 +176,11 @@ export default function Create({ periodes, prodis, dosen }) {
         label: `${d.nama} - ${d.nip}`
     }));
 
+    const ruanganOptions = ruangan.map(r => ({
+        value: r.id_ruangan,
+        label: `${r.kode_ruangan} - ${r.nama_ruangan}${r.kapasitas ? ` (${r.kapasitas} orang)` : ''}`
+    }));
+
     const mkOptions = mataKuliahPeriode.map(mk => ({
         value: mk.id_mk_periode,
         label: `${mk.mata_kuliah.kode_matkul} - ${mk.mata_kuliah.nama_matkul} (${mk.mata_kuliah.sks} SKS)`
@@ -182,23 +190,26 @@ export default function Create({ periodes, prodis, dosen }) {
         <BaakLayout title="Tambah Kelas">
             <Head title="Tambah Kelas" />
 
-            <div className="container mx-auto px-4 py-8">
+            <div className="min-h-screen bg-slate-50 px-3 py-4 sm:px-4 sm:py-5 md:px-6 lg:px-8">
+                <div className="mx-auto w-full max-w-[1120px] space-y-4 md:space-y-5">
                 {/* Header */}
-                <div className="mb-8">
+                <div>
                     <Link
                         href={route('baak.kelas.index')}
-                        className="text-blue-600 hover:text-blue-800 text-sm font-medium inline-flex items-center mb-4"
+                        className="mb-3 inline-flex items-center gap-2 text-sm font-semibold text-blue-600 hover:text-blue-700"
                     >
-                        <i className="fas fa-arrow-left mr-2"></i>
+                        <ArrowLeft className="h-4 w-4" />
                         Kembali ke Daftar
                     </Link>
-                    <h1 className="text-2xl font-bold text-gray-700 mb-2">Tambah Kelas Baru</h1>
-                    <p className="text-gray-600">Isi form untuk menambah kelas perkuliahan baru</p>
+                    <PageHeader
+                        title="Tambah Kelas Baru"
+                        description="Isi data periode, mata kuliah, dosen, ruangan, dan jadwal kelas."
+                    />
                 </div>
 
                 {/* Form */}
                 <form onSubmit={handleSubmit}>
-                    <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+                    <div className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm sm:p-5">
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                             {/* Periode */}
                             <div>
@@ -411,25 +422,29 @@ export default function Create({ periodes, prodis, dosen }) {
                                 )}
                             </div>
 
-                            {/* Ruang Kelas */}
+                            {/* Ruangan */}
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                                    Ruang Kelas <span className="text-red-500">*</span>
+                                    Ruangan <span className="text-red-500">*</span>
                                 </label>
-                                <input
-                                    type="text"
-                                    value={data.ruang_kelas}
-                                    onChange={(e) => setData('ruang_kelas', e.target.value.toUpperCase())}
-                                    placeholder="Contoh: R201, LAB1"
-                                    maxLength={50}
-                                    className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm ${
-                                        errors.ruang_kelas ? 'border-red-500' : 'border-gray-300'
-                                    }`}
+                                <SearchableSelect
+                                    options={ruanganOptions}
+                                    value={data.id_ruangan}
+                                    onChange={(val) => setData('id_ruangan', val)}
+                                    placeholder="-- Pilih Ruangan --"
+                                    displayKey="label"
+                                    valueKey="value"
+                                    error={errors.id_ruangan}
                                 />
-                                {errors.ruang_kelas && (
+                                {errors.id_ruangan && (
                                     <p className="text-red-500 text-xs mt-1">
                                         <i className="fas fa-exclamation-circle mr-1"></i>
-                                        {errors.ruang_kelas}
+                                        {errors.id_ruangan}
+                                    </p>
+                                )}
+                                {ruanganOptions.length === 0 && (
+                                    <p className="text-amber-600 text-xs mt-1">
+                                        Belum ada ruangan aktif. Tambahkan ruangan terlebih dahulu.
                                     </p>
                                 )}
                             </div>
@@ -512,23 +527,24 @@ export default function Create({ periodes, prodis, dosen }) {
                         </div>
 
                         {/* Buttons */}
-                        <div className="flex flex-col sm:flex-row justify-end gap-3 mt-6 pt-6 border-t border-gray-200">
+                        <div className="flex flex-col-reverse gap-3 mt-6 pt-6 border-t border-slate-100 sm:flex-row sm:justify-end">
                             <Link
                                 href={route('baak.kelas.index')}
-                                className="px-6 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 text-center transition-colors"
+                                className="w-full sm:w-auto"
                             >
-                                Batal
+                                <Button type="button" variant="outline" className="w-full sm:w-auto">Batal</Button>
                             </Link>
-                            <button
+                            <Button
                                 type="submit"
                                 disabled={processing}
-                                className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium disabled:opacity-50 transition-colors"
+                                className="w-full sm:w-auto"
                             >
                                 {processing ? 'Menyimpan...' : 'Simpan Data'}
-                            </button>
+                            </Button>
                         </div>
                     </div>
                 </form>
+                </div>
             </div>
         </BaakLayout>
     );

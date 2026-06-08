@@ -12,6 +12,7 @@ use App\Models\Dosen;
 use App\Models\MataKuliahPeriode;
 use App\Models\PeriodeRegistrasi;
 use App\Models\Prodi;
+use App\Models\Ruangan;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 
@@ -19,7 +20,7 @@ class KelasController extends Controller
 {
     public function index(Request $request)
     {
-        $query = Kelas::with(['mataKuliahPeriode.mataKuliah.prodi', 'dosen.prodi']);
+        $query = Kelas::with(['mataKuliahPeriode.mataKuliah.prodi', 'dosen.prodi', 'ruangan']);
 
         // Filter by Mata Kuliah
         if ($request->filled('mata_kuliah')) {
@@ -44,6 +45,10 @@ class KelasController extends Controller
             $query->where(function ($q) use ($search) {
                 $q->where('nama_kelas', 'like', "%{$search}%")
                     ->orWhere('ruang_kelas', 'like', "%{$search}%")
+                    ->orWhereHas('ruangan', function ($q) use ($search) {
+                        $q->where('kode_ruangan', 'like', "%{$search}%")
+                            ->orWhere('nama_ruangan', 'like', "%{$search}%");
+                    })
                     ->orWhereHas('mataKuliahPeriode.mataKuliah', function ($q) use ($search) {
                         $q->where('nama_matkul', 'like', "%{$search}%")
                             ->orWhere('kode_matkul', 'like', "%{$search}%");
@@ -83,6 +88,7 @@ class KelasController extends Controller
             'periodes' => $periodes,
             'prodis' => Prodi::orderBy('nama_prodi')->get(),
             'dosen' => Dosen::with('prodi')->orderBy('nama')->get(),
+            'ruangan' => Ruangan::where('is_active', true)->orderBy('kode_ruangan')->get(),
         ]);
     }
 
@@ -127,8 +133,10 @@ class KelasController extends Controller
         }
 
         // Check bentrok ruangan
+        $ruangan = Ruangan::findOrFail($request->id_ruangan);
+
         $bentrokRuangan = $this->checkBentrokRuangan(
-            $request->ruang_kelas,
+            $request->id_ruangan,
             $request->hari,
             $request->jam_mulai,
             $request->jam_selesai
@@ -147,7 +155,8 @@ class KelasController extends Controller
             'nama_kelas' => $request->nama_kelas,
             'id_mk_periode' => $request->id_mk_periode,
             'id_dosen' => $request->id_dosen,
-            'ruang_kelas' => $request->ruang_kelas,
+            'id_ruangan' => $ruangan->id_ruangan,
+            'ruang_kelas' => $ruangan->kode_ruangan,
             'hari' => $request->hari,
             'jam_mulai' => $request->jam_mulai,
             'jam_selesai' => $request->jam_selesai,
@@ -164,6 +173,7 @@ class KelasController extends Controller
         $kelas = Kelas::with([
             'mataKuliahPeriode.mataKuliah.prodi',
             'dosen.prodi',
+            'ruangan',
             'detailKrs.krs.mahasiswa.prodi',
             'bobotNilai'
         ])->findOrFail($id);
@@ -190,7 +200,8 @@ class KelasController extends Controller
         $kelas = Kelas::with([
             'mataKuliahPeriode.mataKuliah.prodi',  
             'mataKuliahPeriode.prodi',
-            'dosen'
+            'dosen',
+            'ruangan'
         ])->findOrFail($id);
 
         $dosen = Dosen::with('prodi')->orderBy('nama')->get();
@@ -198,6 +209,10 @@ class KelasController extends Controller
         return Inertia::render('Baak/Kelas/Edit', [
             'kelas' => $kelas,
             'dosen' => $dosen,
+            'ruangan' => Ruangan::where('is_active', true)
+                ->orWhere('id_ruangan', $kelas->id_ruangan)
+                ->orderBy('kode_ruangan')
+                ->get(),
         ]);
     }
 
@@ -221,8 +236,10 @@ class KelasController extends Controller
         }
 
         // Check bentrok ruangan (exclude kelas ini)
+        $ruangan = Ruangan::findOrFail($request->id_ruangan);
+
         $bentrokRuangan = $this->checkBentrokRuangan(
-            $request->ruang_kelas,
+            $request->id_ruangan,
             $request->hari,
             $request->jam_mulai,
             $request->jam_selesai,
@@ -231,11 +248,16 @@ class KelasController extends Controller
 
         if ($bentrokRuangan) {
             return back()->withErrors([
-                'ruang_kelas' => 'Ruangan sudah digunakan di waktu yang sama: ' . $bentrokRuangan->mataKuliah->nama_matkul . ' - Kelas ' . $bentrokRuangan->nama_kelas
+                'id_ruangan' => 'Ruangan sudah digunakan di waktu yang sama: ' .
+                    ($bentrokRuangan->mataKuliahPeriode->mataKuliah->nama_matkul ?? '-') .
+                    ' - Kelas ' . $bentrokRuangan->nama_kelas
             ])->withInput();
         }
 
-        $kelas->update($request->validated());
+        $kelas->update([
+            ...$request->validated(),
+            'ruang_kelas' => $ruangan->kode_ruangan,
+        ]);
 
         return redirect()->route('baak.kelas.index')->with('success', 'Kelas berhasil diupdate');
     }
@@ -274,10 +296,10 @@ class KelasController extends Controller
         return $query->first();
     }
 
-    private function checkBentrokRuangan($ruang_kelas, $hari, $jam_mulai, $jam_selesai, $exclude_id = null)
+    private function checkBentrokRuangan($id_ruangan, $hari, $jam_mulai, $jam_selesai, $exclude_id = null)
     {
         $query = Kelas::with('mataKuliahPeriode.mataKuliah')
-            ->where('ruang_kelas', $ruang_kelas)
+            ->where('id_ruangan', $id_ruangan)
             ->where('hari', $hari)
             ->where(function ($q) use ($jam_mulai, $jam_selesai) {
                 $q->where('jam_mulai', '<', $jam_selesai)

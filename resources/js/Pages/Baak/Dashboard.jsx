@@ -1,503 +1,380 @@
 import { Head, Link } from '@inertiajs/react';
 import BaakLayout from '@/Layouts/BaakLayout';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/Components/ui/card';
 import { Badge } from '@/Components/ui/badge';
+import { AlertCard, DashboardPanel, EmptyChart, QuickActionCard, StatCard } from '@/Components/Baak/DashboardCards';
 import {
-    LineChart, Line, BarChart, Bar, PieChart, Pie, Cell,
-    XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
-    Area, AreaChart
+    Area,
+    AreaChart,
+    Bar,
+    BarChart,
+    CartesianGrid,
+    Cell,
+    Pie,
+    PieChart,
+    ResponsiveContainer,
+    Tooltip,
+    XAxis,
+    YAxis,
 } from 'recharts';
 import {
-    Users, GraduationCap, BookOpen, DoorOpen, Clock, UserX, FileText,
-    TrendingUp, PieChart as PieChartIcon, BarChart3, Activity,
-    Zap, Building2, University, ChevronRight, CalendarCheck, ArrowUpRight
+    Activity,
+    ArrowUpRight,
+    BookOpen,
+    CalendarCheck,
+    CheckCircle2,
+    Clock,
+    DoorOpen,
+    FileText,
+    GraduationCap,
+    ShieldCheck,
+    TrendingUp,
+    University,
+    UserCheck,
+    UserX,
+    Users,
 } from 'lucide-react';
 
 export default function Dashboard({ stats, charts, alerts, recent_activities, periode_aktif }) {
+    const palette = ['#2563eb', '#14b8a6', '#f59e0b', '#ef4444', '#8b5cf6', '#64748b'];
+    const statusData = charts.distribusi_status || [];
+    const prodiData = charts.mahasiswa_per_prodi || [];
+    const trendData = charts.mahasiswa_per_angkatan || [];
+    const ipkData = charts.rata_ipk_per_prodi || [];
+    const activities = recent_activities || [];
+    const totalAlert = alerts.krs_pending + alerts.belum_krs + alerts.nilai_kosong;
 
-    const COLORS = ['#2563EB', '#0EA5E9', '#6366F1', '#8B5CF6', '#3B82F6', '#1D4ED8'];
+    const formatNumber = (value) => new Intl.NumberFormat('id-ID').format(value || 0);
 
-    const CustomTooltip = ({ active, payload, label }) => {
-        if (active && payload && payload.length) {
-            return (
-                <div className="bg-white/95 backdrop-blur-sm border border-blue-100 rounded-xl shadow-xl p-3 ring-1 ring-blue-50">
-                    <p className="text-sm font-semibold text-gray-800 mb-1">{label}</p>
-                    {payload.map((entry, index) => (
-                        <p key={index} className="text-sm" style={{ color: entry.color }}>
-                            {entry.name}: <span className="font-bold">{entry.value}</span>
-                        </p>
-                    ))}
-                </div>
-            );
-        }
-        return null;
-    };
-
-    const statCards = [
+    const metricCards = [
         {
             title: 'Total Mahasiswa',
             value: stats.mahasiswa.total,
+            caption: `${formatNumber(stats.mahasiswa.aktif)} aktif`,
             icon: GraduationCap,
-            route: 'baak.mahasiswa.index',
-            gradient: 'from-blue-500 to-blue-600',
-            bgLight: 'bg-blue-50',
-            textColor: 'text-blue-600',
-            badges: [
-                { label: `${stats.mahasiswa.aktif} Aktif`, variant: 'success', icon: '✓' },
-                { label: `${stats.mahasiswa.lulus} Lulus`, variant: 'default', icon: '🎓' },
-                { label: `${stats.mahasiswa.cuti} Cuti`, variant: 'warning', icon: '⏸' },
-                { label: `${stats.mahasiswa.do} DO`, variant: 'destructive', icon: '✕' },
-            ],
+            href: route('baak.mahasiswa.index'),
+            accent: 'text-blue-600',
+            iconBg: 'bg-blue-50',
+            progress: stats.mahasiswa.total ? (stats.mahasiswa.aktif / stats.mahasiswa.total) * 100 : 0,
         },
         {
             title: 'Total Dosen',
             value: stats.dosen.total,
+            caption: `${formatNumber(stats.dosen.aktif)} aktif`,
             icon: Users,
-            route: 'baak.dosen.index',
-            gradient: 'from-sky-500 to-cyan-500',
-            bgLight: 'bg-sky-50',
-            textColor: 'text-sky-600',
-            progress: {
-                current: stats.dosen.aktif,
-                total: stats.dosen.total,
-                label: `${stats.dosen.aktif} Aktif`,
-            },
+            href: route('baak.dosen.index'),
+            accent: 'text-teal-600',
+            iconBg: 'bg-teal-50',
+            progress: stats.dosen.total ? (stats.dosen.aktif / stats.dosen.total) * 100 : 0,
         },
         {
             title: 'Mata Kuliah',
             value: stats.mata_kuliah,
+            caption: 'aktif ditawarkan',
             icon: BookOpen,
-            route: 'baak.mata-kuliah.index',
-            gradient: 'from-indigo-500 to-violet-500',
-            bgLight: 'bg-indigo-50',
-            textColor: 'text-indigo-600',
-            subtitle: 'Mata kuliah terdaftar',
+            href: route('baak.mata-kuliah.index'),
+            accent: 'text-violet-600',
+            iconBg: 'bg-violet-50',
+            progress: 100,
         },
         {
-            title: 'Kelas Aktif',
+            title: 'Kelas',
             value: stats.kelas,
+            caption: 'kelas terdaftar',
             icon: DoorOpen,
-            route: 'baak.kelas.index',
-            gradient: 'from-blue-600 to-indigo-600',
-            bgLight: 'bg-blue-50',
-            textColor: 'text-blue-700',
-            subtitle: 'Total kelas terdaftar',
+            href: route('baak.kelas.index'),
+            accent: 'text-amber-600',
+            iconBg: 'bg-amber-50',
+            progress: 100,
         },
     ];
 
     const alertCards = [
         {
-            condition: alerts.krs_pending > 0,
-            count: alerts.krs_pending,
-            label: 'KRS Menunggu Persetujuan',
-            badge: 'Pending',
-            badgeVariant: 'warning',
+            label: 'KRS Pending',
+            value: alerts.krs_pending,
             icon: Clock,
-            iconBg: 'bg-amber-100',
-            iconColor: 'text-amber-600',
-            borderColor: 'border-amber-200',
-            bgGradient: 'from-amber-50 to-orange-50',
             href: route('baak.krs.index', { status: 'pending' }),
+            tone: 'text-amber-700',
+            bg: 'bg-amber-50',
+            border: 'border-amber-200',
         },
         {
-            condition: alerts.belum_krs > 0,
-            count: alerts.belum_krs,
-            label: 'Mahasiswa Belum KRS',
-            badge: 'Alert',
-            badgeVariant: 'destructive',
+            label: 'Belum KRS',
+            value: alerts.belum_krs,
             icon: UserX,
-            iconBg: 'bg-red-100',
-            iconColor: 'text-red-600',
-            borderColor: 'border-red-200',
-            bgGradient: 'from-red-50 to-rose-50',
+            tone: 'text-red-700',
+            bg: 'bg-red-50',
+            border: 'border-red-200',
         },
         {
-            condition: alerts.nilai_kosong > 0,
-            count: alerts.nilai_kosong,
-            label: 'Nilai Belum Diinput',
-            badge: 'Action',
-            badgeVariant: 'warning',
+            label: 'Nilai Kosong',
+            value: alerts.nilai_kosong,
             icon: FileText,
-            iconBg: 'bg-orange-100',
-            iconColor: 'text-orange-600',
-            borderColor: 'border-orange-200',
-            bgGradient: 'from-orange-50 to-amber-50',
             href: route('baak.nilai.index'),
+            tone: 'text-orange-700',
+            bg: 'bg-orange-50',
+            border: 'border-orange-200',
         },
     ];
 
     const quickActions = [
         { label: 'Mahasiswa', icon: GraduationCap, route: 'baak.mahasiswa.index' },
-        { label: 'Dosen', icon: Users, route: 'baak.dosen.index' },
+        { label: 'Dosen', icon: UserCheck, route: 'baak.dosen.index' },
         { label: 'Mata Kuliah', icon: BookOpen, route: 'baak.mata-kuliah.index' },
         { label: 'Kelas', icon: DoorOpen, route: 'baak.kelas.index' },
         { label: 'Prodi', icon: University, route: 'baak.prodi.index' },
-        { label: 'Fakultas', icon: Building2, route: 'baak.fakultas.index' },
     ];
+
+    const CustomTooltip = ({ active, payload, label }) => {
+        if (!active || !payload?.length) return null;
+
+        return (
+            <div className="rounded-lg border border-slate-200 bg-white px-3 py-2 shadow-lg">
+                <p className="mb-1 text-xs font-semibold text-slate-700">{label}</p>
+                {payload.map((entry, index) => (
+                    <p key={index} className="text-xs text-slate-500">
+                        {entry.name}: <span className="font-semibold text-slate-900">{formatNumber(entry.value)}</span>
+                    </p>
+                ))}
+            </div>
+        );
+    };
 
     return (
         <BaakLayout title="Dashboard">
             <Head title="Dashboard" />
 
-            <div className="p-4 md:p-6 space-y-6">
-                {/* ===== HEADER HERO ===== */}
-                <div className="relative overflow-hidden bg-gradient-to-br from-blue-600 via-blue-700 to-indigo-800 rounded-2xl p-6 md:p-8 text-white shadow-2xl">
-                    {/* Decorative elements */}
-                    <div className="absolute top-0 right-0 -mt-8 -mr-8 w-48 h-48 bg-white opacity-[0.07] rounded-full blur-3xl"></div>
-                    <div className="absolute bottom-0 left-0 -mb-8 -ml-8 w-40 h-40 bg-blue-300 opacity-[0.1] rounded-full blur-3xl"></div>
-                    <div className="absolute top-1/2 right-1/4 w-24 h-24 bg-indigo-400 opacity-[0.08] rounded-full blur-2xl"></div>
-
-                    <div className="relative z-10">
-                        <div className="flex items-center gap-4 mb-3">
-                            <div className="w-14 h-14 bg-white/15 rounded-2xl flex items-center justify-center backdrop-blur-sm border border-white/20 shadow-lg">
-                                <TrendingUp className="w-7 h-7" />
+            <div className="min-h-screen bg-slate-50 px-3 py-4 sm:px-4 sm:py-5 md:px-6 lg:px-8">
+                <div className="mx-auto w-full max-w-[1440px] space-y-4 md:space-y-5">
+                    <section className="flex min-w-0 flex-col gap-4 rounded-lg border border-slate-200 bg-white px-4 py-4 shadow-sm sm:px-5 lg:flex-row lg:items-center lg:justify-between">
+                        <div className="min-w-0">
+                            <div className="mb-2 flex flex-wrap items-center gap-2">
+                                <Badge className="rounded-md bg-blue-50 px-2.5 py-1 text-xs font-semibold text-blue-700 hover:bg-blue-50">
+                                    BAAK Dashboard
+                                </Badge>
+                                {periode_aktif ? (
+                                    <Badge className="rounded-md bg-emerald-50 px-2.5 py-1 text-xs font-semibold text-emerald-700 hover:bg-emerald-50">
+                                        <CalendarCheck className="mr-1 h-3.5 w-3.5" />
+                                        {periode_aktif.tahun_ajaran} - {periode_aktif.jenis_semester}
+                                    </Badge>
+                                ) : (
+                                    <Badge className="rounded-md bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-600 hover:bg-slate-100">
+                                        Tidak ada periode aktif
+                                    </Badge>
+                                )}
                             </div>
-                            <div>
-                                <h1 className="text-2xl md:text-3xl font-bold tracking-tight">Dashboard BAAK</h1>
-                                <p className="text-blue-100/90 text-sm md:text-base font-medium">Sistem Informasi Akademik — ITB Riau</p>
-                            </div>
+                            <h1 className="text-2xl font-bold text-slate-950 md:text-3xl">Dashboard BAAK</h1>
+                            <p className="mt-1 text-sm text-slate-500">Ringkasan operasional akademik ITB Riau.</p>
                         </div>
 
-                        {periode_aktif && (
-                            <div className="mt-5 inline-flex items-center gap-2.5 bg-white/15 backdrop-blur-sm rounded-full px-5 py-2.5 border border-white/25 shadow-sm">
-                                <CalendarCheck className="w-4 h-4" />
-                                <span className="text-sm font-semibold">
-                                    Periode Aktif: {periode_aktif.tahun_ajaran} – {periode_aktif.jenis_semester}
-                                </span>
-                            </div>
-                        )}
-                    </div>
-                </div>
+                        <div className="flex w-full flex-col gap-3 sm:w-auto sm:flex-row sm:items-center">
+                            <Link
+                                href={route('baak.laporan.index')}
+                                className="inline-flex h-10 w-full items-center justify-center gap-2 rounded-lg bg-slate-950 px-4 text-sm font-semibold text-white transition hover:bg-slate-800 sm:w-auto"
+                            >
+                                Laporan
+                                <ArrowUpRight className="h-4 w-4" />
+                            </Link>
+                        </div>
+                    </section>
 
-                {/* ===== ALERT CARDS ===== */}
-                {alertCards.some(a => a.condition) && (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                        {alertCards.map((alert, idx) => {
-                            if (!alert.condition) return null;
-                            const Wrapper = alert.href ? Link : 'div';
-                            const wrapperProps = alert.href ? { href: alert.href } : {};
-                            const Icon = alert.icon;
-                            return (
-                                <Wrapper
-                                    key={idx}
-                                    {...wrapperProps}
-                                    className={`group relative overflow-hidden bg-gradient-to-br ${alert.bgGradient} border-2 ${alert.borderColor} rounded-xl p-5 hover:shadow-lg hover:scale-[1.02] transition-all duration-300 cursor-pointer`}
-                                >
-                                    <div className="absolute top-0 right-0 -mt-3 -mr-3 w-24 h-24 bg-current opacity-[0.04] rounded-full blur-2xl group-hover:scale-150 transition-transform duration-500"></div>
-                                    <div className="relative z-10">
-                                        <div className="flex items-start justify-between mb-3">
-                                            <div className={`w-12 h-12 ${alert.iconBg} rounded-xl flex items-center justify-center group-hover:rotate-6 transition-transform duration-300 shadow-sm`}>
-                                                <Icon className={`w-5 h-5 ${alert.iconColor}`} />
+                    <section className="grid grid-cols-2 gap-3 sm:gap-4 xl:grid-cols-4">
+                        {metricCards.map((metric) => (
+                            <StatCard key={metric.title} metric={metric} formatNumber={formatNumber} />
+                        ))}
+                    </section>
+
+                    <section className="grid grid-cols-1 gap-4 md:gap-5 xl:grid-cols-[minmax(0,1.7fr)_minmax(0,1fr)]">
+                        <DashboardPanel
+                            title="Tren Mahasiswa"
+                            description="Jumlah mahasiswa aktif per angkatan."
+                            headerClassName="space-y-0"
+                            action={
+                                <Badge className="shrink-0 rounded-md bg-blue-50 px-2.5 py-1 text-xs font-semibold text-blue-700 hover:bg-blue-50">
+                                    Bulanan
+                                </Badge>
+                            }
+                        >
+                            {trendData.length > 0 ? (
+                                <ResponsiveContainer width="100%" height={290}>
+                                    <AreaChart data={trendData} margin={{ top: 12, right: 12, left: -18, bottom: 0 }}>
+                                        <defs>
+                                            <linearGradient id="studentTrend" x1="0" x2="0" y1="0" y2="1">
+                                                <stop offset="5%" stopColor="#2563eb" stopOpacity={0.35} />
+                                                <stop offset="95%" stopColor="#2563eb" stopOpacity={0.04} />
+                                            </linearGradient>
+                                        </defs>
+                                        <CartesianGrid stroke="#e2e8f0" strokeDasharray="4 4" vertical={false} />
+                                        <XAxis dataKey="angkatan" axisLine={false} tickLine={false} tick={{ fill: '#64748b', fontSize: 12 }} />
+                                        <YAxis axisLine={false} tickLine={false} tick={{ fill: '#64748b', fontSize: 12 }} />
+                                        <Tooltip content={<CustomTooltip />} />
+                                        <Area type="monotone" dataKey="total" name="Mahasiswa" stroke="#2563eb" strokeWidth={3} fill="url(#studentTrend)" />
+                                    </AreaChart>
+                                </ResponsiveContainer>
+                            ) : (
+                                <EmptyChart icon={TrendingUp} label="Belum ada data angkatan" />
+                            )}
+                        </DashboardPanel>
+
+                        <DashboardPanel title="Status Mahasiswa" description="Distribusi status akademik.">
+                            {statusData.length > 0 ? (
+                                <div className="grid min-w-0 gap-4 sm:grid-cols-[minmax(180px,220px)_minmax(0,1fr)] xl:grid-cols-1">
+                                    <ResponsiveContainer width="100%" height={210}>
+                                        <PieChart>
+                                            <Pie
+                                                data={statusData}
+                                                cx="50%"
+                                                cy="50%"
+                                                dataKey="total"
+                                                innerRadius={58}
+                                                outerRadius={88}
+                                                paddingAngle={3}
+                                                stroke="#fff"
+                                                strokeWidth={3}
+                                            >
+                                                {statusData.map((entry, index) => (
+                                                    <Cell key={entry.status} fill={palette[index % palette.length]} />
+                                                ))}
+                                            </Pie>
+                                            <Tooltip content={<CustomTooltip />} />
+                                        </PieChart>
+                                    </ResponsiveContainer>
+
+                                    <div className="space-y-3">
+                                        {statusData.map((item, index) => (
+                                            <div key={item.status} className="flex items-center justify-between gap-3">
+                                                <div className="flex min-w-0 items-center gap-2">
+                                                    <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: palette[index % palette.length] }} />
+                                                    <span className="truncate text-sm font-medium text-slate-600">{item.status}</span>
+                                                </div>
+                                                <span className="text-sm font-bold text-slate-950">{formatNumber(item.total)}</span>
                                             </div>
-                                            <Badge variant={alert.badgeVariant} className="text-[10px] uppercase tracking-wider">
-                                                {alert.badge}
-                                            </Badge>
-                                        </div>
-                                        <p className="text-3xl font-bold text-gray-900 mb-1">{alert.count}</p>
-                                        <p className="text-sm text-gray-600 font-medium">{alert.label}</p>
-                                    </div>
-                                </Wrapper>
-                            );
-                        })}
-                    </div>
-                )}
-
-                {/* ===== STATS CARDS ===== */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                    {statCards.map((stat, idx) => {
-                        const Icon = stat.icon;
-                        return (
-                            <Card key={idx} className="group relative overflow-hidden hover:shadow-xl transition-all duration-300 border-gray-100/80 animate-fade-in" style={{ animationDelay: `${idx * 100}ms` }}>
-                                <div className={`absolute top-0 right-0 w-36 h-36 bg-gradient-to-br ${stat.gradient} opacity-[0.07] rounded-full -mr-16 -mt-16 group-hover:scale-150 transition-transform duration-700`}></div>
-
-                                <CardContent className="p-5 relative">
-                                    <div className="flex items-start justify-between mb-4">
-                                        <div className={`w-14 h-14 bg-gradient-to-br ${stat.gradient} rounded-xl flex items-center justify-center shadow-lg shadow-blue-500/20 transform group-hover:scale-110 group-hover:rotate-3 transition-all duration-300`}>
-                                            <Icon className="w-6 h-6 text-white" />
-                                        </div>
-                                        <Link
-                                            href={route(stat.route)}
-                                            className={`${stat.textColor} hover:opacity-80 font-medium text-sm flex items-center gap-1 group-hover:gap-2 transition-all`}
-                                        >
-                                            Lihat <ChevronRight className="w-4 h-4" />
-                                        </Link>
-                                    </div>
-
-                                    <h3 className="text-gray-500 text-sm font-medium mb-1">{stat.title}</h3>
-                                    <p className="text-4xl font-bold text-gray-900 mb-3 tracking-tight">{stat.value}</p>
-
-                                    {stat.badges && (
-                                        <div className="flex flex-wrap gap-1.5">
-                                            {stat.badges.map((b, i) => (
-                                                <Badge key={i} variant={b.variant} className="text-[10px] font-semibold px-2 py-0.5">
-                                                    {b.label}
-                                                </Badge>
-                                            ))}
-                                        </div>
-                                    )}
-
-                                    {stat.progress && (
-                                        <div className="flex items-center gap-2">
-                                            <div className="flex-1 bg-gray-100 rounded-full h-2 overflow-hidden">
-                                                <div
-                                                    className={`bg-gradient-to-r ${stat.gradient} h-full rounded-full transition-all duration-700`}
-                                                    style={{ width: `${(stat.progress.current / stat.progress.total) * 100}%` }}
-                                                ></div>
-                                            </div>
-                                            <span className={`text-xs font-semibold ${stat.textColor}`}>
-                                                {stat.progress.label}
-                                            </span>
-                                        </div>
-                                    )}
-
-                                    {stat.subtitle && (
-                                        <div className="flex items-center gap-2 text-sm text-gray-500">
-                                            <Icon className={`w-4 h-4 ${stat.textColor}`} />
-                                            <span>{stat.subtitle}</span>
-                                        </div>
-                                    )}
-                                </CardContent>
-                            </Card>
-                        );
-                    })}
-                </div>
-
-                {/* ===== CHARTS SECTION ===== */}
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                    {/* Distribusi Mahasiswa per Prodi (Pie) */}
-                    <Card className="overflow-hidden hover:shadow-lg transition-shadow duration-300">
-                        <CardHeader className="flex flex-row items-center justify-between pb-2">
-                            <div>
-                                <CardTitle className="text-base font-bold text-gray-900">Distribusi Mahasiswa</CardTitle>
-                                <CardDescription>Per Program Studi</CardDescription>
-                            </div>
-                            <div className="w-10 h-10 bg-blue-50 rounded-xl flex items-center justify-center">
-                                <PieChartIcon className="w-5 h-5 text-blue-600" />
-                            </div>
-                        </CardHeader>
-                        <CardContent className="px-2 pb-2 pt-0">
-                            <ResponsiveContainer width="100%" height={280}>
-                                <PieChart>
-                                    <Pie
-                                        data={charts.mahasiswa_per_prodi}
-                                        cx="50%"
-                                        cy="50%"
-                                        labelLine={false}
-                                        label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
-                                        outerRadius={90}
-                                        fill="#8884d8"
-                                        dataKey="value"
-                                        stroke="#fff"
-                                        strokeWidth={2}
-                                    >
-                                        {charts.mahasiswa_per_prodi.map((entry, index) => (
-                                            <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                                         ))}
-                                    </Pie>
-                                    <Tooltip content={<CustomTooltip />} />
-                                </PieChart>
-                            </ResponsiveContainer>
-                        </CardContent>
-                    </Card>
+                                    </div>
+                                </div>
+                            ) : (
+                                <EmptyChart icon={Activity} label="Belum ada data status" />
+                            )}
+                        </DashboardPanel>
+                    </section>
 
-                    {/* Tren Mahasiswa per Angkatan (Area) */}
-                    <Card className="overflow-hidden hover:shadow-lg transition-shadow duration-300">
-                        <CardHeader className="flex flex-row items-center justify-between pb-2">
-                            <div>
-                                <CardTitle className="text-base font-bold text-gray-900">Tren Mahasiswa</CardTitle>
-                                <CardDescription>Per Angkatan</CardDescription>
-                            </div>
-                            <div className="w-10 h-10 bg-sky-50 rounded-xl flex items-center justify-center">
-                                <TrendingUp className="w-5 h-5 text-sky-600" />
-                            </div>
-                        </CardHeader>
-                        <CardContent className="pb-2 pt-0">
-                            <ResponsiveContainer width="100%" height={280}>
-                                <AreaChart data={charts.mahasiswa_per_angkatan} margin={{ top: 5, right: 15, left: -15, bottom: 5 }}>
-                                    <defs>
-                                        <linearGradient id="colorMahasiswa" x1="0" y1="0" x2="0" y2="1">
-                                            <stop offset="5%" stopColor="#2563EB" stopOpacity={0.8}/>
-                                            <stop offset="95%" stopColor="#2563EB" stopOpacity={0.05}/>
-                                        </linearGradient>
-                                    </defs>
-                                    <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
-                                    <XAxis dataKey="angkatan" stroke="#94A3B8" style={{ fontSize: '12px' }} />
-                                    <YAxis stroke="#94A3B8" style={{ fontSize: '12px' }} />
-                                    <Tooltip content={<CustomTooltip />} />
-                                    <Area type="monotone" dataKey="total" stroke="#2563EB" strokeWidth={2.5} fillOpacity={1} fill="url(#colorMahasiswa)" />
-                                </AreaChart>
-                            </ResponsiveContainer>
-                        </CardContent>
-                    </Card>
-
-                    {/* Rata-rata IPK per Prodi (Bar) */}
-                    <Card className="overflow-hidden hover:shadow-lg transition-shadow duration-300">
-                        <CardHeader className="flex flex-row items-center justify-between pb-2">
-                            <div>
-                                <CardTitle className="text-base font-bold text-gray-900">Rata-rata IPK</CardTitle>
-                                <CardDescription>Per Program Studi</CardDescription>
-                            </div>
-                            <div className="w-10 h-10 bg-indigo-50 rounded-xl flex items-center justify-center">
-                                <BarChart3 className="w-5 h-5 text-indigo-600" />
-                            </div>
-                        </CardHeader>
-                        <CardContent className="pb-2 pt-0">
-                            {charts.rata_ipk_per_prodi && charts.rata_ipk_per_prodi.length > 0 ? (
-                                <ResponsiveContainer width="100%" height={280}>
-                                    <BarChart data={charts.rata_ipk_per_prodi} margin={{ top: 5, right: 15, left: -15, bottom: 60 }}>
-                                        <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
+                    <section className="grid grid-cols-1 gap-4 md:grid-cols-2 md:gap-5 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(0,0.9fr)]">
+                        <DashboardPanel title="Rata-rata IPK" description="Per program studi.">
+                            {ipkData.length > 0 ? (
+                                <ResponsiveContainer width="100%" height={250}>
+                                    <BarChart data={ipkData} margin={{ top: 12, right: 8, left: -22, bottom: 44 }}>
+                                        <CartesianGrid stroke="#e2e8f0" strokeDasharray="4 4" vertical={false} />
                                         <XAxis
                                             dataKey="prodi"
-                                            stroke="#94A3B8"
-                                            style={{ fontSize: '10px' }}
-                                            angle={-45}
-                                            textAnchor="end"
-                                            height={60}
+                                            axisLine={false}
+                                            tickLine={false}
                                             interval={0}
+                                            angle={-35}
+                                            textAnchor="end"
+                                            tick={{ fill: '#64748b', fontSize: 11 }}
                                         />
-                                        <YAxis
-                                            domain={[0, 4]}
-                                            stroke="#94A3B8"
-                                            style={{ fontSize: '12px' }}
-                                            ticks={[0, 1, 2, 3, 4]}
-                                        />
+                                        <YAxis domain={[0, 4]} axisLine={false} tickLine={false} tick={{ fill: '#64748b', fontSize: 12 }} />
                                         <Tooltip content={<CustomTooltip />} />
-                                        <Bar dataKey="ipk" radius={[8, 8, 0, 0]}>
-                                            {charts.rata_ipk_per_prodi.map((entry, index) => (
-                                                <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                                            ))}
-                                        </Bar>
+                                        <Bar dataKey="ipk" name="IPK" radius={[6, 6, 0, 0]} fill="#14b8a6" />
                                     </BarChart>
                                 </ResponsiveContainer>
                             ) : (
-                                <div className="text-center py-12">
-                                    <div className="w-16 h-16 bg-gray-50 rounded-2xl flex items-center justify-center mx-auto mb-3">
-                                        <BarChart3 className="w-7 h-7 text-gray-300" />
-                                    </div>
-                                    <p className="text-gray-400 text-sm font-medium">Belum ada data IPK</p>
-                                </div>
+                                <EmptyChart icon={ShieldCheck} label="Belum ada data IPK" />
                             )}
-                        </CardContent>
-                    </Card>
+                        </DashboardPanel>
 
-                    {/* Distribusi Status Mahasiswa (Bar) */}
-                    <Card className="overflow-hidden hover:shadow-lg transition-shadow duration-300">
-                        <CardHeader className="flex flex-row items-center justify-between pb-2">
-                            <div>
-                                <CardTitle className="text-base font-bold text-gray-900">Status Mahasiswa</CardTitle>
-                                <CardDescription>Distribusi per Status</CardDescription>
-                            </div>
-                            <div className="w-10 h-10 bg-violet-50 rounded-xl flex items-center justify-center">
-                                <BarChart3 className="w-5 h-5 text-violet-600" />
-                            </div>
-                        </CardHeader>
-                        <CardContent className="pb-2 pt-0">
-                            <ResponsiveContainer width="100%" height={280}>
-                                <BarChart data={charts.distribusi_status} margin={{ top: 5, right: 15, left: -15, bottom: 5 }}>
-                                    <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
-                                    <XAxis dataKey="status" stroke="#94A3B8" style={{ fontSize: '12px' }} />
-                                    <YAxis stroke="#94A3B8" style={{ fontSize: '12px' }} />
-                                    <Tooltip content={<CustomTooltip />} />
-                                    <Bar dataKey="total" radius={[8, 8, 0, 0]}>
-                                        {charts.distribusi_status.map((entry, index) => (
-                                            <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                                        ))}
-                                    </Bar>
-                                </BarChart>
-                            </ResponsiveContainer>
-                        </CardContent>
-                    </Card>
-                </div>
+                        <DashboardPanel title="Mahasiswa per Prodi" description="Komposisi mahasiswa aktif.">
+                            {prodiData.length > 0 ? (
+                                <div className="space-y-3">
+                                    {prodiData.slice(0, 6).map((item, index) => {
+                                        const maxValue = Math.max(...prodiData.map((prodi) => prodi.value), 1);
+                                        const width = (item.value / maxValue) * 100;
 
-                {/* ===== RECENT ACTIVITIES ===== */}
-                <Card className="hover:shadow-lg transition-shadow duration-300">
-                    <CardHeader className="flex flex-row items-center justify-between">
-                        <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 bg-blue-50 rounded-xl flex items-center justify-center">
-                                <Activity className="w-5 h-5 text-blue-600" />
-                            </div>
-                            <div>
-                                <CardTitle className="text-base font-bold text-gray-900">Aktivitas Terbaru</CardTitle>
-                                <CardDescription>10 aktivitas terakhir</CardDescription>
-                            </div>
-                        </div>
-                    </CardHeader>
-                    <CardContent>
-                        {recent_activities && recent_activities.length > 0 ? (
-                            <div className="space-y-4 max-h-[320px] overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-blue-200 scrollbar-track-gray-50 hover:scrollbar-thumb-blue-300">
-                                {recent_activities.map((activity, index) => (
-                                    <div key={index} className="relative flex items-start gap-4 group">
-                                        {index !== recent_activities.length - 1 && (
-                                            <div className="absolute left-5 top-12 w-0.5 h-full bg-blue-100"></div>
-                                        )}
+                                        return (
+                                            <div key={item.name}>
+                                                <div className="mb-1.5 flex items-center justify-between gap-3">
+                                                    <span className="truncate text-sm font-medium text-slate-600">{item.name}</span>
+                                                    <span className="text-sm font-bold text-slate-950">{formatNumber(item.value)}</span>
+                                                </div>
+                                                <div className="h-2 overflow-hidden rounded-full bg-slate-100">
+                                                    <div
+                                                        className="h-full rounded-full"
+                                                        style={{
+                                                            width: `${width}%`,
+                                                            backgroundColor: palette[index % palette.length],
+                                                        }}
+                                                    />
+                                                </div>
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                            ) : (
+                                <EmptyChart icon={University} label="Belum ada data prodi" />
+                            )}
+                        </DashboardPanel>
 
-                                        <div className={`relative z-10 w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 shadow-md group-hover:scale-110 transition-transform duration-300 ${
-                                            activity.type === 'krs_approved'
-                                                ? 'bg-gradient-to-br from-emerald-400 to-emerald-600'
-                                                : 'bg-gradient-to-br from-blue-500 to-blue-600'
-                                        }`}>
-                                            {activity.type === 'krs_approved' ? (
-                                                <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" /></svg>
-                                            ) : (
-                                                <FileText className="w-4 h-4 text-white" />
-                                            )}
-                                        </div>
+                        <DashboardPanel
+                            title="Prioritas Hari Ini"
+                            description="Item yang perlu dipantau."
+                            className="md:col-span-2 xl:col-span-1"
+                            contentClassName="grid grid-cols-2 gap-3"
+                            action={
+                                <Badge className="shrink-0 rounded-md bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-700 hover:bg-slate-100">
+                                    {formatNumber(totalAlert)}
+                                </Badge>
+                            }
+                        >
+                            {alertCards.map((alert) => (
+                                <AlertCard key={alert.label} alert={alert} formatNumber={formatNumber} />
+                            ))}
+                        </DashboardPanel>
+                    </section>
 
-                                        <div className="flex-1 bg-gray-50/80 rounded-xl p-4 group-hover:bg-blue-50/50 transition-colors duration-200 border border-gray-100 group-hover:border-blue-100">
-                                            <p className="text-sm text-gray-700 font-medium mb-1">{activity.message}</p>
-                                            <div className="flex items-center gap-2 text-xs text-gray-400">
-                                                <Clock className="w-3 h-3" />
-                                                <span>{activity.time}</span>
+                    <section className="grid grid-cols-1 gap-4 md:gap-5 xl:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)]">
+                        <DashboardPanel
+                            title="Aktivitas Terbaru"
+                            description="Riwayat pembaruan akademik terakhir."
+                            headerClassName="space-y-0"
+                            action={<Activity className="h-5 w-5 shrink-0 text-slate-400" />}
+                        >
+                            {activities.length > 0 ? (
+                                <div className="divide-y divide-slate-100">
+                                    {activities.slice(0, 6).map((activity, index) => (
+                                        <div key={`${activity.type}-${index}`} className="flex items-center gap-3 py-3 first:pt-0 last:pb-0">
+                                            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-slate-100">
+                                                {activity.type === 'krs_approved' ? (
+                                                    <CheckCircle2 className="h-4 w-4 text-emerald-600" />
+                                                ) : (
+                                                    <FileText className="h-4 w-4 text-blue-600" />
+                                                )}
+                                            </div>
+                                            <div className="min-w-0 flex-1">
+                                                <p className="truncate text-sm font-medium text-slate-700">{activity.message}</p>
+                                                <p className="mt-0.5 text-xs text-slate-400">{activity.time}</p>
                                             </div>
                                         </div>
-                                    </div>
-                                ))}
-                            </div>
-                        ) : (
-                            <div className="text-center py-14">
-                                <div className="w-20 h-20 bg-blue-50 rounded-2xl flex items-center justify-center mx-auto mb-4">
-                                    <Activity className="w-9 h-9 text-blue-200" />
+                                    ))}
                                 </div>
-                                <p className="text-gray-500 font-medium">Belum ada aktivitas</p>
-                                <p className="text-gray-400 text-sm mt-1">Aktivitas akan muncul di sini</p>
-                            </div>
-                        )}
-                    </CardContent>
-                </Card>
+                            ) : (
+                                <div className="flex h-44 flex-col items-center justify-center text-center">
+                                    <Activity className="mb-3 h-8 w-8 text-slate-300" />
+                                    <p className="text-sm font-medium text-slate-500">Belum ada aktivitas</p>
+                                </div>
+                            )}
+                        </DashboardPanel>
 
-                {/* ===== QUICK ACTIONS ===== */}
-                <Card className="bg-gradient-to-br from-blue-50/80 via-indigo-50/50 to-white border-blue-100/50">
-                    <CardHeader>
-                        <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center shadow-lg shadow-blue-600/30">
-                                <Zap className="w-5 h-5 text-white" />
-                            </div>
-                            <div>
-                                <CardTitle className="text-base font-bold text-gray-900">Quick Actions</CardTitle>
-                                <CardDescription>Akses cepat ke fitur utama</CardDescription>
-                            </div>
-                        </div>
-                    </CardHeader>
-                    <CardContent>
-                        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
-                            {quickActions.map((action, idx) => {
-                                const Icon = action.icon;
-                                return (
-                                    <Link
-                                        key={idx}
-                                        href={route(action.route)}
-                                        className="group flex flex-col items-center gap-2.5 p-4 bg-white rounded-xl border-2 border-gray-100 hover:border-blue-400 hover:shadow-lg hover:shadow-blue-500/10 transition-all duration-300 hover:-translate-y-0.5"
-                                    >
-                                        <div className="w-12 h-12 bg-blue-50 rounded-xl flex items-center justify-center group-hover:bg-blue-600 transition-all duration-300 group-hover:shadow-lg group-hover:shadow-blue-600/30">
-                                            <Icon className="w-5 h-5 text-blue-600 group-hover:text-white transition-colors duration-300" />
-                                        </div>
-                                        <span className="text-xs font-semibold text-gray-600 group-hover:text-blue-700 text-center transition-colors">{action.label}</span>
-                                    </Link>
-                                );
-                            })}
-                        </div>
-                    </CardContent>
-                </Card>
+                        <DashboardPanel
+                            title="Akses Cepat"
+                            description="Navigasi fitur utama BAAK."
+                            contentClassName="grid grid-cols-2 gap-3"
+                        >
+                            {quickActions.map((action) => (
+                                <QuickActionCard key={action.label} action={action} />
+                            ))}
+                        </DashboardPanel>
+                    </section>
+                </div>
             </div>
         </BaakLayout>
     );

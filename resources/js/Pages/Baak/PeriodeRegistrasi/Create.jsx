@@ -1,5 +1,8 @@
 import { Head, Link, useForm } from '@inertiajs/react';
 import BaakLayout from '@/Layouts/BaakLayout';
+import { Button } from '@/Components/ui/button';
+import { FormCard, FormField } from '@/Components/ui/form-card';
+import { PageHeader } from '@/Components/ui/data-display';
 
 export default function Create({ defaultTahunAjaran }) {
     const { data, setData, post, processing, errors } = useForm({
@@ -18,58 +21,58 @@ export default function Create({ defaultTahunAjaran }) {
         <BaakLayout title="Tambah Periode Registrasi">
             <Head title="Tambah Periode Registrasi" />
 
-            <div className="p-4 md:p-6">
-                {/* Header */}
-                <div className="mb-6">
+            <div className="min-h-screen bg-slate-50 px-3 py-4 sm:px-4 lg:px-6">
+                <div className="mx-auto flex max-w-5xl flex-col gap-5">
                     <Link
                         href={route('baak.periode-registrasi.index')}
-                        className="text-blue-600 hover:text-blue-700 text-sm font-medium mb-3 inline-flex items-center gap-1"
+                        className="text-sm font-semibold text-blue-600 hover:text-blue-700"
                     >
-                        <i className="fas fa-arrow-left"></i>
-                        <span>Kembali ke Daftar Periode</span>
+                        Kembali ke Daftar Periode
                     </Link>
-                    <h1 className="text-2xl font-bold text-gray-700 mt-2">Tambah Periode Registrasi</h1>
-                    <p className="text-sm text-gray-600 mt-1">Buat periode registrasi semester baru untuk mahasiswa</p>
-                </div>
 
-                {/* Form */}
-                <form onSubmit={handleSubmit}>
-                    <div className="bg-white rounded-lg border border-gray-200 p-6">
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            {/* Tahun Ajaran */}
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-2">
-                                    Tahun Ajaran <span className="text-red-500">*</span>
-                                </label>
+                    <PageHeader
+                        title="Tambah Periode Registrasi"
+                        description="Buat periode registrasi semester baru untuk mahasiswa."
+                    />
+
+                    <form onSubmit={handleSubmit}>
+                        <FormCard
+                            footer={
+                                <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+                                    <Link href={route('baak.periode-registrasi.index')} className="w-full sm:w-auto">
+                                        <Button type="button" variant="outline" className="w-full sm:w-auto">
+                                            Batal
+                                        </Button>
+                                    </Link>
+                                    <Button type="submit" disabled={processing} className="w-full sm:w-auto">
+                                        {processing ? 'Menyimpan...' : 'Simpan Data'}
+                                    </Button>
+                                </div>
+                            }
+                        >
+                            <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
+                                <FormField
+                                    label="Tahun Ajaran"
+                                    required
+                                    error={errors.tahun_ajaran}
+                                    hint="Format: YYYY/YYYY, contoh: 2024/2025."
+                                >
                                 <input
                                     type="text"
                                     value={data.tahun_ajaran}
                                     onChange={(e) => setData('tahun_ajaran', e.target.value)}
                                     placeholder="Contoh: 2024/2025"
-                                    className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm ${
+                                    className={`h-10 w-full rounded-lg border px-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 ${
                                         errors.tahun_ajaran ? 'border-red-500' : 'border-gray-300'
                                     }`}
                                 />
-                                {errors.tahun_ajaran && (
-                                    <p className="text-red-500 text-xs mt-1">
-                                        <i className="fas fa-exclamation-circle mr-1"></i>
-                                        {errors.tahun_ajaran}
-                                    </p>
-                                )}
-                                <p className="text-xs text-gray-500 mt-1">
-                                    Format: YYYY/YYYY (contoh: 2024/2025)
-                                </p>
-                            </div>
+                                </FormField>
 
-                            {/* Jenis Semester */}
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-2">
-                                    Jenis Semester <span className="text-red-500">*</span>
-                                </label>
+                                <FormField label="Jenis Semester" required error={errors.jenis_semester}>
                                 <select
                                     value={data.jenis_semester}
                                     onChange={(e) => setData('jenis_semester', e.target.value)}
-                                    className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm ${
+                                    className={`h-10 w-full rounded-lg border px-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 ${
                                         errors.jenis_semester ? 'border-red-500' : 'border-gray-300'
                                     }`}
                                 >
@@ -77,62 +80,32 @@ export default function Create({ defaultTahunAjaran }) {
                                     <option value="ganjil">Ganjil</option>
                                     <option value="genap">Genap</option>
                                 </select>
-                                {errors.jenis_semester && (
-                                    <p className="text-red-500 text-xs mt-1">
-                                        <i className="fas fa-exclamation-circle mr-1"></i>
-                                        {errors.jenis_semester}
-                                    </p>
-                                )}
-                            </div>
+                                </FormField>
 
-                            {/* Tanggal Mulai */}
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-2">
-                                    Tanggal Mulai <span className="text-red-500">*</span>
-                                </label>
+                                <FormField label="Tanggal Mulai" required error={errors.tanggal_mulai}>
                                 <input
                                     type="date"
                                     value={data.tanggal_mulai}
                                     onChange={(e) => setData('tanggal_mulai', e.target.value)}
-                                    className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm ${
+                                    className={`h-10 w-full rounded-lg border px-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 ${
                                         errors.tanggal_mulai ? 'border-red-500' : 'border-gray-300'
                                     }`}
                                 />
-                                {errors.tanggal_mulai}
-                                {errors.tanggal_mulai && (
-                                    <p className="text-red-500 text-xs mt-1">
-                                        <i className="fas fa-exclamation-circle mr-1"></i>
-                                        {errors.tanggal_mulai}
-                                    </p>
-                                )}
-                            </div>
+                                </FormField>
 
-                            {/* Tanggal Selesai */}
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-2">
-                                    Tanggal Selesai <span className="text-red-500">*</span>
-                                </label>
+                                <FormField label="Tanggal Selesai" required error={errors.tanggal_selesai}>
                                 <input
                                     type="date"
                                     value={data.tanggal_selesai}
                                     onChange={(e) => setData('tanggal_selesai', e.target.value)}
-                                    className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm ${
+                                    className={`h-10 w-full rounded-lg border px-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 ${
                                         errors.tanggal_selesai ? 'border-red-500' : 'border-gray-300'
                                     }`}
                                 />
-                                {errors.tanggal_selesai && (
-                                    <p className="text-red-500 text-xs mt-1">
-                                        <i className="fas fa-exclamation-circle mr-1"></i>
-                                        {errors.tanggal_selesai}
-                                    </p>
-                                )}
+                                </FormField>
                             </div>
-                        </div>
 
-                        {/* Info Box */}
-                        <div className="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-                            <div className="flex gap-3">
-                                <i className="fas fa-info-circle text-blue-600 mt-0.5"></i>
+                            <div className="mt-5 rounded-lg border border-blue-200 bg-blue-50 p-4">
                                 <div className="text-sm text-blue-800">
                                     <p className="font-medium mb-1">Informasi Penting:</p>
                                     <ul className="list-disc list-inside space-y-1">
@@ -143,26 +116,9 @@ export default function Create({ defaultTahunAjaran }) {
                                     </ul>
                                 </div>
                             </div>
-                        </div>
-
-                        {/* Buttons */}
-                        <div className="flex flex-col sm:flex-row justify-end gap-3 mt-6 pt-6 border-t border-gray-200">
-                            <Link
-                                href={route('baak.periode-registrasi.index')}
-                                className="px-6 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 text-center transition-colors"
-                            >
-                                Batal
-                            </Link>
-                            <button
-                                type="submit"
-                                disabled={processing}
-                                className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium disabled:opacity-50 transition-colors"
-                            >
-                                {processing ? 'Menyimpan...' : 'Simpan Data'}
-                            </button>
-                        </div>
-                    </div>
-                </form>
+                        </FormCard>
+                    </form>
+                </div>
             </div>
         </BaakLayout>
     );

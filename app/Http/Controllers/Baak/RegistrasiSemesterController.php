@@ -5,10 +5,10 @@ namespace App\Http\Controllers\Baak;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreRegistrasiSemesterRequest;
 use App\Http\Requests\UpdateRegistrasiSemesterRequest;
-use App\Models\RegistrasiSemester;
 use App\Models\Mahasiswa;
 use App\Models\PeriodeRegistrasi;
 use App\Models\Prodi;
+use App\Models\RegistrasiSemester;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 
@@ -16,7 +16,7 @@ class RegistrasiSemesterController extends Controller
 {
     public function index(Request $request)
     {
-        $query = RegistrasiSemester::with(['mahasiswa.prodi.fakultas']);
+        $query = RegistrasiSemester::with(['mahasiswa.prodi']);
 
         $this->applyFilters($query, $request);
 
@@ -88,9 +88,9 @@ class RegistrasiSemesterController extends Controller
         $request->validate(['search' => 'required|string|min:3']);
 
         $mahasiswa = Mahasiswa::with('prodi')
-            ->where(function($q) use ($request) {
+            ->where(function ($q) use ($request) {
                 $q->where('nim', 'like', "%{$request->search}%")
-                  ->orWhere('nama', 'like', "%{$request->search}%");
+                    ->orWhere('nama', 'like', "%{$request->search}%");
             })
             ->where('status', 'aktif')
             ->limit(10)
@@ -104,11 +104,11 @@ class RegistrasiSemesterController extends Controller
         if ($request->filled('periode')) {
             [$tahun, $jenis] = explode('-', $request->periode);
             $query->where('tahun_ajaran', $tahun)
-                  ->where('jenis_semester', $jenis);
+                ->where('jenis_semester', $jenis);
         }
 
         if ($request->filled('prodi')) {
-            $query->whereHas('mahasiswa', fn($q) => $q->where('kode_prodi', $request->prodi));
+            $query->whereHas('mahasiswa', fn ($q) => $q->where('kode_prodi', $request->prodi));
         }
 
         if ($request->filled('status')) {
@@ -116,26 +116,27 @@ class RegistrasiSemesterController extends Controller
         }
 
         if ($request->filled('search')) {
-            $query->whereHas('mahasiswa', function($q) use ($request) {
+            $query->whereHas('mahasiswa', function ($q) use ($request) {
                 $q->where('nim', 'like', "%{$request->search}%")
-                  ->orWhere('nama', 'like', "%{$request->search}%");
+                    ->orWhere('nama', 'like', "%{$request->search}%");
             });
         }
     }
 
     private function getStatistik($periode)
     {
-        if (!$periode) return [];
+        if (! $periode) {
+            return [];
+        }
 
         [$tahun, $jenis] = explode('-', $periode);
 
         return Prodi::with('mahasiswa')
             ->get()
-            ->map(function($prodi) use ($tahun, $jenis) {
+            ->map(function ($prodi) use ($tahun, $jenis) {
                 $totalMhs = $prodi->mahasiswa()->where('status', 'aktif')->count();
-                $sudahRegistrasi = RegistrasiSemester::whereHas('mahasiswa', fn($q) =>
-                        $q->where('kode_prodi', $prodi->kode_prodi)
-                    )
+                $sudahRegistrasi = RegistrasiSemester::whereHas('mahasiswa', fn ($q) => $q->where('kode_prodi', $prodi->kode_prodi)
+                )
                     ->where('tahun_ajaran', $tahun)
                     ->where('jenis_semester', $jenis)
                     ->count();
@@ -145,7 +146,7 @@ class RegistrasiSemesterController extends Controller
                     'total' => $totalMhs,
                     'sudah' => $sudahRegistrasi,
                     'belum' => $totalMhs - $sudahRegistrasi,
-                    'persentase' => $totalMhs > 0 ? round(($sudahRegistrasi / $totalMhs) * 100, 1) : 0
+                    'persentase' => $totalMhs > 0 ? round(($sudahRegistrasi / $totalMhs) * 100, 1) : 0,
                 ];
             })
             ->toArray();

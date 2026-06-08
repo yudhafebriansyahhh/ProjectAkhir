@@ -17,8 +17,8 @@ class UpdateKelasRequest extends FormRequest
         return [
             'nama_kelas' => 'required|string|max:10',
             'id_dosen' => 'required|exists:dosen,id_dosen',
-            'ruang_kelas' => 'required|string|max:20',
-            'hari' => 'required|in:Senin,Selasa,Rabu,Kamis,Jumat,Sabtu',
+            'id_ruangan' => 'required|exists:ruangan,id_ruangan',
+            'hari' => 'required|in:Senin,Selasa,Rabu,Kamis,Jumat,Sabtu,Minggu',
             'jam_mulai' => 'required|date_format:H:i',
             'jam_selesai' => 'required|date_format:H:i|after:jam_mulai',
             'kapasitas' => 'required|integer|min:20|max:100',
@@ -35,12 +35,8 @@ class UpdateKelasRequest extends FormRequest
                 ->where('hari', $this->hari)
                 ->where('id_kelas', '!=', $kelasId)
                 ->where(function($q) {
-                    $q->whereBetween('jam_mulai', [$this->jam_mulai, $this->jam_selesai])
-                      ->orWhereBetween('jam_selesai', [$this->jam_mulai, $this->jam_selesai])
-                      ->orWhere(function($q) {
-                          $q->where('jam_mulai', '<=', $this->jam_mulai)
-                            ->where('jam_selesai', '>=', $this->jam_selesai);
-                      });
+                    $q->where('jam_mulai', '<', $this->jam_selesai)
+                        ->where('jam_selesai', '>', $this->jam_mulai);
                 })
                 ->exists();
 
@@ -49,16 +45,12 @@ class UpdateKelasRequest extends FormRequest
             }
 
             // Validasi bentrok ruangan
-            $bentrokRuangan = Kelas::where('ruang_kelas', $this->ruang_kelas)
+            $bentrokRuangan = Kelas::where('id_ruangan', $this->id_ruangan)
                 ->where('hari', $this->hari)
                 ->where('id_kelas', '!=', $kelasId)
                 ->where(function($q) {
-                    $q->whereBetween('jam_mulai', [$this->jam_mulai, $this->jam_selesai])
-                      ->orWhereBetween('jam_selesai', [$this->jam_mulai, $this->jam_selesai])
-                      ->orWhere(function($q) {
-                          $q->where('jam_mulai', '<=', $this->jam_mulai)
-                            ->where('jam_selesai', '>=', $this->jam_selesai);
-                      });
+                    $q->where('jam_mulai', '<', $this->jam_selesai)
+                        ->where('jam_selesai', '>', $this->jam_mulai);
                 })
                 ->exists();
 
@@ -73,7 +65,8 @@ class UpdateKelasRequest extends FormRequest
         return [
             'nama_kelas.required' => 'Nama kelas wajib diisi',
             'id_dosen.required' => 'Dosen wajib dipilih',
-            'ruang_kelas.required' => 'Ruang kelas wajib diisi',
+            'id_ruangan.required' => 'Ruangan wajib dipilih',
+            'id_ruangan.exists' => 'Ruangan tidak valid',
             'hari.required' => 'Hari wajib dipilih',
             'jam_mulai.required' => 'Jam mulai wajib diisi',
             'jam_selesai.required' => 'Jam selesai wajib diisi',

@@ -11,7 +11,7 @@ import {
 } from "lucide-react";
 
 export default function BaakLayout({ children, title }) {
-    const { auth } = usePage().props;
+    const { auth, flash, errors } = usePage().props;
     const [sidebarOpen, setSidebarOpen] = useState(false);
 
     const isActive = (routeName) => {
@@ -23,13 +23,13 @@ export default function BaakLayout({ children, title }) {
     };
 
     const [masterDataOpen, setMasterDataOpen] = useState(
-        isParentActive(["baak.fakultas", "baak.prodi", "baak.mata-kuliah"])
+        isParentActive(["baak.prodi", "baak.mata-kuliah"])
     );
     const [civitasOpen, setCivitasOpen] = useState(
         isParentActive(["baak.dosen", "baak.mahasiswa"])
     );
     const [perkuliahanOpen, setPerkuliahanOpen] = useState(
-        isParentActive(["baak.kelas", "baak.krs", "baak.nilai"])
+        isParentActive(["baak.kelas", "baak.ruangan", "baak.krs", "baak.nilai"])
     );
     const [akademikOpen, setAkademikOpen] = useState(
         isParentActive([
@@ -42,13 +42,13 @@ export default function BaakLayout({ children, title }) {
 
     useEffect(() => {
         setMasterDataOpen(
-            isParentActive(["baak.fakultas", "baak.prodi", "baak.mata-kuliah"])
+            isParentActive(["baak.prodi", "baak.mata-kuliah"])
         );
         setCivitasOpen(
             isParentActive(["baak.dosen", "baak.mahasiswa"])
         );
         setPerkuliahanOpen(
-            isParentActive(["baak.kelas", "baak.krs", "baak.nilai"])
+            isParentActive(["baak.kelas", "baak.ruangan", "baak.krs", "baak.nilai"])
         );
         setAkademikOpen(
             isParentActive([
@@ -59,6 +59,51 @@ export default function BaakLayout({ children, title }) {
             ])
         );
     }, [route().current()]);
+
+    useEffect(() => {
+        if (flash?.success) {
+            window.Swal?.fire({
+                title: "Berhasil!",
+                text: flash.success,
+                icon: "success",
+                confirmButtonColor: "#10b981",
+                confirmButtonText: "Tutup",
+                timer: 3000,
+                timerProgressBar: true
+            });
+        }
+        if (flash?.error) {
+            window.Swal?.fire({
+                title: "Gagal!",
+                text: flash.error,
+                icon: "error",
+                confirmButtonColor: "#dc2626",
+                confirmButtonText: "Tutup",
+            });
+        }
+        
+        if (errors && Object.keys(errors).length > 0) {
+            const errorValues = Object.values(errors);
+            if (errorValues.length === 1) {
+                window.Swal?.fire({
+                    title: "Peringatan!",
+                    text: errorValues[0],
+                    icon: "warning",
+                    confirmButtonColor: "#dc2626",
+                    confirmButtonText: "Tutup",
+                });
+            } else {
+                const errorList = errorValues.map(msg => `<li>${msg}</li>`).join('');
+                window.Swal?.fire({
+                    title: "Peringatan!",
+                    html: `<ul class="list-disc pl-5 text-left text-sm text-slate-700 space-y-1">${errorList}</ul>`,
+                    icon: "warning",
+                    confirmButtonColor: "#dc2626",
+                    confirmButtonText: "Tutup",
+                });
+            }
+        }
+    }, [flash, errors]);
 
     const handleLogout = () => {
         if (window.Swal) {
@@ -147,7 +192,7 @@ export default function BaakLayout({ children, title }) {
                 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
             </Head>
 
-            <div className="flex min-h-screen bg-gray-50/50">
+            <div className="flex min-h-screen min-w-0 bg-gray-50/50">
                 {/* Overlay mobile */}
                 {sidebarOpen && (
                     <div
@@ -163,7 +208,7 @@ export default function BaakLayout({ children, title }) {
                     }`}
                 >
                     {/* Logo Section */}
-                    <div className="flex-shrink-0 p-5 border-b border-gray-100 bg-gradient-to-br from-blue-600 via-blue-600 to-indigo-700">
+                    <div className="flex-shrink-0 p-5 border-b border-gray-100 bg-blue-600">
                         <div className="flex flex-col items-center">
                             <div className="w-14 h-14 bg-white rounded-2xl p-1 mb-3 shadow-lg shadow-blue-900/20">
                                 <img
@@ -225,9 +270,8 @@ export default function BaakLayout({ children, title }) {
                                 label="Master Data"
                                 isOpen={masterDataOpen}
                                 setIsOpen={setMasterDataOpen}
-                                isActiveParent={isParentActive(["baak.fakultas", "baak.prodi", "baak.mata-kuliah"])}
+                                isActiveParent={isParentActive(["baak.prodi", "baak.mata-kuliah"])}
                             >
-                                <SubNavItem href={route("baak.fakultas.index")} icon={Building2} label="Fakultas" active={isActive("baak.fakultas")} />
                                 <SubNavItem href={route("baak.prodi.index")} icon={GraduationCap} label="Program Studi" active={isActive("baak.prodi")} />
                                 <SubNavItem href={route("baak.mata-kuliah.index")} icon={BookOpen} label="Mata Kuliah" active={isActive("baak.mata-kuliah")} />
                             </DropdownMenu>
@@ -255,9 +299,10 @@ export default function BaakLayout({ children, title }) {
                                 label="Perkuliahan"
                                 isOpen={perkuliahanOpen}
                                 setIsOpen={setPerkuliahanOpen}
-                                isActiveParent={isParentActive(["baak.kelas", "baak.krs", "baak.nilai"])}
+                                isActiveParent={isParentActive(["baak.kelas", "baak.ruangan", "baak.krs", "baak.nilai"])}
                             >
                                 <SubNavItem href={route("baak.kelas.index")} icon={DoorOpen} label="Kelas" active={isActive("baak.kelas")} />
+                                <SubNavItem href={route("baak.ruangan.index")} icon={Building2} label="Ruangan" active={isActive("baak.ruangan")} />
                                 <SubNavItem href={route("baak.krs.index")} icon={ClipboardList} label="Monitoring KRS" active={isActive("baak.krs")} />
                                 <SubNavItem href={route("baak.nilai.index")} icon={Star} label="Manajemen Nilai" active={isActive("baak.nilai")} />
                             </DropdownMenu>
@@ -312,7 +357,7 @@ export default function BaakLayout({ children, title }) {
                 </aside>
 
                 {/* Main Content */}
-                <div className="flex-1 lg:ml-[270px]">
+                <div className="min-w-0 flex-1 overflow-x-hidden lg:ml-[270px]">
                     {/* Mobile Topbar */}
                     <header className="lg:hidden bg-white/80 backdrop-blur-md border-b border-gray-100 shadow-sm px-4 py-3 flex items-center justify-between sticky top-0 z-30">
                         <button
@@ -328,7 +373,7 @@ export default function BaakLayout({ children, title }) {
                     </header>
 
                     {/* Page Content */}
-                    <main className="min-h-screen bg-gray-50/50">
+                    <main className="min-h-screen min-w-0 bg-gray-50/50">
                         {children}
                     </main>
                 </div>

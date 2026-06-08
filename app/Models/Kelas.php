@@ -16,6 +16,7 @@ class Kelas extends Model
         'nama_kelas',
         'id_mk_periode',
         'id_dosen',
+        'id_ruangan',
         'ruang_kelas',
         'hari',
         'jam_mulai',
@@ -40,6 +41,11 @@ class Kelas extends Model
     public function dosen()
     {
         return $this->belongsTo(Dosen::class, 'id_dosen', 'id_dosen');
+    }
+
+    public function ruangan()
+    {
+        return $this->belongsTo(Ruangan::class, 'id_ruangan', 'id_ruangan');
     }
 
     public function detailKrs()

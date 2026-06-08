@@ -1,31 +1,58 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Head, Link, router, usePage } from '@inertiajs/react';
+import { CalendarCheck, CalendarClock, CheckCircle2, Pencil, Power, RefreshCcw, Trash2, XCircle } from 'lucide-react';
 import BaakLayout from '@/Layouts/BaakLayout';
+import { Badge } from '@/Components/ui/badge';
+import { Button } from '@/Components/ui/button';
+import { Card, CardContent } from '@/Components/ui/card';
+import { CardGrid, DataTable, EmptyState, PageHeader, Pagination, SearchInput, SummaryCard } from '@/Components/ui/data-display';
+import { SelectDropdown } from '@/Components/ui/select-dropdown';
 
-export default function Index({ periodes, tahunAjaranList, filters }) {
-    const { flash } = usePage().props;
+const formatDate = (date) => {
+    if (!date) return '-';
+    return new Date(date).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
+};
+
+const statusClass = (status) => status === 'aktif'
+    ? 'border-emerald-200 bg-emerald-50 text-emerald-700'
+    : 'border-red-200 bg-red-50 text-red-700';
+
+export default function Index({ periodes, tahunAjaranList = [], filters = {} }) {
+    const { flash = {} } = usePage().props;
     const [search, setSearch] = useState(filters.search || '');
     const [tahunAjaran, setTahunAjaran] = useState(filters.tahun_ajaran || '');
+    const isFirstRender = useRef(true);
 
-    const handleFilter = (e) => {
-        e.preventDefault();
-        router.get(route('baak.periode-registrasi.index'), {
-            search,
-            tahun_ajaran: tahunAjaran,
-        }, {
-            preserveState: true,
-            preserveScroll: true,
-        });
-    };
+    const periodeData = periodes.data || [];
+    const hasFilters = Boolean(search || tahunAjaran);
+    const tahunOptions = tahunAjaranList.map((item) => ({ value: item, label: item }));
+
+    useEffect(() => {
+        if (isFirstRender.current) {
+            isFirstRender.current = false;
+            return;
+        }
+
+        const timeout = setTimeout(() => {
+            router.get(
+                route('baak.periode-registrasi.index'),
+                { search, tahun_ajaran: tahunAjaran },
+                { preserveState: true, preserveScroll: true, replace: true },
+            );
+        }, 350);
+
+        return () => clearTimeout(timeout);
+    }, [search, tahunAjaran]);
 
     const handleReset = () => {
         setSearch('');
         setTahunAjaran('');
-        router.get(route('baak.periode-registrasi.index'));
+        router.get(route('baak.periode-registrasi.index'), {}, { preserveState: true, preserveScroll: true, replace: true });
     };
 
     const handleToggleStatus = (periode) => {
         const action = periode.status === 'tutup' ? 'mengaktifkan' : 'menutup';
+        const toggle = () => router.post(route('baak.periode-registrasi.toggle-status', periode.id_periode), {}, { preserveScroll: true });
 
         if (window.Swal) {
             window.Swal.fire({
@@ -33,21 +60,22 @@ export default function Index({ periodes, tahunAjaranList, filters }) {
                 text: `Apakah Anda yakin ingin ${action} periode ini?`,
                 icon: 'warning',
                 showCancelButton: true,
-                confirmButtonColor: '#3085d6',
-                cancelButtonColor: '#d33',
+                confirmButtonColor: '#2563eb',
+                cancelButtonColor: '#6b7280',
                 confirmButtonText: 'Ya, Lanjutkan',
                 cancelButtonText: 'Batal',
             }).then((result) => {
-                if (result.isConfirmed) {
-                    router.post(route('baak.periode-registrasi.toggle-status', periode.id_periode), {}, {
-                        preserveScroll: true,
-                    });
-                }
+                if (result.isConfirmed) toggle();
             });
+            return;
         }
+
+        if (confirm(`Yakin ingin ${action} periode ini?`)) toggle();
     };
 
     const handleDelete = (periode) => {
+        const destroy = () => router.delete(route('baak.periode-registrasi.destroy', periode.id_periode), { preserveScroll: true });
+
         if (window.Swal) {
             window.Swal.fire({
                 title: 'Hapus Periode?',
@@ -57,330 +85,135 @@ export default function Index({ periodes, tahunAjaranList, filters }) {
                 confirmButtonColor: '#dc2626',
                 cancelButtonColor: '#6b7280',
                 confirmButtonText: 'Ya, Hapus!',
-                cancelButtonText: 'Batal'
+                cancelButtonText: 'Batal',
             }).then((result) => {
-                if (result.isConfirmed) {
-                    router.delete(route('baak.periode-registrasi.destroy', periode.id_periode), {
-                        preserveScroll: true,
-                    });
-                }
+                if (result.isConfirmed) destroy();
             });
+            return;
         }
+
+        if (confirm(`Hapus periode ${periode.tahun_ajaran} ${periode.jenis_semester}?`)) destroy();
     };
 
-    const getStatusBadge = (status) => {
-        return status === 'aktif'
-            ? 'bg-green-100 text-green-700'
-            : 'bg-red-100 text-red-700';
+    const renderActions = (periode, compact = false) => {
+        if (compact) {
+            return (
+                <div className="grid grid-cols-3 gap-2 border-t border-slate-100 pt-3">
+                    <Button type="button" variant="outline" size="sm" className={`w-full gap-1.5 ${periode.status === 'tutup' ? 'text-emerald-600' : 'text-orange-600'}`} onClick={() => handleToggleStatus(periode)}>
+                        <Power className="h-3.5 w-3.5" />
+                        {periode.status === 'tutup' ? 'Aktifkan' : 'Tutup'}
+                    </Button>
+                    <Link href={route('baak.periode-registrasi.edit', periode.id_periode)}>
+                        <Button variant="outline" size="sm" className="w-full gap-1.5 text-amber-600">
+                            <Pencil className="h-3.5 w-3.5" />
+                            Edit
+                        </Button>
+                    </Link>
+                    <Button type="button" variant="outline" size="sm" className="w-full gap-1.5 text-red-600" onClick={() => handleDelete(periode)}>
+                        <Trash2 className="h-3.5 w-3.5" />
+                        Hapus
+                    </Button>
+                </div>
+            );
+        }
+
+        return (
+            <div className="flex items-center justify-center gap-1.5">
+                <Button type="button" variant="ghost" size="icon" className={`h-8 w-8 ${periode.status === 'tutup' ? 'text-emerald-600' : 'text-orange-600'}`} title={periode.status === 'tutup' ? 'Aktifkan' : 'Tutup'} onClick={() => handleToggleStatus(periode)}>
+                    <Power className="h-4 w-4" />
+                </Button>
+                <Link href={route('baak.periode-registrasi.edit', periode.id_periode)}>
+                    <Button variant="ghost" size="icon" className="h-8 w-8 text-amber-600" title="Edit">
+                        <Pencil className="h-4 w-4" />
+                    </Button>
+                </Link>
+                <Button type="button" variant="ghost" size="icon" className="h-8 w-8 text-red-600" title="Hapus" onClick={() => handleDelete(periode)}>
+                    <Trash2 className="h-4 w-4" />
+                </Button>
+            </div>
+        );
     };
 
-    const formatDate = (date) => {
-        return new Date(date).toLocaleDateString('id-ID', {
-            day: 'numeric',
-            month: 'long',
-            year: 'numeric',
-        });
-    };
+    const columns = [
+        { key: 'number', header: 'No', headerClassName: 'w-[56px]', cellClassName: 'font-medium text-slate-500', render: (_item, index) => (periodes.from || 1) + index },
+        { key: 'tahun_ajaran', header: 'Tahun Ajaran', render: (item) => <span className="font-semibold text-slate-900">{item.tahun_ajaran}</span> },
+        { key: 'semester', header: 'Semester', headerClassName: 'text-center', cellClassName: 'text-center', render: (item) => <Badge variant="outline" className="bg-blue-50 capitalize text-blue-700">{item.jenis_semester}</Badge> },
+        { key: 'mulai', header: 'Tanggal Mulai', render: (item) => <span className="whitespace-nowrap text-sm text-slate-700">{formatDate(item.tanggal_mulai)}</span> },
+        { key: 'selesai', header: 'Tanggal Selesai', render: (item) => <span className="whitespace-nowrap text-sm text-slate-700">{formatDate(item.tanggal_selesai)}</span> },
+        { key: 'durasi', header: 'Durasi', headerClassName: 'text-center', cellClassName: 'text-center', render: (item) => <Badge variant="outline" className="bg-slate-50 text-slate-700">{item.durasi} hari</Badge> },
+        { key: 'status', header: 'Status', headerClassName: 'text-center', cellClassName: 'text-center', render: (item) => <Badge variant="outline" className={statusClass(item.status)}>{item.status === 'aktif' ? 'Aktif' : 'Tutup'}</Badge> },
+        { key: 'actions', header: 'Aksi', headerClassName: 'text-center', cellClassName: 'text-center', render: (item) => renderActions(item) },
+    ];
+
+    const renderCard = (periode, _index, key) => (
+        <Card key={key} className={`rounded-lg shadow-sm ${periode.status === 'aktif' ? 'border-emerald-200' : 'border-slate-200'}`}>
+            <CardContent className="space-y-4 p-4">
+                <div className="flex items-start justify-between gap-3">
+                    <div>
+                        <p className="font-semibold text-slate-950">{periode.tahun_ajaran}</p>
+                        <Badge variant="outline" className="mt-2 bg-blue-50 capitalize text-blue-700">{periode.jenis_semester}</Badge>
+                    </div>
+                    <Badge variant="outline" className={statusClass(periode.status)}>{periode.status === 'aktif' ? 'Aktif' : 'Tutup'}</Badge>
+                </div>
+                <div className="grid gap-2 rounded-lg bg-slate-50 p-3 text-sm text-slate-600">
+                    <p><span className="font-medium text-slate-800">Mulai:</span> {formatDate(periode.tanggal_mulai)}</p>
+                    <p><span className="font-medium text-slate-800">Selesai:</span> {formatDate(periode.tanggal_selesai)}</p>
+                    <p><span className="font-medium text-slate-800">Durasi:</span> {periode.durasi} hari</p>
+                </div>
+                {renderActions(periode, true)}
+            </CardContent>
+        </Card>
+    );
 
     return (
         <BaakLayout title="Periode Registrasi">
             <Head title="Periode Registrasi" />
 
-            <div className="p-4 md:p-6">
-                {/* Header */}
-                <div className="mb-8">
-                    <h1 className="text-2xl font-bold text-gray-700 mb-2">Periode Registrasi</h1>
-                    <p className="text-gray-600">Kelola periode registrasi semester mahasiswa</p>
-                </div>
+            <div className="min-h-screen bg-slate-50 px-3 py-4 sm:px-4 sm:py-5 md:px-6 lg:px-8">
+                <div className="mx-auto w-full max-w-[1440px] space-y-4 md:space-y-5">
+                    <PageHeader
+                        title="Periode Registrasi"
+                        description="Kelola periode registrasi semester mahasiswa."
+                        actionHref={route('baak.periode-registrasi.create')}
+                        actionLabel="Tambah Periode"
+                    />
 
-                {/* Alert */}
-                {flash.success && (
-                    <div className="mb-6 p-4 bg-green-50 border border-green-200 text-green-800 rounded-lg flex items-center">
-                        <i className="fas fa-check-circle mr-2"></i>
-                        {flash.success}
-                    </div>
-                )}
-
-                {flash.error && (
-                    <div className="mb-6 p-4 bg-red-50 border border-red-200 text-red-800 rounded-lg flex items-center">
-                        <i className="fas fa-exclamation-circle mr-2"></i>
-                        {flash.error}
-                    </div>
-                )}
-
-                {/* Filter & Add */}
-                <div className="mb-6 bg-white rounded-lg border border-gray-200 p-4">
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                        {/* Search */}
-                        <div className="md:col-span-1">
-                            <input
-                                type="text"
-                                value={search}
-                                onChange={(e) => setSearch(e.target.value)}
-                                placeholder="Cari tahun ajaran..."
-                                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
-                            />
-                        </div>
-
-                        {/* Filter Tahun Ajaran */}
-                        <select
-                            value={tahunAjaran}
-                            onChange={(e) => setTahunAjaran(e.target.value)}
-                            className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
-                        >
-                            <option value="">Semua Tahun Ajaran</option>
-                            {tahunAjaranList.map((ta) => (
-                                <option key={ta} value={ta}>
-                                    {ta}
-                                </option>
-                            ))}
-                        </select>
-
-                        {/* Placeholder untuk keseimbangan grid */}
-                        <div className="hidden md:block"></div>
+                    <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+                        <SummaryCard title="Total Periode" value={periodes.total || 0} icon={CalendarClock} tone="blue" />
+                        <SummaryCard title="Aktif" value={periodeData.filter((item) => item.status === 'aktif').length} icon={CheckCircle2} tone="emerald" />
+                        <SummaryCard title="Tutup" value={periodeData.filter((item) => item.status !== 'aktif').length} icon={XCircle} tone="amber" />
+                        <SummaryCard title="Tahun Ajaran" value={tahunAjaranList.length || 0} icon={CalendarCheck} tone="violet" />
                     </div>
 
-                    {/* Filter Buttons */}
-                    <div className="flex gap-2 mt-3">
-                        <button
-                            onClick={handleFilter}
-                            className="flex-1 md:flex-none bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium flex items-center justify-center gap-2 transition-colors"
-                        >
-                            <i className="fas fa-filter"></i>
-                            <span>Filter</span>
-                        </button>
-                        {(search || tahunAjaran) && (
-                            <button
-                                onClick={handleReset}
-                                className="flex-1 md:flex-none bg-gray-100 hover:bg-gray-200 px-4 py-2 rounded-lg text-sm font-medium text-gray-700 flex items-center justify-center gap-2 transition-colors"
-                            >
-                                <i className="fas fa-redo"></i>
-                                <span>Reset</span>
-                            </button>
-                        )}
-                        <Link
-                            href={route('baak.periode-registrasi.create')}
-                            className="flex-1 md:flex-none bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm font-medium flex items-center justify-center gap-2 transition-colors"
-                        >
-                            <i className="fas fa-plus"></i>
-                            <span>Tambah Periode</span>
-                        </Link>
-                    </div>
-                </div>
+                    <Card className="rounded-lg border-slate-200 shadow-sm">
+                        <CardContent className="grid gap-3 p-4 md:grid-cols-[minmax(0,1fr)_minmax(180px,260px)_auto]">
+                            <SearchInput value={search} onChange={setSearch} onClear={() => setSearch('')} placeholder="Cari tahun ajaran..." />
+                            <SelectDropdown value={tahunAjaran} onChange={(selected) => setTahunAjaran(selected ? selected.value : '')} options={tahunOptions} placeholder="Semua Tahun Ajaran" />
+                            <Button type="button" variant="outline" className="w-full gap-2 md:w-auto" onClick={handleReset} disabled={!hasFilters}>
+                                <RefreshCcw className="h-4 w-4" />
+                                Reset
+                            </Button>
+                        </CardContent>
+                    </Card>
 
-                {/* Table - Desktop */}
-                <div className="hidden md:block bg-white rounded-lg overflow-hidden border border-gray-200">
-                    <div className="overflow-x-auto">
-                        <table className="w-full">
-                            <thead className="bg-gray-50">
-                                <tr className="text-gray-600 font-semibold text-xs">
-                                    <th className="px-6 py-4 text-left uppercase tracking-wider">No</th>
-                                    <th className="px-6 py-3 text-left uppercase tracking-wider">Tahun Ajaran</th>
-                                    <th className="px-6 py-3 text-center uppercase tracking-wider">Semester</th>
-                                    <th className="px-6 py-3 text-left uppercase tracking-wider">Tanggal Mulai</th>
-                                    <th className="px-6 py-3 text-left uppercase tracking-wider">Tanggal Selesai</th>
-                                    <th className="px-6 py-3 text-center uppercase tracking-wider">Durasi</th>
-                                    <th className="px-6 py-3 text-center uppercase tracking-wider">Status</th>
-                                    <th className="px-6 py-3 text-center uppercase tracking-wider">Aksi</th>
-                                </tr>
-                            </thead>
-                            <tbody className="bg-white divide-y divide-gray-200">
-                                {periodes.data.length > 0 ? (
-                                    periodes.data.map((periode, index) => (
-                                        <tr
-                                            key={periode.id_periode}
-                                            className={`hover:bg-gray-50 ${periode.status === 'aktif' ? 'bg-green-50' : ''}`}
-                                        >
-                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
-                                                {periodes.from + index}
-                                            </td>
-                                            <td className="px-6 py-4 whitespace-nowrap font-medium text-gray-900">
-                                                {periode.tahun_ajaran}
-                                            </td>
-                                            <td className="px-6 py-4 whitespace-nowrap text-center">
-                                                <span className="px-3 py-1 text-xs font-semibold text-blue-800 bg-blue-100 rounded-lg capitalize">
-                                                    {periode.jenis_semester}
-                                                </span>
-                                            </td>
-                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
-                                                {formatDate(periode.tanggal_mulai)}
-                                            </td>
-                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
-                                                {formatDate(periode.tanggal_selesai)}
-                                            </td>
-                                            <td className="px-6 py-4 whitespace-nowrap text-center text-sm text-gray-600">
-                                                {periode.durasi} hari
-                                            </td>
-                                            <td className="px-6 py-4 whitespace-nowrap text-center">
-                                                <span className={`px-3 py-1 text-xs font-semibold rounded-lg ${getStatusBadge(periode.status)}`}>
-                                                    {periode.status === 'aktif' ? 'Aktif' : 'Tutup'}
-                                                </span>
-                                            </td>
-                                            <td className="px-6 py-4 whitespace-nowrap text-center">
-                                                <div className="flex items-center justify-center gap-2">
-                                                    <button
-                                                        onClick={() => handleToggleStatus(periode)}
-                                                        className={`${
-                                                            periode.status === 'tutup'
-                                                                ? 'bg-green-500 hover:bg-green-600'
-                                                                : 'bg-orange-500 hover:bg-orange-600'
-                                                        } text-white px-3 py-1 rounded text-xs font-medium transition-colors`}
-                                                        title={periode.status === 'tutup' ? 'Aktifkan' : 'Tutup'}
-                                                    >
-                                                        <i className={`fas ${periode.status === 'tutup' ? 'fa-check' : 'fa-times'}`}></i>
-                                                    </button>
-                                                    <Link
-                                                        href={route('baak.periode-registrasi.edit', periode.id_periode)}
-                                                        className="bg-yellow-500 hover:bg-yellow-600 text-white px-3 py-1 rounded text-xs font-medium transition-colors"
-                                                        title="Edit"
-                                                    >
-                                                        <i className="fas fa-edit"></i>
-                                                    </Link>
-                                                    <button
-                                                        onClick={() => handleDelete(periode)}
-                                                        className="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded text-xs font-medium transition-colors"
-                                                        title="Hapus"
-                                                    >
-                                                        <i className="fas fa-trash"></i>
-                                                    </button>
-                                                </div>
-                                            </td>
-                                        </tr>
-                                    ))
-                                ) : (
-                                    <tr>
-                                        <td colSpan="8" className="px-6 py-8 text-center text-gray-500">
-                                            <i className="fas fa-inbox text-4xl mb-2 text-gray-400"></i>
-                                            <p>Tidak ada data periode registrasi</p>
-                                        </td>
-                                    </tr>
-                                )}
-                            </tbody>
-                        </table>
-                    </div>
+                    <DataTable
+                        columns={columns}
+                        data={periodeData}
+                        getRowKey={(item) => item.id_periode}
+                        emptyState={<EmptyState title="Tidak ada data periode" description="Periode registrasi belum tersedia atau tidak sesuai filter." />}
+                        className="hidden lg:block"
+                    />
 
-                    {/* Pagination Desktop */}
-                    {periodes.last_page > 1 && (
-                        <div className="bg-gray-50 px-6 py-4 border-t border-gray-200 flex items-center justify-between">
-                            <div className="text-sm text-gray-600">
-                                Menampilkan {periodes.from} - {periodes.to} dari {periodes.total} data
-                            </div>
-                            <div className="flex gap-2">
-                                {periodes.links.map((link, index) => (
-                                    <Link
-                                        key={index}
-                                        href={link.url || '#'}
-                                        preserveState
-                                        preserveScroll
-                                        className={`px-3 py-1 text-sm rounded ${
-                                            link.active
-                                                ? 'bg-blue-600 text-white'
-                                                : link.url
-                                                ? 'bg-white text-gray-700 hover:bg-gray-50 border border-gray-300'
-                                                : 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                                        }`}
-                                        dangerouslySetInnerHTML={{ __html: link.label }}
-                                    />
-                                ))}
-                            </div>
-                        </div>
-                    )}
-                </div>
+                    <CardGrid
+                        data={periodeData}
+                        getCardKey={(item) => item.id_periode}
+                        renderCard={renderCard}
+                        emptyState={<EmptyState title="Tidak ada data periode" description="Periode registrasi belum tersedia atau tidak sesuai filter." compact />}
+                        className="grid gap-3 md:grid-cols-2 lg:hidden"
+                        emptyClassName="lg:hidden"
+                    />
 
-                {/* Cards - Mobile */}
-                <div className="block md:hidden space-y-4">
-                    {periodes.data.length > 0 ? (
-                        periodes.data.map((periode) => (
-                            <div
-                                key={periode.id_periode}
-                                className={`bg-white rounded-lg border p-4 ${
-                                    periode.status === 'aktif' ? 'border-green-500 border-2' : 'border-gray-200'
-                                }`}
-                            >
-                                <div className="flex justify-between items-start mb-3">
-                                    <div>
-                                        <h3 className="font-semibold text-gray-900">{periode.tahun_ajaran}</h3>
-                                        <span className="inline-block mt-1 px-2 py-1 text-xs font-semibold text-blue-800 bg-blue-100 rounded capitalize">
-                                            {periode.jenis_semester}
-                                        </span>
-                                    </div>
-                                    <span className={`px-3 py-1 text-xs font-semibold rounded-lg ${getStatusBadge(periode.status)}`}>
-                                        {periode.status === 'aktif' ? 'Aktif' : 'Tutup'}
-                                    </span>
-                                </div>
-
-                                <div className="space-y-2 text-sm mb-4">
-                                    <p className="text-gray-600">
-                                        <span className="font-medium">Mulai:</span> {formatDate(periode.tanggal_mulai)}
-                                    </p>
-                                    <p className="text-gray-600">
-                                        <span className="font-medium">Selesai:</span> {formatDate(periode.tanggal_selesai)}
-                                    </p>
-                                    <p className="text-gray-600">
-                                        <span className="font-medium">Durasi:</span> {periode.durasi} hari
-                                    </p>
-                                </div>
-
-                                <div className="grid grid-cols-3 gap-2 pt-3 border-t border-gray-100">
-                                    <button
-                                        onClick={() => handleToggleStatus(periode)}
-                                        className={`${
-                                            periode.status === 'tutup'
-                                                ? 'bg-green-500 hover:bg-green-600'
-                                                : 'bg-orange-500 hover:bg-orange-600'
-                                        } text-white px-3 py-2 rounded text-sm font-medium transition-colors`}
-                                    >
-                                        <i className={`fas ${periode.status === 'tutup' ? 'fa-check' : 'fa-times'} mr-1`}></i>
-                                        {periode.status === 'tutup' ? 'Aktifkan' : 'Tutup'}
-                                    </button>
-                                    <Link
-                                        href={route('baak.periode-registrasi.edit', periode.id_periode)}
-                                        className="bg-yellow-500 hover:bg-yellow-600 text-white px-3 py-2 rounded text-sm font-medium text-center transition-colors"
-                                    >
-                                        <i className="fas fa-edit mr-1"></i> Edit
-                                    </Link>
-                                    <button
-                                        onClick={() => handleDelete(periode)}
-                                        className="bg-red-500 hover:bg-red-600 text-white px-3 py-2 rounded text-sm font-medium transition-colors"
-                                    >
-                                        <i className="fas fa-trash mr-1"></i> Hapus
-                                    </button>
-                                </div>
-                            </div>
-                        ))
-                    ) : (
-                        <div className="bg-white rounded-lg border border-gray-200 p-8 text-center">
-                            <i className="fas fa-inbox text-4xl mb-2 text-gray-400"></i>
-                            <p className="text-gray-500">Tidak ada data periode registrasi</p>
-                        </div>
-                    )}
-
-                    {/* Pagination Mobile */}
-                    {periodes.last_page > 1 && (
-                        <div className="bg-white rounded-lg border border-gray-200 p-4">
-                            <div className="text-sm text-gray-600 mb-3 text-center">
-                                Menampilkan {periodes.from} - {periodes.to} dari {periodes.total} data
-                            </div>
-                            <div className="flex flex-wrap gap-2 justify-center">
-                                {periodes.links.map((link, index) => (
-                                    <Link
-                                        key={index}
-                                        href={link.url || '#'}
-                                        preserveState
-                                        preserveScroll
-                                        className={`px-3 py-1 text-sm rounded ${
-                                            link.active
-                                                ? 'bg-blue-600 text-white'
-                                                : link.url
-                                                ? 'bg-white text-gray-700 hover:bg-gray-50 border border-gray-300'
-                                                : 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                                        }`}
-                                        dangerouslySetInnerHTML={{ __html: link.label }}
-                                    />
-                                ))}
-                            </div>
-                        </div>
-                    )}
+                    <Pagination pagination={periodes} />
                 </div>
             </div>
         </BaakLayout>

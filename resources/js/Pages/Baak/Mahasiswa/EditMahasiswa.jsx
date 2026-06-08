@@ -1,8 +1,26 @@
-import { Head, Link, useForm, router } from '@inertiajs/react';
-import BaakLayout from '@/Layouts/BaakLayout';
 import { useState } from 'react';
+import { Head, Link, router, useForm } from '@inertiajs/react';
+import { AlertCircle, ImagePlus, KeyRound, X } from 'lucide-react';
+import BaakLayout from '@/Layouts/BaakLayout';
+import { Button } from '@/Components/ui/button';
+import { Input } from '@/Components/ui/input';
+import { FormCard, FormField } from '@/Components/ui/form-card';
+import { PageHeader } from '@/Components/ui/data-display';
+import { SelectDropdown } from '@/Components/ui/select-dropdown';
 
-export default function EditMahasiswa({ mahasiswa, prodis, dosens }) {
+const statusOptions = [
+    { value: 'aktif', label: 'Aktif' },
+    { value: 'lulus', label: 'Lulus' },
+    { value: 'keluar', label: 'Keluar' },
+    { value: 'DO', label: 'DO (Drop Out)' },
+];
+
+const genderOptions = [
+    { value: 'Laki-laki', label: 'Laki-laki' },
+    { value: 'Perempuan', label: 'Perempuan' },
+];
+
+export default function EditMahasiswa({ mahasiswa, prodis = [], dosens = [] }) {
     const { data, setData, post, processing, errors } = useForm({
         nama: mahasiswa.nama || '',
         kode_prodi: mahasiswa.kode_prodi || '',
@@ -16,32 +34,36 @@ export default function EditMahasiswa({ mahasiswa, prodis, dosens }) {
         _method: 'PUT',
     });
 
-    const [previewImage, setPreviewImage] = useState(
-        mahasiswa.foto ? `/storage/${mahasiswa.foto}` : null
-    );
+    const [previewImage, setPreviewImage] = useState(mahasiswa.foto ? `/storage/${mahasiswa.foto}` : null);
+    const prodiOptions = prodis.map((prodi) => ({ value: prodi.kode_prodi, label: prodi.nama_prodi }));
+    const dosenOptions = dosens.map((dosen) => ({ value: dosen.id_dosen, label: `${dosen.nama} - ${dosen.nip}` }));
 
-    const handleSubmit = (e) => {
-        e.preventDefault();
+    const handleSubmit = (event) => {
+        event.preventDefault();
         post(route('baak.mahasiswa.update', mahasiswa.id_mahasiswa));
     };
 
-    const handleImageChange = (e) => {
-        const file = e.target.files[0];
-        if (file) {
-            setData('foto', file);
-            const reader = new FileReader();
-            reader.onloadend = () => {
-                setPreviewImage(reader.result);
-            };
-            reader.readAsDataURL(file);
-        }
+    const handleImageChange = (event) => {
+        const file = event.target.files[0];
+
+        if (!file) return;
+
+        setData('foto', file);
+        const reader = new FileReader();
+        reader.onloadend = () => setPreviewImage(reader.result);
+        reader.readAsDataURL(file);
+    };
+
+    const clearImage = () => {
+        setPreviewImage(null);
+        setData('foto', null);
     };
 
     const handleResetPassword = () => {
         if (window.Swal) {
             window.Swal.fire({
                 title: 'Reset Password?',
-                text: `Password akan direset menjadi NIM: ${mahasiswa.nim}`,
+                text: `Password akan direset menjadi NIM: ${mahasiswa.nim || '-'}`,
                 icon: 'warning',
                 showCancelButton: true,
                 confirmButtonText: 'Ya, Reset!',
@@ -50,9 +72,7 @@ export default function EditMahasiswa({ mahasiswa, prodis, dosens }) {
             }).then((result) => {
                 if (result.isConfirmed) {
                     router.post(route('baak.mahasiswa.reset-password', mahasiswa.id_mahasiswa), {}, {
-                        onSuccess: () => {
-                            window.Swal.fire('Berhasil!', 'Password berhasil direset ke NIM', 'success');
-                        }
+                        preserveScroll: true,
                     });
                 }
             });
@@ -61,253 +81,167 @@ export default function EditMahasiswa({ mahasiswa, prodis, dosens }) {
 
     return (
         <BaakLayout title="Edit Data Mahasiswa">
-            <Head title="Edit Data Mahasiswa" />
+            <Head title={`Edit ${mahasiswa.nama}`} />
 
-            <div className="p-6">
-                {/* Header */}
-                <div className="mb-6">
-                    <h1 className="text-2xl font-bold text-gray-700">Edit Data Mahasiswa</h1>
-                    <p className="text-sm text-gray-600 mt-1">Ubah data mahasiswa</p>
-                    <div className="mt-2 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
-                        <p className="text-sm text-yellow-800">
-                            <i className="fas fa-exclamation-triangle mr-2"></i>
-                            NIM: <strong>{mahasiswa.nim}</strong> (tidak bisa diubah)
-                        </p>
+            <div className="min-h-screen bg-slate-50 px-3 py-4 sm:px-4 sm:py-5 md:px-6 lg:px-8">
+                <div className="mx-auto w-full max-w-[1440px] space-y-4 md:space-y-5">
+                    <PageHeader
+                        title="Edit Data Mahasiswa"
+                        description="Ubah data mahasiswa yang sudah terdaftar."
+                    />
+
+                    <div className="flex items-start gap-3 rounded-lg border border-amber-100 bg-amber-50 p-4 text-sm text-amber-800">
+                        <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-amber-600" />
+                        <p>NIM: <strong>{mahasiswa.nim || '-'}</strong>. NIM tidak dapat diubah melalui form ini.</p>
                     </div>
-                </div>
 
-                {/* Form */}
-                <form onSubmit={handleSubmit}>
-                    <div className="bg-white rounded-lg border border-gray-200 p-6">
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            {/* Nama */}
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-2">
-                                    Nama Lengkap <span className="text-red-500">*</span>
-                                </label>
-                                <input
-                                    type="text"
-                                    value={data.nama}
-                                    onChange={(e) => setData('nama', e.target.value)}
-                                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                />
-                                {errors.nama && <p className="text-red-500 text-xs mt-1">{errors.nama}</p>}
-                            </div>
-
-                            {/* Program Studi */}
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-2">
-                                    Program Studi <span className="text-red-500">*</span>
-                                </label>
-                                <select
-                                    value={data.kode_prodi}
-                                    onChange={(e) => setData('kode_prodi', e.target.value)}
-                                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                >
-                                    <option value="">Pilih Program Studi</option>
-                                    {prodis.map((prodi) => (
-                                        <option key={prodi.kode_prodi} value={prodi.kode_prodi}>
-                                            {prodi.nama_prodi} - {prodi.fakultas.nama_fakultas}
-                                        </option>
-                                    ))}
-                                </select>
-                                {errors.kode_prodi && <p className="text-red-500 text-xs mt-1">{errors.kode_prodi}</p>}
-                            </div>
-
-                            {/* Dosen Wali */}
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-2">
-                                    Dosen Wali
-                                </label>
-                                <select
-                                    value={data.id_dosen_wali}
-                                    onChange={(e) => setData('id_dosen_wali', e.target.value)}
-                                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                >
-                                    <option value="">Pilih Dosen Wali (Opsional)</option>
-                                    {dosens.map((dosen) => (
-                                        <option key={dosen.id_dosen} value={dosen.id_dosen}>
-                                            {dosen.nama} - {dosen.nip}
-                                        </option>
-                                    ))}
-                                </select>
-                                {errors.id_dosen_wali && <p className="text-red-500 text-xs mt-1">{errors.id_dosen_wali}</p>}
-                            </div>
-
-                            {/* Tanggal Lahir */}
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-2">
-                                    Tanggal Lahir <span className="text-red-500">*</span>
-                                </label>
-                                <input
-                                    type="date"
-                                    value={data.tanggal_lahir}
-                                    onChange={(e) => setData('tanggal_lahir', e.target.value)}
-                                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                />
-                                {errors.tanggal_lahir && <p className="text-red-500 text-xs mt-1">{errors.tanggal_lahir}</p>}
-                            </div>
-
-                            {/* Jenis Kelamin */}
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-2">
-                                    Jenis Kelamin <span className="text-red-500">*</span>
-                                </label>
-                                <div className="flex gap-4">
-                                    <label className="flex items-center">
-                                        <input
-                                            type="radio"
-                                            value="Laki-laki"
-                                            checked={data.jenis_kelamin === 'Laki-laki'}
-                                            onChange={(e) => setData('jenis_kelamin', e.target.value)}
-                                            className="mr-2"
-                                        />
-                                        Laki-laki
-                                    </label>
-                                    <label className="flex items-center">
-                                        <input
-                                            type="radio"
-                                            value="Perempuan"
-                                            checked={data.jenis_kelamin === 'Perempuan'}
-                                            onChange={(e) => setData('jenis_kelamin', e.target.value)}
-                                            className="mr-2"
-                                        />
-                                        Perempuan
-                                    </label>
+                    <form onSubmit={handleSubmit}>
+                        <FormCard
+                            footer={
+                                <div className="grid gap-2 sm:flex sm:justify-between">
+                                    <Button type="button" variant="outline" className="gap-2 border-amber-200 text-amber-700 hover:bg-amber-50" onClick={handleResetPassword}>
+                                        <KeyRound className="h-4 w-4" />
+                                        Reset Password
+                                    </Button>
+                                    <div className="grid gap-2 sm:flex sm:justify-end">
+                                        <Link href={route('baak.mahasiswa.index')} className="order-2 sm:order-1">
+                                            <Button type="button" variant="outline" className="w-full sm:w-auto">
+                                                Batal
+                                            </Button>
+                                        </Link>
+                                        <Button type="submit" disabled={processing} className="order-1 w-full sm:order-2 sm:w-auto">
+                                            {processing ? 'Menyimpan...' : 'Update Data'}
+                                        </Button>
+                                    </div>
                                 </div>
-                                {errors.jenis_kelamin && <p className="text-red-500 text-xs mt-1">{errors.jenis_kelamin}</p>}
-                            </div>
+                            }
+                        >
+                            <div className="grid gap-5 md:grid-cols-2">
+                                <FormField label="Nama Lengkap" required error={errors.nama}>
+                                    <Input
+                                        type="text"
+                                        value={data.nama}
+                                        onChange={(event) => setData('nama', event.target.value)}
+                                        className={errors.nama ? 'border-red-300 focus-visible:ring-red-500' : ''}
+                                    />
+                                </FormField>
 
-                            {/* Nomor Telepon */}
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-2">
-                                    Nomor Telepon
-                                </label>
-                                <input
-                                    type="text"
-                                    value={data.no_hp}
-                                    onChange={(e) => setData('no_hp', e.target.value)}
-                                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                />
-                                {errors.no_hp && <p className="text-red-500 text-xs mt-1">{errors.no_hp}</p>}
-                            </div>
+                                <FormField label="Program Studi" required error={errors.kode_prodi}>
+                                    <SelectDropdown
+                                        value={data.kode_prodi}
+                                        onChange={(selected) => setData('kode_prodi', selected ? selected.value : '')}
+                                        options={prodiOptions}
+                                        placeholder="Pilih Program Studi"
+                                    />
+                                </FormField>
 
-                            {/* Status */}
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-2">
-                                    Status <span className="text-red-500">*</span>
-                                </label>
-                                <select
-                                    value={data.status}
-                                    onChange={(e) => setData('status', e.target.value)}
-                                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                >
-                                    <option value="aktif">Aktif</option>
-                                    <option value="lulus">Lulus</option>
-                                    <option value="keluar">Keluar</option>
-                                    <option value="DO">DO (Drop Out)</option>
-                                </select>
-                                {errors.status && <p className="text-red-500 text-xs mt-1">{errors.status}</p>}
-                            </div>
+                                <FormField label="Dosen Wali" error={errors.id_dosen_wali}>
+                                    <SelectDropdown
+                                        value={data.id_dosen_wali}
+                                        onChange={(selected) => setData('id_dosen_wali', selected ? selected.value : '')}
+                                        options={dosenOptions}
+                                        placeholder="Pilih Dosen Wali"
+                                    />
+                                </FormField>
 
-                            {/* Reset Password Button */}
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-2">
-                                    Password
-                                </label>
-                                <button
-                                    type="button"
-                                    onClick={handleResetPassword}
-                                    className="px-4 py-2 bg-orange-500 hover:bg-orange-600 text-white rounded-lg text-sm font-medium"
-                                >
-                                    <i className="fas fa-key mr-2"></i>
-                                    Reset Password ke NIM
-                                </button>
-                                <p className="text-xs text-gray-500 mt-1">
-                                    Password akan direset menjadi: {mahasiswa.nim}
-                                </p>
-                            </div>
+                                <FormField label="Tanggal Lahir" required error={errors.tanggal_lahir}>
+                                    <Input
+                                        type="date"
+                                        value={data.tanggal_lahir}
+                                        onChange={(event) => setData('tanggal_lahir', event.target.value)}
+                                        className={errors.tanggal_lahir ? 'border-red-300 focus-visible:ring-red-500' : ''}
+                                    />
+                                </FormField>
 
-                            {/* Alamat */}
-                            <div className="md:col-span-2">
-                                <label className="block text-sm font-medium text-gray-700 mb-2">
-                                    Alamat
-                                </label>
-                                <textarea
-                                    value={data.alamat}
-                                    onChange={(e) => setData('alamat', e.target.value)}
-                                    rows="3"
-                                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                />
-                                {errors.alamat && <p className="text-red-500 text-xs mt-1">{errors.alamat}</p>}
-                            </div>
-
-                            {/* Foto */}
-                            <div className="md:col-span-2">
-                                <label className="block text-sm font-medium text-gray-700 mb-2">
-                                    Foto Diri
-                                </label>
-                                <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center">
-                                    {previewImage ? (
-                                        <div className="space-y-3">
-                                            <img
-                                                src={previewImage}
-                                                alt="Preview"
-                                                className="mx-auto h-32 w-32 object-cover rounded-full"
-                                            />
-                                            <button
-                                                type="button"
-                                                onClick={() => {
-                                                    setPreviewImage(null);
-                                                    setData('foto', null);
-                                                }}
-                                                className="text-red-500 text-sm hover:underline"
-                                            >
-                                                Hapus Foto
-                                            </button>
-                                        </div>
-                                    ) : (
-                                        <>
-                                            <i className="fas fa-cloud-upload-alt text-4xl text-gray-400 mb-2"></i>
-                                            <p className="text-sm text-gray-600 mb-2">Pilih foto untuk diupload</p>
-                                            <input
-                                                type="file"
-                                                accept="image/*"
-                                                onChange={handleImageChange}
-                                                className="hidden"
-                                                id="foto-input"
-                                            />
+                                <FormField label="Jenis Kelamin" required error={errors.jenis_kelamin}>
+                                    <div className="grid grid-cols-2 gap-2">
+                                        {genderOptions.map((option) => (
                                             <label
-                                                htmlFor="foto-input"
-                                                className="cursor-pointer inline-block px-4 py-2 bg-gray-100 hover:bg-gray-200 rounded-lg text-sm font-medium text-gray-700"
+                                                key={option.value}
+                                                className={`flex h-11 cursor-pointer items-center justify-center rounded-lg border text-sm font-semibold transition ${
+                                                    data.jenis_kelamin === option.value
+                                                        ? 'border-blue-500 bg-blue-50 text-blue-700 ring-1 ring-blue-200'
+                                                        : 'border-slate-200 bg-white text-slate-600 hover:border-blue-200 hover:bg-blue-50'
+                                                }`}
                                             >
-                                                Pilih File
+                                                <input
+                                                    type="radio"
+                                                    name="jenis_kelamin"
+                                                    value={option.value}
+                                                    checked={data.jenis_kelamin === option.value}
+                                                    onChange={(event) => setData('jenis_kelamin', event.target.value)}
+                                                    className="sr-only"
+                                                />
+                                                {option.label}
                                             </label>
-                                        </>
-                                    )}
-                                </div>
-                                {errors.foto && <p className="text-red-500 text-xs mt-1">{errors.foto}</p>}
-                            </div>
-                        </div>
+                                        ))}
+                                    </div>
+                                </FormField>
 
-                        {/* Buttons */}
-                        <div className="flex justify-end gap-3 mt-6 pt-6 border-t border-gray-200">
-                            <Link
-                                href={route('baak.mahasiswa.index')}
-                                className="px-6 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50"
-                            >
-                                Batal
-                            </Link>
-                            <button
-                                type="submit"
-                                disabled={processing}
-                                className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium disabled:opacity-50"
-                            >
-                                {processing ? 'Menyimpan...' : 'Update Data'}
-                            </button>
-                        </div>
-                    </div>
-                </form>
+                                <FormField label="Nomor Telepon" error={errors.no_hp}>
+                                    <Input
+                                        type="text"
+                                        value={data.no_hp}
+                                        onChange={(event) => setData('no_hp', event.target.value)}
+                                        className={errors.no_hp ? 'border-red-300 focus-visible:ring-red-500' : ''}
+                                    />
+                                </FormField>
+
+                                <FormField label="Status" required error={errors.status}>
+                                    <SelectDropdown
+                                        value={data.status}
+                                        onChange={(selected) => setData('status', selected ? selected.value : '')}
+                                        options={statusOptions}
+                                        placeholder="Pilih Status"
+                                        isSearchable={false}
+                                        isClearable={false}
+                                    />
+                                </FormField>
+
+                                <div className="md:col-span-2">
+                                    <FormField label="Alamat" error={errors.alamat}>
+                                        <textarea
+                                            value={data.alamat}
+                                            onChange={(event) => setData('alamat', event.target.value)}
+                                            rows="3"
+                                            className={`min-h-24 w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm placeholder:text-gray-400 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-1 ${
+                                                errors.alamat ? 'border-red-300 focus-visible:ring-red-500' : ''
+                                            }`}
+                                        />
+                                    </FormField>
+                                </div>
+
+                                <div className="md:col-span-2">
+                                    <FormField label="Foto Diri" error={errors.foto}>
+                                        <div className="rounded-lg border border-dashed border-slate-300 bg-slate-50 p-4 text-center">
+                                            {previewImage ? (
+                                                <div className="space-y-3">
+                                                    <img src={previewImage} alt="Preview" className="mx-auto h-32 w-32 rounded-full object-cover" />
+                                                    <Button type="button" variant="outline" size="sm" className="gap-2 border-red-200 text-red-600 hover:bg-red-50" onClick={clearImage}>
+                                                        <X className="h-4 w-4" />
+                                                        Hapus Foto
+                                                    </Button>
+                                                </div>
+                                            ) : (
+                                                <div className="space-y-3">
+                                                    <ImagePlus className="mx-auto h-10 w-10 text-slate-400" />
+                                                    <p className="text-sm text-slate-500">Pilih foto mahasiswa untuk diupload</p>
+                                                    <input type="file" accept="image/*" onChange={handleImageChange} className="hidden" id="foto-input" />
+                                                    <label
+                                                        htmlFor="foto-input"
+                                                        className="inline-flex h-9 cursor-pointer items-center justify-center rounded-md border border-gray-200 bg-white px-3 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
+                                                    >
+                                                        Pilih File
+                                                    </label>
+                                                </div>
+                                            )}
+                                        </div>
+                                    </FormField>
+                                </div>
+                            </div>
+                        </FormCard>
+                    </form>
+                </div>
             </div>
         </BaakLayout>
     );

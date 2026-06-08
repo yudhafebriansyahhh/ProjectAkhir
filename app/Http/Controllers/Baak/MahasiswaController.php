@@ -2,20 +2,26 @@
 
 namespace App\Http\Controllers\Baak;
 
+use App\Helpers\NimGenerator;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreMahasiswaRequest;
 use App\Http\Requests\UpdateMahasiswaRequest;
-use App\Models\Mahasiswa;
-use App\Models\Prodi;
 use App\Models\Dosen;
-use App\Models\User;
 use App\Models\Krs;
+use App\Models\Mahasiswa;
 use App\Models\NilaiMahasiswa;
+use App\Models\Prodi;
 use App\Models\RegistrasiSemester;
-use App\Helpers\NimGenerator;
-use Inertia\Inertia;
-use Illuminate\Support\Facades\Storage;
+use App\Models\User;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Storage;
+use Maatwebsite\Excel\Facades\Excel;
+use App\Exports\MahasiswaDataExport;
+use App\Exports\MahasiswaTemplateExport;
+use App\Imports\MahasiswaImport;
+use Inertia\Inertia;
 
 class MahasiswaController extends Controller
 {
@@ -24,44 +30,65 @@ class MahasiswaController extends Controller
         $search = request('search');
         $kodeProdi = request('kode_prodi');
         $status = request('status');
+        $sortField = request('sort_field', 'created_at');
+        $sortDirection = request('sort_direction', 'desc');
 
-        $mahasiswas = Mahasiswa::with(['prodi.fakultas', 'dosenWali'])
+        $allowedSorts = ['nama', 'nim', 'tahun_masuk', 'created_at'];
+        if (!in_array($sortField, $allowedSorts)) {
+            $sortField = 'created_at';
+        }
+        if (!in_array($sortDirection, ['asc', 'desc'])) {
+            $sortDirection = 'desc';
+        }
+
+        $mahasiswas = Mahasiswa::with(['prodi', 'dosenWali'])
             ->when(
                 $search,
-                fn($query) =>
-                $query->where('nim', 'like', '%' . $search . '%')
-                    ->orWhere('nama', 'like', '%' . $search . '%')
+                fn ($query) => $query->where(function ($query) use ($search) {
+                    $query->where('nim', 'like', '%'.$search.'%')
+                        ->orWhere('nama', 'like', '%'.$search.'%');
+                })
             )
             ->when(
                 $kodeProdi,
-                fn($query) =>
-                $query->where('kode_prodi', $kodeProdi)
+                fn ($query) => $query->where('kode_prodi', $kodeProdi)
             )
             ->when(
                 $status,
-                fn($query) =>
-                $query->where('status', $status)
+                fn ($query) => $query->where('status', $status)
             )
-            ->latest()
+            ->orderBy($sortField, $sortDirection)
             ->paginate(10)
             ->withQueryString();
 
-        $prodis = Prodi::with('fakultas')->get();
+        $prodis = Prodi::orderBy('nama_prodi')->get();
+        $mahasiswaTanpaNimCount = Mahasiswa::whereNull('nim')->count();
+        $stats = [
+            'total' => Mahasiswa::count(),
+            'aktif' => Mahasiswa::where('status', 'aktif')->count(),
+            'nonaktif' => Mahasiswa::where('status', '!=', 'aktif')->count(),
+            'lulus' => Mahasiswa::where('status', 'lulus')->count(),
+            'tanpa_nim' => $mahasiswaTanpaNimCount,
+        ];
 
         return Inertia::render('Baak/Mahasiswa/Index', [
             'mahasiswas' => $mahasiswas,
             'prodis' => $prodis,
+            'mahasiswaTanpaNimCount' => $mahasiswaTanpaNimCount,
+            'stats' => $stats,
             'filters' => [
                 'search' => $search,
                 'kode_prodi' => $kodeProdi,
                 'status' => $status,
+                'sort_field' => $sortField,
+                'sort_direction' => $sortDirection,
             ],
         ]);
     }
 
     public function create()
     {
-        $prodis = Prodi::with('fakultas')->get();
+        $prodis = Prodi::orderBy('nama_prodi')->get();
         $dosens = Dosen::select('id_dosen', 'nama', 'nip')->get();
 
         return Inertia::render('Baak/Mahasiswa/TambahMahasiswa', [
@@ -70,52 +97,109 @@ class MahasiswaController extends Controller
         ]);
     }
 
+    /**
+     * Generate NIM untuk semua mahasiswa yang belum memiliki NIM.
+     * Dikelompokkan berdasarkan kode_prodi dan tahun_masuk,
+     * diurutkan berdasarkan nama (alfabet) dalam setiap kelompok.
+     */
+    public function generateNim()
+    {
+        $mahasiswaTanpaNim = Mahasiswa::whereNull('nim')
+            ->orderBy('kode_prodi')
+            ->orderBy('tahun_masuk')
+            ->orderBy('nama')
+            ->get();
+
+        if ($mahasiswaTanpaNim->isEmpty()) {
+            return back()->with('info', 'Semua mahasiswa sudah memiliki NIM.');
+        }
+
+        $count = 0;
+
+        // Kelompokkan berdasarkan kode_prodi + tahun_masuk
+        $grouped = $mahasiswaTanpaNim->groupBy(function ($mhs) {
+            return $mhs->kode_prodi.'_'.$mhs->tahun_masuk;
+        });
+
+        foreach ($grouped as $group) {
+            $firstMhs = $group->first();
+            $kodeProdi = $firstMhs->kode_prodi;
+            $tahunMasuk = $firstMhs->tahun_masuk;
+
+            DB::transaction(function () use ($kodeProdi, $tahunMasuk, &$count) {
+                $mahasiswaSeangkatan = Mahasiswa::where('kode_prodi', $kodeProdi)
+                    ->where('tahun_masuk', $tahunMasuk)
+                    ->orderBy('nama')
+                    ->orderBy('id_mahasiswa')
+                    ->get();
+
+                $mahasiswaSeangkatan->each->update(['nim' => null]);
+
+                foreach ($mahasiswaSeangkatan as $index => $mhs) {
+                    $nim = NimGenerator::generateFromSequence($kodeProdi, $tahunMasuk, $index + 1);
+
+                    $mhs->update(['nim' => $nim]);
+
+                    if ($mhs->user) {
+                        $mhs->user->update([
+                            'username' => $nim,
+                            'password' => Hash::make($nim),
+                        ]);
+                    }
+
+                    $count++;
+                }
+            });
+        }
+
+        return back()->with('success', "Berhasil generate dan mengurutkan NIM untuk {$count} mahasiswa.");
+    }
+
     public function store(StoreMahasiswaRequest $request)
     {
         $data = $request->validated();
 
-        // Generate NIM
-        $data['nim'] = NimGenerator::generate($data['kode_prodi'], $data['tahun_masuk']);
-
-        // Generate email
+        // Generate email dari nama
         $emailUsername = strtolower(str_replace(' ', '', $data['nama']));
-        $data['email'] = $emailUsername . '@student.itbriau.ac.id';
+        $data['email'] = $emailUsername.'@student.itbriau.ac.id';
 
         // Handle foto upload
         if ($request->hasFile('foto')) {
             $data['foto'] = $request->file('foto')->store('mahasiswa', 'public');
         }
 
-        // Create user
+        // Create user dengan temporary username (akan diupdate saat generate NIM)
+        $tempUsername = 'temp_'.time().'_'.rand(1000, 9999);
         $user = User::create([
             'role' => 'mahasiswa',
-            'username' => $data['nim'],
+            'username' => $tempUsername,
             'email' => $data['email'],
-            'password' => Hash::make($data['nim']),
+            'password' => Hash::make($tempUsername),
         ]);
 
-        // Create mahasiswa
+        // Create mahasiswa tanpa NIM
         $data['user_id'] = $user->id;
-        unset($data['tahun_masuk'], $data['email']);
+        $data['nim'] = null;
+        unset($data['email']);
 
         Mahasiswa::create($data);
 
         return redirect()->route('baak.mahasiswa.index')
-            ->with('success', "Mahasiswa berhasil ditambahkan. NIM: {$data['nim']}, Password: {$data['nim']}");
+            ->with('success', 'Mahasiswa berhasil ditambahkan. Silakan generate NIM melalui tombol "Generate NIM".');
     }
 
     public function show(Mahasiswa $mahasiswa)
     {
-        $mahasiswa->load(['prodi.fakultas', 'dosenWali', 'user']);
+        $mahasiswa->load(['prodi', 'dosenWali', 'user']);
 
         // ========================================
         // DATA UNTUK TAB RENCANA STUDI (KRS)
         // ========================================
         $rencanaStudiData = Krs::where('id_mahasiswa', $mahasiswa->id_mahasiswa)
-            ->with(['detailKrs.kelas' => function($q) {
+            ->with(['detailKrs.kelas' => function ($q) {
                 $q->with([
                     'mataKuliahPeriode.mataKuliah',
-                    'dosen'
+                    'dosen',
                 ]);
             }])
             ->orderBy('semester', 'asc')
@@ -209,7 +293,7 @@ class MahasiswaController extends Controller
                 'nama_mk' => $mk->nama_matkul,
                 'total_sks' => $mk->sks,
                 'jenis' => $jenis,
-                'semester_pengambilan' => ucfirst($mkPeriode->jenis_semester) . ' ' . explode('/', $mkPeriode->tahun_ajaran)[0],
+                'semester_pengambilan' => ucfirst($mkPeriode->jenis_semester).' '.explode('/', $mkPeriode->tahun_ajaran)[0],
                 'bobot' => $this->getBobotNilai($nilai->nilai_huruf),
                 'nilai' => $nilai->nilai_huruf,
             ];
@@ -219,24 +303,26 @@ class MahasiswaController extends Controller
         // STATISTIK UMUM
         // ========================================
         $statistik = [
-            'total_sks' => $allNilai->sum(fn($nilai) => $nilai->kelas->mataKuliahPeriode->mataKuliah->sks),
-            'sks_lulus' => $allNilai->filter(fn($nilai) => $nilai->nilai_huruf != 'E')
-                ->sum(fn($nilai) => $nilai->kelas->mataKuliahPeriode->mataKuliah->sks),
+            'total_sks' => $allNilai->sum(fn ($nilai) => $nilai->kelas->mataKuliahPeriode->mataKuliah->sks),
+            'sks_lulus' => $allNilai->filter(fn ($nilai) => in_array($nilai->nilai_huruf, ['A', 'A-', 'B+', 'B', 'B-', 'C+', 'C']))
+                ->sum(fn ($nilai) => $nilai->kelas->mataKuliahPeriode->mataKuliah->sks),
             'ipk' => $this->hitungIPK($allNilai),
         ];
 
         // Prestasi akademik untuk transkrip
         $prestasiAkademik = [
             'jumlah_sks_matakuliah' => [
-                'wajib' => $allNilai->filter(function($nilai) {
-                    return $nilai->kelas->mataKuliahPeriode->mataKuliah->kategori === 'wajib';
-                })->sum(fn($nilai) => $nilai->kelas->mataKuliahPeriode->mataKuliah->sks),
-                'pilihan' => $allNilai->filter(function($nilai) {
-                    return $nilai->kelas->mataKuliahPeriode->mataKuliah->kategori === 'pilihan';
-                })->sum(fn($nilai) => $nilai->kelas->mataKuliahPeriode->mataKuliah->sks),
+                'wajib' => $allNilai->filter(function ($nilai) {
+                    return strtolower($nilai->kelas->mataKuliahPeriode->mataKuliah->kategori) === 'wajib' &&
+                           in_array($nilai->nilai_huruf, ['A', 'A-', 'B+', 'B', 'B-', 'C+', 'C']);
+                })->sum(fn ($nilai) => $nilai->kelas->mataKuliahPeriode->mataKuliah->sks),
+                'pilihan' => $allNilai->filter(function ($nilai) {
+                    return strtolower($nilai->kelas->mataKuliahPeriode->mataKuliah->kategori) === 'pilihan' &&
+                           in_array($nilai->nilai_huruf, ['A', 'A-', 'B+', 'B', 'B-', 'C+', 'C']);
+                })->sum(fn ($nilai) => $nilai->kelas->mataKuliahPeriode->mataKuliah->sks),
                 'total' => $statistik['total_sks'],
             ],
-            'total_sks_bobot' => $allNilai->sum(function($nilai) {
+            'total_sks_bobot' => $allNilai->sum(function ($nilai) {
                 return $nilai->kelas->mataKuliahPeriode->mataKuliah->sks * $this->getBobotNilai($nilai->nilai_huruf);
             }),
             'ipk' => $statistik['ipk'],
@@ -247,7 +333,7 @@ class MahasiswaController extends Controller
         $keteranganNilai = [
             'A' => '4.00', 'A-' => '3.75', 'B+' => '3.50',
             'B' => '3.00', 'B-' => '2.75', 'C+' => '2.50',
-            'C' => '2.00', 'D' => '1.00', 'E' => '0.00', 'T' => '0.00'
+            'C' => '2.00', 'D' => '1.00', 'E' => '0.00',
         ];
 
         // Statistik nilai untuk transkrip
@@ -275,8 +361,8 @@ class MahasiswaController extends Controller
 
     public function edit(Mahasiswa $mahasiswa)
     {
-        $mahasiswa->load(['prodi.fakultas']);
-        $prodis = Prodi::with('fakultas')->get();
+        $mahasiswa->load(['prodi']);
+        $prodis = Prodi::orderBy('nama_prodi')->get();
         $dosens = Dosen::select('id_dosen', 'nama', 'nip')->get();
 
         return Inertia::render('Baak/Mahasiswa/EditMahasiswa', [
@@ -321,15 +407,39 @@ class MahasiswaController extends Controller
 
     public function resetPassword(Mahasiswa $mahasiswa)
     {
-        if (!$mahasiswa->user) {
+        if (! $mahasiswa->user) {
             return back()->withErrors(['error' => 'User tidak ditemukan']);
         }
 
         $mahasiswa->user->update([
-            'password' => Hash::make($mahasiswa->nim)
+            'password' => Hash::make($mahasiswa->nim),
         ]);
 
-        return back()->with('success', 'Password berhasil direset ke NIM');
+        return back()->with('success', 'Password berhasil direset ke NIM: '.$mahasiswa->nim);
+    }
+
+    public function exportExcel()
+    {
+        return Excel::download(new MahasiswaDataExport, 'data_mahasiswa.xlsx');
+    }
+
+    public function exportTemplate()
+    {
+        return Excel::download(new MahasiswaTemplateExport, 'template_import_mahasiswa.xlsx');
+    }
+
+    public function importExcel(Request $request)
+    {
+        $request->validate([
+            'file' => 'required|mimes:xlsx,xls,csv|max:2048',
+        ]);
+
+        try {
+            Excel::import(new MahasiswaImport, $request->file('file'));
+            return redirect()->back()->with('success', 'Data mahasiswa berhasil diimport!');
+        } catch (\Exception $e) {
+            return redirect()->back()->with('error', 'Terjadi kesalahan saat import: ' . $e->getMessage());
+        }
     }
 
     // ========================================
@@ -343,6 +453,7 @@ class MahasiswaController extends Controller
             'B' => 3.00, 'B-' => 2.75, 'C+' => 2.50,
             'C' => 2.00, 'D' => 1.00, 'E' => 0.00,
         ];
+
         return $bobotMap[$nilaiHuruf] ?? 0;
     }
 
@@ -352,7 +463,10 @@ class MahasiswaController extends Controller
         $totalSks = 0;
 
         foreach ($mataKuliahCollection as $mk) {
-            if ($mk['bobot'] > 0 && $mk['sks']) {
+            if (isset($mk['nilai']) && ($mk['nilai'] === '-' || $mk['nilai'] === null)) {
+                continue;
+            }
+            if ($mk['sks']) {
                 $totalBobot += $mk['bobot'] * $mk['sks'];
                 $totalSks += $mk['sks'];
             }
@@ -389,6 +503,12 @@ class MahasiswaController extends Controller
         $totalSks = 0;
         foreach ($krs as $k) {
             foreach ($k->detailKrs as $detail) {
+                // Jangan hitung SKS jika nilainya '-' (belum diinput)
+                $nilai = \App\Models\NilaiMahasiswa::where('id_kelas', $detail->id_kelas)
+                    ->where('id_mahasiswa', $idMahasiswa)->first();
+                if (!$nilai || $nilai->nilai_huruf === '-' || $nilai->nilai_huruf === null) {
+                    continue;
+                }
                 $totalSks += $detail->kelas->mataKuliahPeriode->mataKuliah->sks;
             }
         }
@@ -402,11 +522,17 @@ class MahasiswaController extends Controller
 
         foreach ($mataKuliahCollection as $mk) {
             $nilai = $mk['nilai'];
-            if (in_array($nilai, ['A', 'A-'])) $distribusi['A']++;
-            elseif (in_array($nilai, ['B+', 'B', 'B-'])) $distribusi['B']++;
-            elseif (in_array($nilai, ['C+', 'C'])) $distribusi['C']++;
-            elseif ($nilai === 'D') $distribusi['D']++;
-            elseif ($nilai === 'E') $distribusi['E']++;
+            if (in_array($nilai, ['A', 'A-'])) {
+                $distribusi['A']++;
+            } elseif (in_array($nilai, ['B+', 'B', 'B-'])) {
+                $distribusi['B']++;
+            } elseif (in_array($nilai, ['C+', 'C'])) {
+                $distribusi['C']++;
+            } elseif ($nilai === 'D') {
+                $distribusi['D']++;
+            } elseif ($nilai === 'E') {
+                $distribusi['E']++;
+            }
         }
 
         return $distribusi;
@@ -418,6 +544,9 @@ class MahasiswaController extends Controller
         $totalSks = 0;
 
         foreach ($nilaiCollection as $nilai) {
+            if ($nilai->nilai_huruf === '-' || $nilai->nilai_huruf === null) {
+                continue;
+            }
             $bobot = $this->getBobotNilai($nilai->nilai_huruf);
             $sks = $nilai->kelas->mataKuliahPeriode->mataKuliah->sks;
             $totalBobot += $bobot * $sks;
@@ -430,11 +559,22 @@ class MahasiswaController extends Controller
     private function getPredikat($ipk)
     {
         $ipkNum = floatval($ipk);
-        if ($ipkNum >= 3.75) return 'Summa Cum Laude';
-        if ($ipkNum >= 3.50) return 'Magna Cum Laude';
-        if ($ipkNum >= 3.25) return 'Cum Laude';
-        if ($ipkNum >= 3.00) return 'Sangat Memuaskan';
-        if ($ipkNum >= 2.75) return 'Memuaskan';
+        if ($ipkNum >= 3.75) {
+            return 'Summa Cum Laude';
+        }
+        if ($ipkNum >= 3.50) {
+            return 'Magna Cum Laude';
+        }
+        if ($ipkNum >= 3.25) {
+            return 'Cum Laude';
+        }
+        if ($ipkNum >= 3.00) {
+            return 'Sangat Memuaskan';
+        }
+        if ($ipkNum >= 2.75) {
+            return 'Memuaskan';
+        }
+
         return 'Cukup';
     }
 
@@ -443,16 +583,16 @@ class MahasiswaController extends Controller
         $stats = [];
         $gradeList = ['A', 'A-', 'B+', 'B', 'B-', 'C+', 'C', 'E'];
 
-        $totalSks = $nilaiCollection->sum(fn($n) => $n->kelas->mataKuliahPeriode->mataKuliah->sks);
+        $totalSks = $nilaiCollection->sum(fn ($n) => $n->kelas->mataKuliahPeriode->mataKuliah->sks);
 
         foreach ($gradeList as $grade) {
-            $sks = $nilaiCollection->filter(fn($n) => $n->nilai_huruf === $grade)
-                ->sum(fn($n) => $n->kelas->mataKuliahPeriode->mataKuliah->sks);
+            $sks = $nilaiCollection->filter(fn ($n) => $n->nilai_huruf === $grade)
+                ->sum(fn ($n) => $n->kelas->mataKuliahPeriode->mataKuliah->sks);
 
             $stats[] = [
                 'nilai' => $grade,
                 'sks' => $sks,
-                'persentase' => $totalSks > 0 ? number_format(($sks / $totalSks) * 100, 4) : '0.0000'
+                'persentase' => $totalSks > 0 ? number_format(($sks / $totalSks) * 100, 4) : '0.0000',
             ];
         }
 

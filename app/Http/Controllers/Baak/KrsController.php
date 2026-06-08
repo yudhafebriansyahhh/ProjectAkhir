@@ -13,9 +13,9 @@ class KrsController extends Controller
     public function index(Request $request)
     {
         $query = Krs::with([
-            'mahasiswa.prodi.fakultas',
+            'mahasiswa.prodi',
             'mahasiswa.dosenWali',
-            'detailKrs'
+            'detailKrs',
         ]);
 
         // Filter by Tahun Ajaran
@@ -61,6 +61,7 @@ class KrsController extends Controller
                 ->sum('mata_kuliah.sks');
 
             $item->total_sks = $totalSks;
+
             return $item;
         });
 
@@ -90,10 +91,10 @@ class KrsController extends Controller
     public function show(Krs $krs)
     {
         $krs->load([
-            'mahasiswa.prodi.fakultas',
+            'mahasiswa.prodi',
             'mahasiswa.dosenWali',
             'detailKrs.kelas.mataKuliahPeriode.mataKuliah',
-            'detailKrs.kelas.dosen'
+            'detailKrs.kelas.dosen',
         ]);
 
         // Calculate total SKS

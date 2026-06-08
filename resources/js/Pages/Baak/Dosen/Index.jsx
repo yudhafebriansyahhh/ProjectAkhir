@@ -1,27 +1,77 @@
-import { useState } from 'react';
-import { Head, Link, router, usePage } from '@inertiajs/react';
+import { useEffect, useMemo, useState } from 'react';
+import { Head, Link, router, usePage, useForm } from '@inertiajs/react';
+import { Eye, KeyRound, Pencil, RefreshCcw, Trash2, UserCheck, UsersRound, GraduationCap, BookOpen, Download, Upload } from 'lucide-react';
 import BaakLayout from '@/Layouts/BaakLayout';
+import { Badge } from '@/Components/ui/badge';
+import { Button } from '@/Components/ui/button';
+import { Card, CardContent } from '@/Components/ui/card';
+import { CardGrid, DataTable, EmptyState, PageHeader, Pagination, SearchInput, SummaryCard } from '@/Components/ui/data-display';
+import Modal from '@/Components/Modal';
+import { SelectDropdown } from '@/Components/ui/select-dropdown';
 
-export default function Index({ dosen, prodi_list, filters }) {
+const getGenderBadge = (gender) => {
+    if (gender === 'Laki-laki') return 'bg-blue-50 text-blue-700 border-blue-200';
+    if (gender === 'Perempuan') return 'bg-rose-50 text-rose-700 border-rose-200';
+    return 'bg-slate-50 text-slate-700 border-slate-200';
+};
+
+export default function Index({ dosen, prodi_list = [], filters = {}, stats = {} }) {
     const { flash } = usePage().props;
     const [search, setSearch] = useState(filters.search || '');
     const [prodi, setProdi] = useState(filters.prodi || '');
 
-    const handleFilter = (e) => {
+    const [isImportModalOpen, setIsImportModalOpen] = useState(false);
+    const { data, setData, post, processing, errors, reset } = useForm({
+        file: null,
+    });
+
+    const handleImportSubmit = (e) => {
         e.preventDefault();
-        router.get(route('baak.dosen.index'), { search, prodi }, {
-            preserveState: true,
+        post(route('baak.dosen.import'), {
             preserveScroll: true,
+            onSuccess: () => {
+                setIsImportModalOpen(false);
+                reset('file');
+            },
         });
     };
+
+    const prodiOptions = useMemo(
+        () => prodi_list.map((item) => ({ value: item.kode_prodi, label: item.nama_prodi })),
+        [prodi_list],
+    );
+
+    useEffect(() => {
+        const timeout = setTimeout(() => {
+            const nextFilters = { search, prodi };
+            const currentFilters = {
+                search: filters.search || '',
+                prodi: filters.prodi || '',
+            };
+
+            if (nextFilters.search === currentFilters.search && nextFilters.prodi === currentFilters.prodi) return;
+
+            router.get(route('baak.dosen.index'), nextFilters, {
+                preserveState: true,
+                preserveScroll: true,
+                replace: true,
+            });
+        }, 350);
+
+        return () => clearTimeout(timeout);
+    }, [search, prodi, filters.search, filters.prodi]);
 
     const handleReset = () => {
         setSearch('');
         setProdi('');
-        router.get(route('baak.dosen.index'));
+        router.get(route('baak.dosen.index'), {}, { preserveScroll: true, replace: true });
     };
 
     const handleDelete = (id_dosen, nama) => {
+        const deleteDosen = () => {
+            router.delete(route('baak.dosen.destroy', id_dosen), { preserveScroll: true });
+        };
+
         if (window.Swal) {
             window.Swal.fire({
                 title: 'Hapus Dosen?',
@@ -31,24 +81,21 @@ export default function Index({ dosen, prodi_list, filters }) {
                 confirmButtonColor: '#dc2626',
                 cancelButtonColor: '#6b7280',
                 confirmButtonText: 'Ya, Hapus!',
-                cancelButtonText: 'Batal'
+                cancelButtonText: 'Batal',
             }).then((result) => {
-                if (result.isConfirmed) {
-                    router.delete(route('baak.dosen.destroy', id_dosen), {
-                        preserveScroll: true,
-                    });
-                }
+                if (result.isConfirmed) deleteDosen();
             });
-        } else {
-            if (confirm(`Apakah Anda yakin ingin menghapus dosen "${nama}"?`)) {
-                router.delete(route('baak.dosen.destroy', id_dosen), {
-                    preserveScroll: true,
-                });
-            }
+            return;
         }
+
+        if (confirm(`Apakah Anda yakin ingin menghapus dosen "${nama}"?`)) deleteDosen();
     };
 
     const handleResetPassword = (id_dosen, nip) => {
+        const resetPassword = () => {
+            router.post(route('baak.dosen.reset-password', id_dosen), {}, { preserveScroll: true });
+        };
+
         if (window.Swal) {
             window.Swal.fire({
                 title: 'Reset Password?',
@@ -58,347 +105,229 @@ export default function Index({ dosen, prodi_list, filters }) {
                 confirmButtonColor: '#3b82f6',
                 cancelButtonColor: '#6b7280',
                 confirmButtonText: 'Ya, Reset!',
-                cancelButtonText: 'Batal'
+                cancelButtonText: 'Batal',
             }).then((result) => {
-                if (result.isConfirmed) {
-                    router.post(route('baak.dosen.reset-password', id_dosen), {}, {
-                        preserveScroll: true,
-                    });
-                }
+                if (result.isConfirmed) resetPassword();
             });
-        } else {
-            if (confirm(`Reset password ke NIP: ${nip}?`)) {
-                router.post(route('baak.dosen.reset-password', id_dosen), {}, {
-                    preserveScroll: true,
-                });
-            }
+            return;
         }
+
+        if (confirm(`Reset password ke NIP: ${nip}?`)) resetPassword();
     };
+
+    const columns = [
+        { key: 'number', header: 'No', headerClassName: 'w-[64px]', cellClassName: 'font-medium text-slate-500', render: (_item, index) => (dosen.from || 1) + index },
+        { key: 'nip', header: 'NIP', render: (item) => <span className="font-mono font-semibold text-blue-700">{item.nip}</span> },
+        { key: 'nama', header: 'Nama Dosen', render: (item) => <span className="font-semibold text-slate-900">{item.nama}</span> },
+        { key: 'prodi', header: 'Program Studi', render: (item) => item.prodi?.nama_prodi || '-' },
+        {
+            key: 'jenis_kelamin',
+            header: 'Jenis Kelamin',
+            headerClassName: 'text-center',
+            cellClassName: 'text-center',
+            render: (item) => (
+                <Badge variant="outline" className={getGenderBadge(item.jenis_kelamin)}>
+                    {item.jenis_kelamin || '-'}
+                </Badge>
+            ),
+        },
+        { key: 'kelas_count', header: 'Kelas', headerClassName: 'text-center', cellClassName: 'text-center', render: (item) => `${item.kelas_count || 0} Kelas` },
+        { key: 'mahasiswa_bimbingan_count', header: 'Bimbingan', headerClassName: 'text-center', cellClassName: 'text-center', render: (item) => `${item.mahasiswa_bimbingan_count || 0} Mahasiswa` },
+        {
+            key: 'actions',
+            header: 'Aksi',
+            headerClassName: 'text-center',
+            cellClassName: 'text-center',
+            render: (item) => (
+                <div className="flex items-center justify-center gap-1.5">
+                    <Link href={route('baak.dosen.show', item.id_dosen)}>
+                        <Button variant="outline" size="icon" className="h-8 w-8 text-blue-600" title="Detail">
+                            <Eye className="h-4 w-4" />
+                        </Button>
+                    </Link>
+                    <Link href={route('baak.dosen.edit', item.id_dosen)}>
+                        <Button variant="outline" size="icon" className="h-8 w-8 text-amber-600" title="Edit">
+                            <Pencil className="h-4 w-4" />
+                        </Button>
+                    </Link>
+                    <Button type="button" variant="outline" size="icon" className="h-8 w-8 text-emerald-600" title="Reset Password" onClick={() => handleResetPassword(item.id_dosen, item.nip)}>
+                        <KeyRound className="h-4 w-4" />
+                    </Button>
+                    <Button type="button" variant="outline" size="icon" className="h-8 w-8 text-red-600" title="Hapus" onClick={() => handleDelete(item.id_dosen, item.nama)}>
+                        <Trash2 className="h-4 w-4" />
+                    </Button>
+                </div>
+            ),
+        },
+    ];
+
+    const renderDosenCard = (item) => (
+        <Card key={item.id_dosen} className="rounded-lg border-slate-200 shadow-sm">
+            <CardContent className="space-y-4 p-4">
+                <div className="flex min-w-0 items-start justify-between gap-3">
+                    <div className="min-w-0">
+                        <p className="break-words font-semibold text-slate-950">{item.nama}</p>
+                        <p className="mt-1 font-mono text-xs font-semibold text-blue-700">{item.nip || '-'}</p>
+                    </div>
+                    <Badge variant="outline" className={`shrink-0 ${getGenderBadge(item.jenis_kelamin)}`}>
+                        {item.jenis_kelamin === 'Laki-laki' ? 'L' : item.jenis_kelamin === 'Perempuan' ? 'P' : '-'}
+                    </Badge>
+                </div>
+
+                <div className="grid grid-cols-2 gap-2 rounded-lg bg-slate-50 p-3 text-sm">
+                    <div className="col-span-2 min-w-0">
+                        <p className="text-xs font-medium text-slate-500">Program Studi</p>
+                        <p className="mt-1 break-words font-semibold text-slate-900">{item.prodi?.nama_prodi || '-'}</p>
+                    </div>
+                    <div>
+                        <p className="text-xs font-medium text-slate-500">Kelas</p>
+                        <p className="mt-1 font-semibold text-slate-900">{item.kelas_count || 0}</p>
+                    </div>
+                    <div>
+                        <p className="text-xs font-medium text-slate-500">Bimbingan</p>
+                        <p className="mt-1 font-semibold text-slate-900">{item.mahasiswa_bimbingan_count || 0}</p>
+                    </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-2 border-t border-slate-100 pt-3">
+                    <Link href={route('baak.dosen.show', item.id_dosen)}>
+                        <Button variant="outline" className="w-full gap-2 text-blue-600">
+                            <Eye className="h-4 w-4" />
+                            Detail
+                        </Button>
+                    </Link>
+                    <Link href={route('baak.dosen.edit', item.id_dosen)}>
+                        <Button variant="outline" className="w-full gap-2 text-amber-600">
+                            <Pencil className="h-4 w-4" />
+                            Edit
+                        </Button>
+                    </Link>
+                    <Button type="button" variant="outline" className="w-full gap-2 text-emerald-600" onClick={() => handleResetPassword(item.id_dosen, item.nip)}>
+                        <KeyRound className="h-4 w-4" />
+                        Reset
+                    </Button>
+                    <Button type="button" variant="outline" className="w-full gap-2 text-red-600" onClick={() => handleDelete(item.id_dosen, item.nama)}>
+                        <Trash2 className="h-4 w-4" />
+                        Hapus
+                    </Button>
+                </div>
+            </CardContent>
+        </Card>
+    );
+
+    const hasFilters = Boolean(search || prodi);
 
     return (
         <BaakLayout title="Data Dosen">
             <Head title="Data Dosen" />
 
-            <div className="container mx-auto px-4 py-8">
-                {/* Header */}
-                <div className="mb-8">
-                    <h1 className="text-2xl font-bold text-gray-700 mb-2">Data Dosen</h1>
-                    <p className="text-gray-600">Kelola data dosen di sistem akademik</p>
-                </div>
+            <div className="min-h-screen bg-slate-50 px-3 py-4 sm:px-4 sm:py-5 md:px-6 lg:px-8">
+                <div className="mx-auto w-full max-w-[1440px] space-y-4 md:space-y-5">
+                    <PageHeader
+                        title="Data Dosen"
+                        description="Kelola data dosen di sistem akademik."
+                        actionHref={route('baak.dosen.create')}
+                        actionLabel="Tambah Dosen"
+                    >
+                        <a href={route('baak.dosen.export')} target="_blank" rel="noreferrer" className="w-full sm:w-auto">
+                            <Button variant="outline" className="w-full gap-2 text-slate-700 sm:w-auto">
+                                <Download className="h-4 w-4" />
+                                Export Excel
+                            </Button>
+                        </a>
+                        <Button 
+                            variant="outline" 
+                            className="w-full gap-2 text-emerald-700 sm:w-auto"
+                            onClick={() => setIsImportModalOpen(true)}
+                        >
+                            <Upload className="h-4 w-4" />
+                            Import Excel
+                        </Button>
+                    </PageHeader>
 
-                {/* Alert */}
-                {flash.success && (
-                    <div className="mb-6 p-4 bg-green-50 border border-green-200 text-green-800 rounded-lg flex items-center">
-                        <i className="fas fa-check-circle mr-2"></i>
-                        {flash.success}
+                    <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+                        <SummaryCard title="Total Dosen" value={stats.total ?? dosen.total ?? 0} icon={UserCheck} tone="blue" />
+                        <SummaryCard title="Program Studi" value={stats.total_prodi ?? 0} icon={GraduationCap} tone="violet" />
+                        <SummaryCard title="Total Kelas" value={stats.total_kelas ?? 0} icon={BookOpen} tone="emerald" />
+                        <SummaryCard title="Mahasiswa Bimbingan" value={stats.total_bimbingan ?? 0} icon={UsersRound} tone="amber" />
                     </div>
-                )}
 
-                {flash.error && (
-                    <div className="mb-6 p-4 bg-red-50 border border-red-200 text-red-800 rounded-lg flex items-center">
-                        <i className="fas fa-exclamation-circle mr-2"></i>
-                        {flash.error}
-                    </div>
-                )}
-
-                {/* Filter & Add */}
-                <div className="mb-6 bg-white rounded-lg shadow-sm border border-gray-200 p-4">
-                    <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
-                        {/* Search */}
-                        <div className="md:col-span-2">
-                            <input
-                                type="text"
+                    <Card className="rounded-lg border-slate-200 shadow-sm">
+                        <CardContent className="grid gap-3 p-4 md:grid-cols-[minmax(0,1fr)_minmax(220px,280px)_auto]">
+                            <SearchInput
                                 value={search}
-                                onChange={(e) => setSearch(e.target.value)}
+                                onChange={setSearch}
+                                onClear={() => setSearch('')}
                                 placeholder="Cari nama atau NIP dosen..."
-                                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
                             />
-                        </div>
+                            <SelectDropdown
+                                value={prodi}
+                                onChange={(selected) => setProdi(selected ? selected.value : '')}
+                                options={prodiOptions}
+                                placeholder="Semua Prodi"
+                                isSearchable
+                            />
+                            <Button type="button" variant="outline" className="w-full gap-2 md:w-auto" onClick={handleReset} disabled={!hasFilters}>
+                                <RefreshCcw className="h-4 w-4" />
+                                Reset
+                            </Button>
+                        </CardContent>
+                    </Card>
 
-                        {/* Prodi Filter */}
-                        <select
-                            value={prodi}
-                            onChange={(e) => setProdi(e.target.value)}
-                            className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
-                        >
-                            <option value="">Semua Prodi</option>
-                            {prodi_list.map((item) => (
-                                <option key={item.kode_prodi} value={item.kode_prodi}>
-                                    {item.nama_prodi}
-                                </option>
-                            ))}
-                        </select>
+                    <DataTable
+                        columns={columns}
+                        data={dosen.data || []}
+                        getRowKey={(item) => item.id_dosen}
+                        emptyState={<EmptyState title="Tidak ada data dosen" description="Data dosen belum tersedia atau tidak sesuai filter." />}
+                        className="hidden xl:block"
+                    />
 
-                        {/* Add Button Desktop */}
-                        <Link
-                            href={route('baak.dosen.create')}
-                            className="hidden md:inline-flex items-center justify-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium whitespace-nowrap"
-                        >
-                            <i className="fas fa-plus mr-2"></i>
-                            Tambah Dosen
-                        </Link>
-                    </div>
+                    <CardGrid
+                        data={dosen.data || []}
+                        getCardKey={(item) => item.id_dosen}
+                        renderCard={renderDosenCard}
+                        emptyState={<EmptyState title="Tidak ada data dosen" description="Data dosen belum tersedia atau tidak sesuai filter." compact />}
+                        className="grid gap-3 sm:grid-cols-2 xl:hidden"
+                        emptyClassName="xl:hidden"
+                    />
 
-                    {/* Filter Buttons */}
-                    <div className="flex gap-2 mt-3">
-                        <button
-                            onClick={handleFilter}
-                            className="flex-1 md:flex-none bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium flex items-center justify-center gap-2 transition-colors"
-                        >
-                            <i className="fas fa-filter"></i>
-                            <span>Filter</span>
-                        </button>
-                        {(search || prodi) && (
-                            <button
-                                onClick={handleReset}
-                                className="flex-1 md:flex-none bg-gray-100 hover:bg-gray-200 px-4 py-2 rounded-lg text-sm font-medium text-gray-700 flex items-center justify-center gap-2 transition-colors"
-                            >
-                                <i className="fas fa-redo"></i>
-                                <span>Reset</span>
-                            </button>
-                        )}
-                        {/* Add Button Mobile */}
-                        <Link
-                            href={route('baak.dosen.create')}
-                            className="md:hidden flex-1 bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm font-medium flex items-center justify-center gap-2 transition-colors"
-                        >
-                            <i className="fas fa-plus"></i>
-                            <span>Tambah</span>
-                        </Link>
-                    </div>
-                </div>
-
-                {/* Table - Desktop */}
-                <div className="hidden md:block bg-white rounded-lg shadow-sm overflow-hidden border border-gray-200">
-                    <div className="overflow-x-auto">
-                        <table className="w-full min-w-[900px]">
-                            <thead className="bg-gray-50">
-                                <tr className="text-gray-600 font-semibold text-xs">
-                                    <th className="px-6 py-4 text-left uppercase tracking-wider">No</th>
-                                    <th className="px-6 py-3 text-left uppercase tracking-wider">NIP</th>
-                                    <th className="px-6 py-3 text-left uppercase tracking-wider">Nama Dosen</th>
-                                    <th className="px-6 py-3 text-left uppercase tracking-wider">Program Studi</th>
-                                    <th className="px-6 py-3 text-center uppercase tracking-wider">Jenis Kelamin</th>
-                                    <th className="px-6 py-3 text-center uppercase tracking-wider">Jumlah Kelas</th>
-                                    <th className="px-6 py-3 text-center uppercase tracking-wider">Mahasiswa Bimbingan</th>
-                                    <th className="px-6 py-3 text-center uppercase tracking-wider">Aksi</th>
-                                </tr>
-                            </thead>
-                            <tbody className="bg-white divide-y divide-gray-200">
-                                {dosen.data.length > 0 ? (
-                                    dosen.data.map((item, index) => (
-                                        <tr key={item.id_dosen} className="hover:bg-gray-50">
-                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
-                                                {dosen.from + index}
-                                            </td>
-                                            <td className="px-6 py-4 whitespace-nowrap">
-                                                <span className="px-2 py-1 text-xs font-semibold text-blue-800 bg-blue-100 rounded-lg">
-                                                    {item.nip}
-                                                </span>
-                                            </td>
-                                            <td className="px-6 py-4 text-sm text-gray-700 font-medium">
-                                                {item.nama}
-                                            </td>
-                                            <td className="px-6 py-4 text-sm text-gray-600">
-                                                {item.prodi?.nama_prodi || '-'}
-                                            </td>
-                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700 text-center">
-                                                {item.jenis_kelamin === 'Laki-laki' ? (
-                                                    <span className="px-2 py-1 rounded-lg text-xs font-semibold bg-blue-100 text-blue-800">
-                                                        <i className="fas fa-mars mr-1"></i>Laki-laki
-                                                    </span>
-                                                ) : (
-                                                    <span className="px-2 py-1 rounded-lg text-xs font-semibold bg-pink-100 text-pink-800">
-                                                        <i className="fas fa-venus mr-1"></i>Perempuan
-                                                    </span>
-                                                )}
-                                            </td>
-                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700 text-center">
-                                                <span className="inline-flex items-center px-2 py-1 rounded-lg text-xs font-medium bg-gray-100 text-gray-800">
-                                                    {item.kelas_count} Kelas
-                                                </span>
-                                            </td>
-                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700 text-center">
-                                                <span className="inline-flex items-center px-2 py-1 rounded-lg text-xs font-medium bg-purple-100 text-purple-800">
-                                                    {item.mahasiswa_bimbingan_count} Mahasiswa
-                                                </span>
-                                            </td>
-                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-center">
-                                                <div className="flex items-center justify-center gap-2">
-                                                    <Link
-                                                        href={route('baak.dosen.show', item.id_dosen)}
-                                                        className="bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded text-xs font-medium transition-colors"
-                                                        title="Detail"
-                                                    >
-                                                        <i className="fas fa-eye"></i>
-                                                    </Link>
-                                                    <Link
-                                                        href={route('baak.dosen.edit', item.id_dosen)}
-                                                        className="bg-yellow-500 hover:bg-yellow-600 text-white px-3 py-1 rounded text-xs font-medium transition-colors"
-                                                        title="Edit"
-                                                    >
-                                                        <i className="fas fa-edit"></i>
-                                                    </Link>
-                                                    <button
-                                                        onClick={() => handleResetPassword(item.id_dosen, item.nip)}
-                                                        className="bg-green-500 hover:bg-green-600 text-white px-3 py-1 rounded text-xs font-medium transition-colors"
-                                                        title="Reset Password"
-                                                    >
-                                                        <i className="fas fa-key"></i>
-                                                    </button>
-                                                    <button
-                                                        onClick={() => handleDelete(item.id_dosen, item.nama)}
-                                                        className="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded text-xs font-medium transition-colors"
-                                                        title="Hapus"
-                                                    >
-                                                        <i className="fas fa-trash"></i>
-                                                    </button>
-                                                </div>
-                                            </td>
-                                        </tr>
-                                    ))
-                                ) : (
-                                    <tr>
-                                        <td colSpan="8" className="px-6 py-8 text-center text-gray-500">
-                                            <i className="fas fa-inbox text-4xl mb-2 text-gray-400"></i>
-                                            <p>Tidak ada data dosen</p>
-                                        </td>
-                                    </tr>
-                                )}
-                            </tbody>
-                        </table>
-                    </div>
-
-                    {/* Pagination Desktop */}
-                    {dosen.last_page > 1 && (
-                        <div className="bg-gray-50 px-6 py-4 border-t border-gray-200 flex items-center justify-between">
-                            <div className="text-sm text-gray-600">
-                                Menampilkan {dosen.from} - {dosen.to} dari {dosen.total} data
-                            </div>
-                            <div className="flex gap-2">
-                                {dosen.links.map((link, index) => (
-                                    <Link
-                                        key={index}
-                                        href={link.url || '#'}
-                                        preserveState
-                                        preserveScroll
-                                        className={`px-3 py-1 text-sm rounded ${
-                                            link.active
-                                                ? 'bg-blue-600 text-white'
-                                                : link.url
-                                                ? 'bg-white text-gray-700 hover:bg-gray-50 border border-gray-300'
-                                                : 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                                        }`}
-                                        dangerouslySetInnerHTML={{ __html: link.label }}
-                                    />
-                                ))}
-                            </div>
-                        </div>
-                    )}
-                </div>
-
-                {/* Cards - Mobile */}
-                <div className="block md:hidden space-y-4">
-                    {dosen.data.length > 0 ? (
-                        dosen.data.map((item) => (
-                            <div key={item.id_dosen} className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
-                                <div className="flex justify-between items-start mb-3">
-                                    <div className="flex-1">
-                                        <h3 className="font-semibold text-gray-900">{item.nama}</h3>
-                                        <span className="inline-block mt-1 px-2 py-1 text-xs font-semibold text-blue-800 bg-blue-100 rounded-lg">
-                                            {item.nip}
-                                        </span>
-                                    </div>
-                                    {item.jenis_kelamin === 'Laki-laki' ? (
-                                        <span className="px-2 py-1 rounded-lg text-xs font-semibold bg-blue-100 text-blue-800">
-                                            <i className="fas fa-mars mr-1"></i>L
-                                        </span>
-                                    ) : (
-                                        <span className="px-2 py-1 rounded-lg text-xs font-semibold bg-pink-100 text-pink-800">
-                                            <i className="fas fa-venus mr-1"></i>P
-                                        </span>
-                                    )}
-                                </div>
-                                <div className="space-y-1 mb-3">
-                                    <p className="text-sm text-gray-600">
-                                        <span className="font-medium">Prodi:</span> {item.prodi?.nama_prodi || '-'}
-                                    </p>
-                                    <p className="text-sm text-gray-600">
-                                        <span className="font-medium">Kelas:</span>{' '}
-                                        <span className="inline-flex items-center px-2 py-0.5 rounded-lg text-xs font-medium bg-gray-100 text-gray-800">
-                                            {item.kelas_count} Kelas
-                                        </span>
-                                    </p>
-                                    <p className="text-sm text-gray-600">
-                                        <span className="font-medium">Mahasiswa Bimbingan:</span>{' '}
-                                        <span className="inline-flex items-center px-2 py-0.5 rounded-lg text-xs font-medium bg-purple-100 text-purple-800">
-                                            {item.mahasiswa_bimbingan_count} Mahasiswa
-                                        </span>
-                                    </p>
-                                </div>
-                                <div className="grid grid-cols-2 gap-2 mt-3 pt-3 border-t border-gray-100">
-                                    <Link
-                                        href={route('baak.dosen.show', item.id_dosen)}
-                                        className="bg-blue-500 hover:bg-blue-600 text-white px-3 py-2 rounded text-sm font-medium text-center transition-colors"
-                                    >
-                                        <i className="fas fa-eye mr-1"></i> Detail
-                                    </Link>
-                                    <Link
-                                        href={route('baak.dosen.edit', item.id_dosen)}
-                                        className="bg-yellow-500 hover:bg-yellow-600 text-white px-3 py-2 rounded text-sm font-medium text-center transition-colors"
-                                    >
-                                        <i className="fas fa-edit mr-1"></i> Edit
-                                    </Link>
-                                    <button
-                                        onClick={() => handleResetPassword(item.id_dosen, item.nip)}
-                                        className="bg-green-500 hover:bg-green-600 text-white px-3 py-2 rounded text-sm font-medium transition-colors"
-                                    >
-                                        <i className="fas fa-key mr-1"></i> Reset PW
-                                    </button>
-                                    <button
-                                        onClick={() => handleDelete(item.id_dosen, item.nama)}
-                                        className="bg-red-500 hover:bg-red-600 text-white px-3 py-2 rounded text-sm font-medium transition-colors"
-                                    >
-                                        <i className="fas fa-trash mr-1"></i> Hapus
-                                    </button>
-                                </div>
-                            </div>
-                        ))
-                    ) : (
-                        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-8 text-center">
-                            <i className="fas fa-inbox text-4xl mb-2 text-gray-400"></i>
-                            <p className="text-gray-500">Tidak ada data dosen</p>
-                        </div>
-                    )}
-
-                    {/* Pagination Mobile */}
-                    {dosen.last_page > 1 && (
-                        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
-                            <div className="text-sm text-gray-600 mb-3 text-center">
-                                Menampilkan {dosen.from} - {dosen.to} dari {dosen.total} data
-                            </div>
-                            <div className="flex flex-wrap gap-2 justify-center">
-                                {dosen.links.map((link, index) => (
-                                    <Link
-                                        key={index}
-                                        href={link.url || '#'}
-                                        preserveState
-                                        preserveScroll
-                                        className={`px-3 py-1 text-sm rounded ${
-                                            link.active
-                                                ? 'bg-blue-600 text-white'
-                                                : link.url
-                                                ? 'bg-white text-gray-700 hover:bg-gray-50 border border-gray-300'
-                                                : 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                                        }`}
-                                        dangerouslySetInnerHTML={{ __html: link.label }}
-                                    />
-                                ))}
-                            </div>
-                        </div>
-                    )}
+                    <Pagination pagination={dosen} />
                 </div>
             </div>
+
+            <Modal show={isImportModalOpen} onClose={() => setIsImportModalOpen(false)}>
+                <div className="p-6">
+                    <h2 className="text-lg font-medium text-slate-900">Import Data Dosen</h2>
+                    <p className="mt-1 text-sm text-slate-600">
+                        Pilih file Excel (.xlsx) atau CSV yang berisi data dosen untuk diunggah.
+                        Belum punya template?{' '}
+                        <a href={route('baak.dosen.export-template')} target="_blank" rel="noreferrer" className="text-blue-600 hover:underline font-medium">
+                            Unduh Template Excel
+                        </a>
+                    </p>
+
+                    <form onSubmit={handleImportSubmit} className="mt-6 space-y-4">
+                        <div>
+                            <input
+                                type="file"
+                                accept=".xlsx, .xls, .csv"
+                                onChange={(e) => setData('file', e.target.files[0])}
+                                className="block w-full text-sm text-slate-500 file:mr-4 file:rounded-full file:border-0 file:bg-blue-50 file:px-4 file:py-2 file:text-sm file:font-semibold file:text-blue-700 hover:file:bg-blue-100"
+                            />
+                            {errors.file && <p className="mt-2 text-sm text-red-600">{errors.file}</p>}
+                        </div>
+
+                        <div className="flex justify-end gap-3 pt-4">
+                            <Button type="button" variant="outline" onClick={() => setIsImportModalOpen(false)}>
+                                Batal
+                            </Button>
+                            <Button type="submit" disabled={processing || !data.file} className="bg-emerald-600 hover:bg-emerald-700 text-white">
+                                {processing ? 'Mengunggah...' : 'Import Data'}
+                            </Button>
+                        </div>
+                    </form>
+                </div>
+            </Modal>
         </BaakLayout>
     );
 }

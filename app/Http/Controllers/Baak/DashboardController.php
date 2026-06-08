@@ -1,17 +1,18 @@
 <?php
+
 // app/Http/Controllers/Baak/DashboardController.php
 
 namespace App\Http\Controllers\Baak;
 
 use App\Http\Controllers\Controller;
-use App\Models\Mahasiswa;
+use App\Models\DetailKrs;
 use App\Models\Dosen;
-use App\Models\MataKuliah;
 use App\Models\Kelas;
 use App\Models\Krs;
+use App\Models\Mahasiswa;
+use App\Models\MataKuliah;
 use App\Models\NilaiMahasiswa;
 use App\Models\PeriodeRegistrasi;
-use App\Models\DetailKrs;
 use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
 
@@ -27,7 +28,8 @@ class DashboardController extends Controller
         $mahasiswaAktif = Mahasiswa::where('status', 'aktif')->count();
         $mahasiswaCuti = Mahasiswa::where('status', 'cuti')->count();
         $mahasiswaLulus = Mahasiswa::where('status', 'lulus')->count();
-        $mahasiswaDO = Mahasiswa::whereIn('status', ['do', 'keluar'])->count();
+        $mahasiswaDO = Mahasiswa::where('status', 'DO')->count();
+        $mahasiswaKeluar = Mahasiswa::where('status', 'keluar')->count();
 
         $totalDosen = Dosen::count();
         $dosenAktif = $totalDosen;
@@ -36,7 +38,7 @@ class DashboardController extends Controller
 
         $periodeAktif = PeriodeRegistrasi::where('status', 'aktif')->first();
 
-        // Total Kelas - SEMUA KELAS (tidak filter periode) 🔥
+        // Total Kelas - SEMUA KELAS (tidak filter periode)
         $totalKelas = Kelas::count();
 
         // ==========================================
@@ -49,66 +51,65 @@ class DashboardController extends Controller
             ->with('prodi:kode_prodi,nama_prodi')
             ->groupBy('kode_prodi')
             ->get()
-            ->map(function($item) {
+            ->map(function ($item) {
                 return [
                     'name' => $item->prodi->nama_prodi ?? 'Unknown',
                     'value' => $item->total,
                 ];
             });
 
-        // Chart 2: Mahasiswa per Tahun Masuk (Area Chart) - FIXED! 🔥
+        // Chart 2: Mahasiswa per Tahun Masuk (Area Chart)
         $mahasiswaPerAngkatan = Mahasiswa::select(
-                'tahun_masuk',
-                DB::raw('count(*) as total')
-            )
+            'tahun_masuk',
+            DB::raw('count(*) as total')
+        )
             ->where('status', 'aktif')
             ->whereNotNull('tahun_masuk')
             ->groupBy('tahun_masuk')
             ->orderBy('tahun_masuk', 'asc')
             ->limit(6)
             ->get()
-            ->map(function($item) {
+            ->map(function ($item) {
                 return [
                     'angkatan' => $item->tahun_masuk,
                     'total' => $item->total,
                 ];
             });
 
-        // Chart 3: Rata-rata IPK per Prodi (Bar Chart) - FIXED! Pakai kolom 'semester' 🔥
-        $rataIpkPerProdi = DB::table('mahasiswa as m')
-            ->join('prodi as p', 'm.kode_prodi', '=', 'p.kode_prodi')
-            ->leftJoin('riwayat_akademik as ra', function($join) {
-                $join->on('m.id_mahasiswa', '=', 'ra.id_mahasiswa')
-                     ->whereRaw('ra.id_riwayat = (
-                         SELECT id_riwayat
-                         FROM riwayat_akademik
-                         WHERE id_mahasiswa = m.id_mahasiswa
-                         ORDER BY semester DESC, created_at DESC
-                         LIMIT 1
-                     )');
-            })
-            ->where('m.status', 'aktif')
+        // Chart 3: Rata-rata IPK per Prodi (Bar Chart)
+        $rataIpkPerProdi = DB::table(DB::raw('(
+            SELECT 
+                m.kode_prodi,
+                m.id_mahasiswa,
+                SUM(
+                    CASE nm.nilai_huruf
+                        WHEN \'A\' THEN 4.00 WHEN \'A-\' THEN 3.75 WHEN \'B+\' THEN 3.50 WHEN \'B\' THEN 3.00 WHEN \'B-\' THEN 2.75
+                        WHEN \'C+\' THEN 2.50 WHEN \'C\' THEN 2.00 WHEN \'D\' THEN 1.00 WHEN \'E\' THEN 0.00 ELSE 0.00
+                    END * mk.sks
+                ) / NULLIF(SUM(CASE WHEN nm.nilai_huruf NOT IN (\'-\', \'\') AND nm.nilai_huruf IS NOT NULL THEN mk.sks ELSE 0 END), 0) as ipk
+            FROM mahasiswa m
+            LEFT JOIN nilai_mahasiswa nm ON m.id_mahasiswa = nm.id_mahasiswa
+            LEFT JOIN kelas k ON nm.id_kelas = k.id_kelas
+            LEFT JOIN mata_kuliah_periode mkp ON k.id_mk_periode = mkp.id_mk_periode
+            LEFT JOIN mata_kuliah mk ON mkp.kode_matkul = mk.kode_matkul
+            WHERE m.status = \'aktif\'
+            GROUP BY m.kode_prodi, m.id_mahasiswa
+        ) as student_ipk'))
+            ->join('prodi as p', 'student_ipk.kode_prodi', '=', 'p.kode_prodi')
             ->select(
-                'p.nama_prodi',
-                DB::raw('COALESCE(AVG(ra.ipk), 0) as rata_ipk'),
-                DB::raw('COUNT(DISTINCT m.id_mahasiswa) as total_mahasiswa')
+                'p.nama_prodi as prodi',
+                DB::raw('ROUND(COALESCE(AVG(student_ipk.ipk), 0), 2) as ipk'),
+                DB::raw('COUNT(student_ipk.id_mahasiswa) as mahasiswa')
             )
             ->groupBy('p.kode_prodi', 'p.nama_prodi')
-            ->orderBy('rata_ipk', 'desc')
-            ->get()
-            ->map(function($item) {
-                return [
-                    'prodi' => $item->nama_prodi,
-                    'ipk' => round($item->rata_ipk, 2),
-                    'mahasiswa' => $item->total_mahasiswa,
-                ];
-            });
+            ->orderBy('ipk', 'desc')
+            ->get();
 
         // Chart 4: Distribusi Status Mahasiswa
         $distribusiStatus = Mahasiswa::select('status', DB::raw('count(*) as total'))
             ->groupBy('status')
             ->get()
-            ->map(function($item) {
+            ->map(function ($item) {
                 $statusLabel = [
                     'aktif' => 'Aktif',
                     'lulus' => 'Lulus',
@@ -116,8 +117,11 @@ class DashboardController extends Controller
                     'do' => 'DO',
                     'cuti' => 'Cuti',
                 ];
+
+                $statusKey = strtolower($item->status);
+
                 return [
-                    'status' => $statusLabel[$item->status] ?? ucfirst($item->status),
+                    'status' => $statusLabel[$statusKey] ?? ucfirst($item->status),
                     'total' => $item->total,
                 ];
             });
@@ -139,30 +143,30 @@ class DashboardController extends Controller
             $sudahKRS = Krs::where('tahun_ajaran', $periodeAktif->tahun_ajaran)
                 ->distinct('id_mahasiswa')
                 ->count('id_mahasiswa');
-            $mahasiswaBelumKRS = $totalMahasiswaAktifSemua - $sudahKRS;
+            $mahasiswaBelumKRS = max(0, $totalMahasiswaAktifSemua - $sudahKRS);
         }
 
         $nilaiBelumDiinput = 0;
         if ($periodeAktif) {
-            $kelasList = Kelas::whereHas('mataKuliahPeriode', function($q) use ($periodeAktif) {
+            $kelasList = Kelas::whereHas('mataKuliahPeriode', function ($q) use ($periodeAktif) {
                 $q->where('tahun_ajaran', $periodeAktif->tahun_ajaran)
-                  ->where('jenis_semester', $periodeAktif->jenis_semester);
+                    ->where('jenis_semester', $periodeAktif->jenis_semester);
             })->get();
 
             foreach ($kelasList as $kelas) {
-                $totalMhs = DetailKrs::whereHas('krs', function($q) use ($periodeAktif) {
+                $totalMhs = DetailKrs::whereHas('krs', function ($q) use ($periodeAktif) {
                     $q->where('tahun_ajaran', $periodeAktif->tahun_ajaran)
-                      ->where('status', 'approved');
+                        ->where('status', 'approved');
                 })
-                ->where('id_kelas', $kelas->id_kelas)
-                ->count();
+                    ->where('id_kelas', $kelas->id_kelas)
+                    ->count();
 
                 $nilaiCount = NilaiMahasiswa::where('id_kelas', $kelas->id_kelas)->count();
-                $nilaiBelumDiinput += ($totalMhs - $nilaiCount);
+                $nilaiBelumDiinput += max(0, $totalMhs - $nilaiCount);
             }
         }
 
-        $mahasiswaDOCount = Mahasiswa::where('status', 'do')->count();
+        $mahasiswaDOCount = Mahasiswa::where('status', 'DO')->count();
 
         // ==========================================
         // RECENT ACTIVITIES
@@ -173,32 +177,37 @@ class DashboardController extends Controller
             ->orderBy('updated_at', 'desc')
             ->limit(5)
             ->get()
-            ->map(function($krs) {
+            ->map(function ($krs) {
+                $namaMahasiswa = $krs->mahasiswa?->nama ?? 'Mahasiswa';
+                $nimMahasiswa = $krs->mahasiswa?->nim ?? '-';
+
                 return [
                     'type' => 'krs_approved',
                     'icon' => 'fa-check-circle',
                     'color' => 'green',
-                    'message' => "KRS {$krs->mahasiswa->nama} ({$krs->mahasiswa->nim}) disetujui",
+                    'message' => "KRS {$namaMahasiswa} ({$nimMahasiswa}) disetujui",
                     'time' => $krs->updated_at->diffForHumans(),
                     'timestamp' => $krs->updated_at->timestamp,
                 ];
             });
 
         $recentNilai = NilaiMahasiswa::with([
-                'mahasiswa:id_mahasiswa,nim,nama',
-                'kelas.mataKuliahPeriode.mataKuliah:kode_matkul,nama_matkul'
-            ])
+            'mahasiswa:id_mahasiswa,nim,nama',
+            'kelas.mataKuliahPeriode.mataKuliah:kode_matkul,nama_matkul',
+        ])
             ->whereNotNull('nilai_akhir')
             ->orderBy('updated_at', 'desc')
             ->limit(5)
             ->get()
-            ->map(function($nilai) {
-                $mataKuliah = $nilai->kelas->mataKuliahPeriode->mataKuliah->nama_matkul ?? 'Mata Kuliah';
+            ->map(function ($nilai) {
+                $mataKuliah = $nilai->kelas?->mataKuliahPeriode?->mataKuliah?->nama_matkul ?? 'Mata Kuliah';
+                $namaMahasiswa = $nilai->mahasiswa?->nama ?? 'Mahasiswa';
+
                 return [
                     'type' => 'nilai_input',
                     'icon' => 'fa-file-alt',
                     'color' => 'blue',
-                    'message' => "Nilai {$mataKuliah} untuk {$nilai->mahasiswa->nama} diinput",
+                    'message' => "Nilai {$mataKuliah} untuk {$namaMahasiswa} diinput",
                     'time' => $nilai->updated_at->diffForHumans(),
                     'timestamp' => $nilai->updated_at->timestamp,
                 ];
@@ -232,7 +241,7 @@ class DashboardController extends Controller
                     'cuti' => $mahasiswaCuti,
                     'lulus' => $mahasiswaLulus,
                     'do' => $mahasiswaDO,
-                    'keluar' => Mahasiswa::where('status', 'keluar')->count(),
+                    'keluar' => $mahasiswaKeluar,
                 ],
                 'dosen' => [
                     'total' => $totalDosen,

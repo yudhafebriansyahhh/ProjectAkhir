@@ -6,8 +6,8 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreJadwalKrsRequest;
 use App\Http\Requests\UpdateJadwalKrsRequest;
 use App\Models\JadwalPengisianKrs;
-use App\Models\Prodi;
 use App\Models\PeriodeRegistrasi;
+use App\Models\Prodi;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 
@@ -15,7 +15,7 @@ class JadwalKrsController extends Controller
 {
     public function index(Request $request)
     {
-        $query = JadwalPengisianKrs::with(['prodi.fakultas']);
+        $query = JadwalPengisianKrs::with(['prodi']);
 
         if ($request->filled('prodi')) {
             $query->where('kode_prodi', $request->prodi);
@@ -39,6 +39,7 @@ class JadwalKrsController extends Controller
             $jadwal->status_badge = $this->getStatusBadge($jadwal);
             $jadwal->durasi = $jadwal->tanggal_mulai->diffInDays($jadwal->tanggal_selesai) + 1;
             $jadwal->semester_display = $jadwal->semester_display; // Gunakan accessor
+
             return $jadwal;
         });
 
@@ -52,7 +53,7 @@ class JadwalKrsController extends Controller
     public function create()
     {
         return Inertia::render('Baak/JadwalKrs/Create', [
-            'prodiList' => Prodi::with('fakultas')->get(),
+            'prodiList' => Prodi::orderBy('nama_prodi')->get(),
             'periodeList' => PeriodeRegistrasi::where('status', 'aktif')->get(),
         ]);
     }
@@ -67,11 +68,11 @@ class JadwalKrsController extends Controller
 
     public function edit(JadwalPengisianKrs $jadwalKrs)
     {
-        $jadwalKrs->load('prodi.fakultas');
+        $jadwalKrs->load('prodi');
 
         return Inertia::render('Baak/JadwalKrs/Edit', [
             'jadwalKrs' => $jadwalKrs,
-            'prodiList' => Prodi::with('fakultas')->get(),
+            'prodiList' => Prodi::orderBy('nama_prodi')->get(),
         ]);
     }
 
@@ -94,7 +95,7 @@ class JadwalKrsController extends Controller
 
         if ($hasMahasiswa) {
             return back()->withErrors([
-                'delete' => 'Tidak dapat menghapus jadwal KRS karena sudah ada mahasiswa yang mengisi KRS'
+                'delete' => 'Tidak dapat menghapus jadwal KRS karena sudah ada mahasiswa yang mengisi KRS',
             ]);
         }
 

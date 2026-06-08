@@ -1,266 +1,173 @@
-// resources/js/Pages/Baak/Kelas/Show.jsx
-
 import { Head, Link, router } from '@inertiajs/react';
+import { ArrowLeft, CalendarDays, Pencil, Trash2, Users } from 'lucide-react';
 import BaakLayout from '@/Layouts/BaakLayout';
+import { Badge } from '@/Components/ui/badge';
+import { Button } from '@/Components/ui/button';
+import { Card, CardContent } from '@/Components/ui/card';
+import { CardGrid, DataTable, EmptyState, PageHeader, SummaryCard } from '@/Components/ui/data-display';
 
-export default function Show({ kelas, mahasiswa }) {
+const formatTime = (value) => value?.substring(0, 5) || '-';
+const course = (kelas) => kelas.mata_kuliah_periode?.mata_kuliah;
+const period = (kelas) => kelas.mata_kuliah_periode;
+const roomLabel = (kelas) => kelas.ruangan?.kode_ruangan || kelas.ruang_kelas || '-';
+
+const InfoItem = ({ label, value, children }) => (
+    <div className="min-w-0">
+        <p className="text-xs font-medium text-slate-500">{label}</p>
+        {children || <p className="mt-1 break-words text-sm font-semibold text-slate-900">{value || '-'}</p>}
+    </div>
+);
+
+export default function Show({ kelas, mahasiswa = [] }) {
+    const progress = kelas.kapasitas ? Math.min(100, Math.round((mahasiswa.length / kelas.kapasitas) * 100)) : 0;
+    const isFull = mahasiswa.length >= (kelas.kapasitas || 0);
+
     const handleDelete = () => {
+        const destroy = () => router.delete(route('baak.kelas.destroy', kelas.id_kelas));
+
         if (window.Swal) {
             window.Swal.fire({
                 title: 'Hapus Kelas?',
-                html: `Apakah Anda yakin ingin menghapus kelas <strong>${kelas.mata_kuliah_periode?.mata_kuliah?.nama_matkul} - ${kelas.nama_kelas}</strong>?`,
+                html: `Apakah Anda yakin ingin menghapus kelas <strong>${course(kelas)?.nama_matkul || '-'} - ${kelas.nama_kelas}</strong>?`,
                 icon: 'warning',
                 showCancelButton: true,
                 confirmButtonColor: '#dc2626',
                 cancelButtonColor: '#6b7280',
                 confirmButtonText: 'Ya, Hapus!',
-                cancelButtonText: 'Batal'
+                cancelButtonText: 'Batal',
             }).then((result) => {
-                if (result.isConfirmed) {
-                    router.delete(route('baak.kelas.destroy', kelas.id_kelas));
-                }
+                if (result.isConfirmed) destroy();
             });
+            return;
         }
+
+        if (confirm(`Hapus kelas "${course(kelas)?.nama_matkul || '-'} - ${kelas.nama_kelas}"?`)) destroy();
     };
 
-    const getProgressPercentage = () => {
-        if (kelas.kapasitas === 0) return 0;
-        return Math.round((mahasiswa.length / kelas.kapasitas) * 100);
-    };
+    const columns = [
+        { key: 'number', header: 'No', headerClassName: 'w-[56px]', cellClassName: 'font-medium text-slate-500', render: (_item, index) => index + 1 },
+        { key: 'nim', header: 'NIM', render: (item) => <span className="font-mono text-sm font-semibold text-slate-900">{item.nim || '-'}</span> },
+        { key: 'nama', header: 'Nama Mahasiswa', render: (item) => <span className="break-words font-semibold text-slate-900">{item.nama || '-'}</span> },
+        { key: 'prodi', header: 'Program Studi', render: (item) => <span className="break-words text-sm text-slate-700">{item.prodi?.nama_prodi || '-'}</span> },
+        { key: 'semester', header: 'Semester', headerClassName: 'text-center', cellClassName: 'text-center', render: (item) => <Badge variant="outline" className="bg-blue-50 text-blue-700">Semester {item.semester_aktif || '-'}</Badge> },
+    ];
 
-    const getProgressColor = () => {
-        const percentage = getProgressPercentage();
-        if (percentage >= 90) return 'bg-red-600';
-        if (percentage >= 75) return 'bg-yellow-600';
-        return 'bg-green-600';
-    };
+    const renderMahasiswaCard = (item, index, key) => (
+        <Card key={key} className="rounded-lg border-slate-200 shadow-sm">
+            <CardContent className="space-y-3 p-4">
+                <div className="flex items-start gap-3">
+                    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-blue-50 text-sm font-bold text-blue-700">
+                        {index + 1}
+                    </div>
+                    <div className="min-w-0">
+                        <p className="break-words font-semibold text-slate-950">{item.nama || '-'}</p>
+                        <p className="font-mono text-sm text-slate-500">{item.nim || '-'}</p>
+                    </div>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                    <Badge variant="outline" className="bg-slate-50 text-slate-700">{item.prodi?.nama_prodi || '-'}</Badge>
+                    <Badge variant="outline" className="bg-blue-50 text-blue-700">Sem {item.semester_aktif || '-'}</Badge>
+                </div>
+            </CardContent>
+        </Card>
+    );
 
     return (
         <BaakLayout title="Detail Kelas">
             <Head title="Detail Kelas" />
 
-            <div className="container mx-auto px-4 py-8">
-                {/* Header */}
-                <div className="mb-6">
-                    <Link
-                        href={route('baak.kelas.index')}
-                        className="text-blue-600 hover:text-blue-800 text-sm font-medium inline-flex items-center mb-4"
-                    >
-                        <i className="fas fa-arrow-left mr-2"></i>
-                        Kembali ke Daftar
-                    </Link>
-                    <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-                        <div>
-                            <h1 className="text-2xl font-bold text-gray-900">
-                                {kelas.mata_kuliah_periode?.mata_kuliah?.nama_matkul} - Kelas {kelas.nama_kelas}
-                            </h1>
-                            <p className="mt-1 text-sm text-gray-600">
-                                {kelas.mata_kuliah_periode?.mata_kuliah?.kode_matkul} • {kelas.mata_kuliah_periode?.prodi?.nama_prodi}
-                            </p>
-                        </div>
-                        <div className="flex gap-2">
-                            <Link
-                                href={route('baak.kelas.edit', kelas.id_kelas)}
-                                className="px-4 py-2 bg-yellow-500 hover:bg-yellow-600 text-white rounded-lg text-sm font-medium flex items-center gap-2 transition-colors"
-                            >
-                                <i className="fas fa-edit"></i>
-                                <span>Edit</span>
-                            </Link>
-                            <button
-                                onClick={handleDelete}
-                                className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg text-sm font-medium flex items-center gap-2 transition-colors"
-                            >
-                                <i className="fas fa-trash"></i>
-                                <span>Hapus</span>
-                            </button>
-                        </div>
-                    </div>
-                </div>
-
-                {/* Info Cards */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-                    {/* Periode */}
-                    <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
-                        <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                                <i className="fas fa-calendar-alt text-blue-600"></i>
-                            </div>
-                            <div className="min-w-0 flex-1">
-                                <p className="text-xs text-gray-500">Periode</p>
-                                <p className="font-semibold text-gray-900 truncate">
-                                    {kelas.mata_kuliah_periode?.tahun_ajaran}
-                                </p>
-                                <p className="text-xs text-gray-600 capitalize">
-                                    Semester {kelas.mata_kuliah_periode?.jenis_semester}
-                                </p>
-                            </div>
-                        </div>
+            <div className="min-h-screen bg-slate-50 px-3 py-4 sm:px-4 sm:py-5 md:px-6 lg:px-8">
+                <div className="mx-auto w-full max-w-[1440px] space-y-4 md:space-y-5">
+                    <div>
+                        <Link href={route('baak.kelas.index')} className="mb-3 inline-flex items-center gap-2 text-sm font-semibold text-blue-600 hover:text-blue-700">
+                            <ArrowLeft className="h-4 w-4" />
+                            Kembali ke Daftar
+                        </Link>
+                        <PageHeader
+                            title={`${course(kelas)?.nama_matkul || '-'} - Kelas ${kelas.nama_kelas}`}
+                            description={`${course(kelas)?.kode_matkul || '-'} - ${period(kelas)?.prodi?.nama_prodi || '-'}`}
+                        />
                     </div>
 
-                    {/* Semester Ditawarkan */}
-                    <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
-                        <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                                <i className="fas fa-layer-group text-purple-600"></i>
-                            </div>
-                            <div className="min-w-0 flex-1">
-                                <p className="text-xs text-gray-500">Ditawarkan di</p>
-                                <p className="font-semibold text-gray-900">
-                                    Semester {kelas.mata_kuliah_periode?.semester_ditawarkan}
-                                </p>
-                                <p className="text-xs text-gray-600">
-                                    {kelas.mata_kuliah_periode?.mata_kuliah?.sks} SKS
-                                </p>
-                            </div>
-                        </div>
+                    <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+                        <SummaryCard title="Mahasiswa" value={mahasiswa.length} icon={Users} tone="blue" />
+                        <SummaryCard title="Kapasitas" value={kelas.kapasitas || 0} icon={Users} tone="emerald" />
+                        <SummaryCard title="Terisi (%)" value={progress} icon={CalendarDays} tone="violet" />
+                        <SummaryCard title="SKS" value={course(kelas)?.sks || 0} icon={CalendarDays} tone="amber" />
                     </div>
 
-                    {/* Kapasitas */}
-                    <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
-                        <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                                <i className="fas fa-users text-green-600"></i>
-                            </div>
-                            <div className="min-w-0 flex-1">
-                                <p className="text-xs text-gray-500">Kapasitas</p>
-                                <p className="font-semibold text-gray-900">
-                                    {mahasiswa.length} / {kelas.kapasitas} Mahasiswa
-                                </p>
-                                <div className="mt-1 w-full bg-gray-200 rounded-full h-2">
-                                    <div
-                                        className={`h-2 rounded-full transition-all ${getProgressColor()}`}
-                                        style={{ width: `${getProgressPercentage()}%` }}
-                                    ></div>
+                    <Card className="rounded-lg border-slate-200 shadow-sm">
+                        <CardContent className="space-y-5 p-4 sm:p-5">
+                            <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+                                <div className="min-w-0">
+                                    <div className="mb-2 flex flex-wrap gap-2">
+                                        <Badge variant="outline" className="bg-blue-50 font-mono text-blue-700">{course(kelas)?.kode_matkul || '-'}</Badge>
+                                        <Badge variant="outline" className={isFull ? 'bg-red-50 text-red-700 border-red-200' : 'bg-emerald-50 text-emerald-700 border-emerald-200'}>
+                                            {isFull ? 'Penuh' : 'Tersedia'}
+                                        </Badge>
+                                    </div>
+                                    <h2 className="break-words text-lg font-bold text-slate-950">Informasi Kelas</h2>
+                                    <p className="mt-1 text-sm text-slate-500">Detail kelas, dosen pengampu, jadwal, dan kapasitas.</p>
+                                </div>
+                                <div className="grid gap-2 sm:grid-cols-2">
+                                    <Link href={route('baak.kelas.edit', kelas.id_kelas)}>
+                                        <Button variant="outline" className="w-full gap-2 text-amber-600">
+                                            <Pencil className="h-4 w-4" />
+                                            Edit
+                                        </Button>
+                                    </Link>
+                                    <Button type="button" variant="outline" className="w-full gap-2 text-red-600" onClick={handleDelete}>
+                                        <Trash2 className="h-4 w-4" />
+                                        Hapus
+                                    </Button>
                                 </div>
                             </div>
-                        </div>
-                    </div>
-                </div>
 
-                {/* Detail Kelas */}
-                <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
-                    <h2 className="text-lg font-semibold mb-4">Informasi Kelas</h2>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <div>
-                            <p className="text-sm text-gray-500 mb-1">Dosen Pengampu</p>
-                            <p className="font-medium text-gray-900">
-                                {kelas.dosen?.nama}
-                            </p>
-                            <p className="text-xs text-gray-600 mt-1">
-                                {kelas.dosen?.nip} • {kelas.dosen?.prodi?.nama_prodi}
-                            </p>
-                        </div>
-                        <div>
-                            <p className="text-sm text-gray-500 mb-1">Jadwal</p>
-                            <p className="font-medium text-gray-900">
-                                {kelas.hari}, {kelas.jam_mulai?.substring(0, 5)} - {kelas.jam_selesai?.substring(0, 5)}
-                            </p>
-                            <p className="text-xs text-gray-600 mt-1">
-                                Ruang: {kelas.ruang_kelas}
-                            </p>
-                        </div>
-                        <div>
-                            <p className="text-sm text-gray-500 mb-1">Kategori Mata Kuliah</p>
-                            <span className={`inline-block px-2 py-1 text-xs font-medium rounded capitalize ${
-                                kelas.mata_kuliah_periode?.mata_kuliah?.kategori === 'wajib' ? 'bg-red-100 text-red-700' :
-                                kelas.mata_kuliah_periode?.mata_kuliah?.kategori === 'pilihan' ? 'bg-blue-100 text-blue-700' :
-                                'bg-green-100 text-green-700'
-                            }`}>
-                                {kelas.mata_kuliah_periode?.mata_kuliah?.kategori}
-                            </span>
-                        </div>
-                        <div>
-                            <p className="text-sm text-gray-500 mb-1">Status Kelas</p>
-                            <span className={`inline-block px-2 py-1 text-xs font-medium rounded ${
-                                mahasiswa.length >= kelas.kapasitas
-                                    ? 'bg-red-100 text-red-700'
-                                    : 'bg-green-100 text-green-700'
-                            }`}>
-                                {mahasiswa.length >= kelas.kapasitas ? 'Penuh' : 'Tersedia'}
-                            </span>
-                        </div>
-                    </div>
-                </div>
-
-                {/* Daftar Mahasiswa */}
-                <div className="bg-white rounded-lg shadow-sm border border-gray-200">
-                    <div className="p-6 border-b border-gray-200">
-                        <h2 className="text-lg font-semibold">
-                            Daftar Mahasiswa ({mahasiswa.length})
-                        </h2>
-                    </div>
-
-                    {mahasiswa.length > 0 ? (
-                        <>
-                            {/* Desktop Table */}
-                            <div className="hidden md:block overflow-x-auto">
-                                <table className="w-full">
-                                    <thead className="bg-gray-50">
-                                        <tr className="text-gray-600 font-semibold text-xs">
-                                            <th className="px-6 py-3 text-left uppercase tracking-wider">No</th>
-                                            <th className="px-6 py-3 text-left uppercase tracking-wider">NIM</th>
-                                            <th className="px-6 py-3 text-left uppercase tracking-wider">Nama</th>
-                                            <th className="px-6 py-3 text-left uppercase tracking-wider">Prodi</th>
-                                            <th className="px-6 py-3 text-center uppercase tracking-wider">Semester</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody className="divide-y divide-gray-200">
-                                        {mahasiswa.map((mhs, index) => (
-                                            <tr key={mhs.id_mahasiswa} className="hover:bg-gray-50 transition-colors">
-                                                <td className="px-6 py-4 text-sm text-gray-700">
-                                                    {index + 1}
-                                                </td>
-                                                <td className="px-6 py-4 text-sm font-medium text-gray-900">
-                                                    {mhs.nim}
-                                                </td>
-                                                <td className="px-6 py-4 text-sm text-gray-900">
-                                                    {mhs.nama}
-                                                </td>
-                                                <td className="px-6 py-4 text-sm text-gray-600">
-                                                    {mhs.prodi?.nama_prodi}
-                                                </td>
-                                                <td className="px-6 py-4 text-sm text-gray-700 text-center">
-                                                    {mhs.semester_aktif || '-'}
-                                                </td>
-                                            </tr>
-                                        ))}
-                                    </tbody>
-                                </table>
+                            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+                                <InfoItem label="Periode" value={`${period(kelas)?.tahun_ajaran || '-'} - ${period(kelas)?.jenis_semester || '-'}`} />
+                                <InfoItem label="Ditawarkan di" value={`Semester ${period(kelas)?.semester_ditawarkan || '-'}`} />
+                                <InfoItem label="Dosen Pengampu" value={kelas.dosen?.nama || '-'} />
+                                <InfoItem label="Jadwal" value={`${kelas.hari || '-'}, ${formatTime(kelas.jam_mulai)} - ${formatTime(kelas.jam_selesai)}`} />
+                                <InfoItem label="Ruangan" value={roomLabel(kelas)} />
+                                <InfoItem label="Kategori" value={course(kelas)?.kategori || '-'} />
+                                <InfoItem label="NIP Dosen" value={kelas.dosen?.nip || '-'} />
+                                <InfoItem label="Prodi Dosen" value={kelas.dosen?.prodi?.nama_prodi || '-'} />
                             </div>
 
-                            {/* Mobile Cards */}
-                            <div className="block md:hidden divide-y divide-gray-200">
-                                {mahasiswa.map((mhs, index) => (
-                                    <div key={mhs.id_mahasiswa} className="p-4">
-                                        <div className="flex items-start gap-3">
-                                            <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0">
-                                                <span className="text-sm font-semibold text-blue-700">
-                                                    {index + 1}
-                                                </span>
-                                            </div>
-                                            <div className="flex-1 min-w-0">
-                                                <p className="font-medium text-gray-900">{mhs.nama}</p>
-                                                <p className="text-sm text-gray-600 mt-1">{mhs.nim}</p>
-                                                <div className="mt-2 flex flex-wrap gap-2 text-xs">
-                                                    <span className="px-2 py-1 bg-gray-100 text-gray-700 rounded">
-                                                        {mhs.prodi?.nama_prodi}
-                                                    </span>
-                                                    <span className="px-2 py-1 bg-blue-100 text-blue-700 rounded">
-                                                        Sem {mhs.semester_aktif || '-'}
-                                                    </span>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                ))}
+                            <div>
+                                <div className="mb-2 flex items-center justify-between text-sm">
+                                    <span className="font-medium text-slate-700">Kapasitas Terpakai</span>
+                                    <span className="font-semibold text-slate-900">{mahasiswa.length}/{kelas.kapasitas || 0}</span>
+                                </div>
+                                <div className="h-2 overflow-hidden rounded-full bg-slate-100">
+                                    <div className={`h-full rounded-full ${isFull ? 'bg-red-500' : progress >= 75 ? 'bg-amber-500' : 'bg-emerald-500'}`} style={{ width: `${progress}%` }} />
+                                </div>
                             </div>
-                        </>
-                    ) : (
-                        <div className="p-12 text-center text-gray-500">
-                            <i className="fas fa-users text-5xl mb-3 text-gray-400"></i>
-                            <p className="font-medium">Belum ada mahasiswa yang mengambil kelas ini</p>
-                        </div>
-                    )}
+                        </CardContent>
+                    </Card>
+
+                    <Card className="rounded-lg border-slate-200 shadow-sm">
+                        <CardContent className="border-b border-slate-100 p-4 sm:p-5">
+                            <h2 className="text-lg font-bold text-slate-950">Daftar Mahasiswa ({mahasiswa.length})</h2>
+                        </CardContent>
+                    </Card>
+
+                    <DataTable
+                        columns={columns}
+                        data={mahasiswa}
+                        getRowKey={(item, index) => item.id_mahasiswa || item.nim || index}
+                        emptyState={<EmptyState title="Belum ada mahasiswa" description="Belum ada mahasiswa yang mengambil kelas ini." />}
+                        className="hidden lg:block"
+                    />
+
+                    <CardGrid
+                        data={mahasiswa}
+                        getCardKey={(item, index) => item.id_mahasiswa || item.nim || index}
+                        renderCard={renderMahasiswaCard}
+                        emptyState={<EmptyState title="Belum ada mahasiswa" description="Belum ada mahasiswa yang mengambil kelas ini." compact />}
+                        className="grid gap-3 md:grid-cols-2 lg:hidden"
+                        emptyClassName="lg:hidden"
+                    />
                 </div>
             </div>
         </BaakLayout>
