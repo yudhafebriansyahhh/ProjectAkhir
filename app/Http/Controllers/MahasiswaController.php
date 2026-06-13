@@ -420,6 +420,7 @@ class MahasiswaController extends Controller
                 'jurusan' => $mahasiswa->prodi ? $mahasiswa->prodi->nama_prodi : '-',
                 'no_hp' => $mahasiswa->no_hp ?? '-',
                 'foto' => $mahasiswa->foto_url ?? '/profile.png',
+                'agama' => $mahasiswa->agama ?? '-',
                 'nama_ayah' => $mahasiswa->nama_ayah ?? '-',
                 'nama_ibu' => $mahasiswa->nama_ibu ?? '-',
                 'no_telp_ayah' => $mahasiswa->no_telp_ayah ?? '-',
@@ -450,6 +451,7 @@ class MahasiswaController extends Controller
                 'prodi' => $mahasiswa->prodi ? $mahasiswa->prodi->nama_prodi : '',
                 'jurusan' => $mahasiswa->prodi ? $mahasiswa->prodi->nama_prodi : '',
                 'no_hp' => $mahasiswa->no_hp ?? '',
+                'agama' => $mahasiswa->agama ?? '',
                 'nama_ayah' => $mahasiswa->nama_ayah ?? '',
                 'nama_ibu' => $mahasiswa->nama_ibu ?? '',
                 'no_telp_ayah' => $mahasiswa->no_telp_ayah ?? '',
@@ -468,6 +470,7 @@ class MahasiswaController extends Controller
         $validated = $request->validate([
             'alamat' => 'nullable|string|max:255',
             'no_hp' => 'nullable|string|max:20',
+            'agama' => 'nullable|string|max:50',
             'nama_ayah' => 'nullable|string|max:255',
             'nama_ibu' => 'nullable|string|max:255',
             'no_telp_ayah' => 'nullable|string|max:15',
@@ -479,6 +482,7 @@ class MahasiswaController extends Controller
             $mahasiswa->update([
                 'alamat' => $validated['alamat'],
                 'no_hp' => $validated['no_hp'],
+                'agama' => $validated['agama'],
                 'nama_ayah' => $validated['nama_ayah'],
                 'nama_ibu' => $validated['nama_ibu'],
                 'no_telp_ayah' => $validated['no_telp_ayah'],

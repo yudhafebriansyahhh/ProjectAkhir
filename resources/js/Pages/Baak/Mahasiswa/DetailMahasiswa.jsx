@@ -167,8 +167,13 @@ export default function DetailMahasiswa({
         { label: 'Nomor Telepon', value: mahasiswa.no_hp || '-' },
         { label: 'Tanggal Lahir', value: formatDate(mahasiswa.tanggal_lahir) },
         { label: 'Jenis Kelamin', value: mahasiswa.jenis_kelamin || '-' },
+        { label: 'Agama', value: mahasiswa.agama || '-' },
         { label: 'Dosen Wali', value: mahasiswa.dosen_wali?.nama || '-' },
         { label: 'NIP Dosen Wali', value: mahasiswa.dosen_wali?.nip || '-' },
+        { label: 'Nama Ayah', value: mahasiswa.nama_ayah || '-' },
+        { label: 'No Telp Ayah', value: mahasiswa.no_telp_ayah || '-' },
+        { label: 'Nama Ibu', value: mahasiswa.nama_ibu || '-' },
+        { label: 'No Telp Ibu', value: mahasiswa.no_telp_ibu || '-' },
         { label: 'Alamat', value: mahasiswa.alamat || '-', className: 'md:col-span-2' },
     ];
 

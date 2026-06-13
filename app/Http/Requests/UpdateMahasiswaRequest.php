@@ -20,8 +20,13 @@ class UpdateMahasiswaRequest extends FormRequest
             'id_dosen_wali' => ['nullable', 'exists:dosen,id_dosen'],
             'tanggal_lahir' => ['required', 'date', 'before:today'],
             'jenis_kelamin' => ['required', Rule::in(['Laki-laki', 'Perempuan'])],
+            'agama' => ['nullable', 'string', 'max:50'],
             'alamat' => ['nullable', 'string', 'max:500'],
             'no_hp' => ['nullable', 'string', 'regex:/^[0-9]{10,15}$/', 'max:15'],
+            'nama_ayah' => ['nullable', 'string', 'max:255'],
+            'nama_ibu' => ['nullable', 'string', 'max:255'],
+            'no_telp_ayah' => ['nullable', 'string', 'max:15'],
+            'no_telp_ibu' => ['nullable', 'string', 'max:15'],
             'status' => ['required', Rule::in(['aktif', 'lulus', 'keluar', 'DO'])],
             'foto' => ['nullable', 'image', 'mimes:jpeg,png,jpg', 'max:2048'],
         ];

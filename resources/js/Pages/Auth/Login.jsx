@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Head, useForm } from '@inertiajs/react';
+import { Eye, EyeOff } from 'lucide-react';
 import InputError from '@/Components/InputError';
 import AuthLayout from '@/Layouts/AuthLayout';
 
@@ -27,36 +28,33 @@ export default function Login({ status, canResetPassword }) {
         <AuthLayout>
             <Head title="Masuk" />
 
-            <div className="min-w-[400px] flex flex-col justify-center items-center px-4 py-12">
-                <div className="w-full max-w-md">
-                    {/* Mobile Logo */}
-                    <div className="block sm:hidden mb-6">
+            <div className="flex w-full min-w-0 flex-col justify-center">
+                <div className="w-full min-w-0">
+                    <div className="mb-7 block lg:hidden">
                         <img
-                            className="w-28 h-28 mx-auto mb-2 bg-white p-3 shadow-sm rounded-full"
+                            className="mx-auto mb-3 h-24 w-24 rounded-full bg-white p-2 shadow-sm sm:h-28 sm:w-28"
                             src="/ITBR.jpeg"
-                            alt=""
+                            alt="ITB Riau Logo"
                         />
-                        <h1 className="text-gray-800 text-center text-lg font-semibold">
+                        <h1 className="text-center text-lg font-semibold text-gray-800 sm:text-xl">
                             Sistem Akademik ITB RIAU
                         </h1>
                     </div>
 
-                    {/* Header */}
-                    <div className="mb-8">
-                        <h1 className="text-3xl font-bold text-gray-700 mb-2">Masuk</h1>
-                        <p className="text-gray-600">Masuk ke akun Anda untuk melanjutkan</p>
+                    <div className="mb-7">
+                        <h1 className="mb-2 text-2xl font-bold text-gray-800 sm:text-3xl">Masuk</h1>
+                        <p className="text-sm leading-relaxed text-gray-600 sm:text-base">
+                            Masuk ke akun Anda untuk melanjutkan
+                        </p>
                     </div>
 
-                    {/* Status Message */}
                     {status && (
-                        <div className="mb-4 text-sm font-medium text-green-600">
+                        <div className="mb-4 rounded-lg border border-green-200 bg-green-50 px-4 py-3 text-sm font-medium text-green-700">
                             {status}
                         </div>
                     )}
 
-                    {/* Form */}
-                    <form onSubmit={submit} className="space-y-6">
-                        {/* Username Field */}
+                    <form onSubmit={submit} className="space-y-5">
                         <div className="space-y-2">
                             <label htmlFor="username" className="block text-sm font-semibold text-gray-700">
                                 Username
@@ -67,16 +65,15 @@ export default function Login({ status, canResetPassword }) {
                                 name="username"
                                 value={data.username}
                                 onChange={(e) => setData('username', e.target.value)}
-                                className="flex-1 w-full placeholder:text-sm text-sm px-4 py-2 border-2 placeholder:text-gray-400 border-gray-200 focus:border-blue-600 rounded-lg bg-white text-gray-700 focus:outline-none"
+                                className="h-11 w-full rounded-lg border border-gray-200 bg-white px-4 text-sm text-gray-700 placeholder:text-gray-400 focus:border-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-100"
                                 placeholder="Masukkan NIM/NIP/Email"
                                 autoFocus
                             />
                             <InputError message={errors.username} className="mt-2" />
                         </div>
 
-                        {/* Password Field */}
                         <div className="space-y-2">
-                            <div className="flex justify-between items-center">
+                            <div className="flex items-center justify-between">
                                 <label htmlFor="password" className="block text-sm font-semibold text-gray-700">
                                     Password
                                 </label>
@@ -88,21 +85,21 @@ export default function Login({ status, canResetPassword }) {
                                     name="password"
                                     value={data.password}
                                     onChange={(e) => setData('password', e.target.value)}
-                                    className="flex-1 w-full placeholder:text-sm text-sm px-4 py-2 border-2 placeholder:text-gray-400 border-gray-200 focus:border-blue-600 rounded-lg bg-white text-gray-700 focus:outline-none pr-10"
+                                    className="h-11 w-full rounded-lg border border-gray-200 bg-white px-4 pr-11 text-sm text-gray-700 placeholder:text-gray-400 focus:border-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-100"
                                     placeholder="Masukkan password Anda"
                                 />
                                 <button
                                     type="button"
                                     onClick={togglePasswordVisibility}
-                                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700 focus:outline-none"
+                                    className="absolute right-2 top-1/2 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-md text-gray-500 transition hover:bg-gray-100 hover:text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-100"
+                                    aria-label={showPassword ? 'Sembunyikan password' : 'Tampilkan password'}
                                 >
-                                    <i className={`fa-solid text-sm ${showPassword ? 'fa-eye-slash' : 'fa-eye'}`}></i>
+                                    {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                                 </button>
                             </div>
                             <InputError message={errors.password} className="mt-2" />
                         </div>
 
-                        {/* Remember Me */}
                         <div className="flex items-center">
                             <input
                                 type="checkbox"
@@ -110,18 +107,17 @@ export default function Login({ status, canResetPassword }) {
                                 name="remember"
                                 checked={data.remember}
                                 onChange={(e) => setData('remember', e.target.checked)}
-                                className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray rounded-sm accent-blue-500"
+                                className="h-4 w-4 rounded-sm border-gray-300 text-blue-600 accent-blue-500 focus:ring-blue-500"
                             />
                             <label htmlFor="remember" className="ml-2 text-sm text-gray-700">
                                 Ingat saya
                             </label>
                         </div>
 
-                        {/* Submit Button */}
                         <button
                             type="submit"
                             disabled={processing}
-                            className="w-full bg-gradient-to-r text-sm from-blue-600 to-blue-700 text-white font-semibold py-2 px-4 rounded-lg hover:from-blue-700 hover:to-blue-800 transition-all duration-200 shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                            className="h-11 w-full rounded-lg bg-blue-600 px-4 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
                         >
                             {processing ? 'Memproses...' : 'Masuk ke Akun'}
                         </button>

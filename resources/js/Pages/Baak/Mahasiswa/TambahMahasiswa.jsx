@@ -20,6 +20,15 @@ const genderOptions = [
     { value: 'Perempuan', label: 'Perempuan' },
 ];
 
+const agamaOptions = [
+    { value: 'Islam', label: 'Islam' },
+    { value: 'Kristen Protestan', label: 'Kristen Protestan' },
+    { value: 'Katolik', label: 'Katolik' },
+    { value: 'Hindu', label: 'Hindu' },
+    { value: 'Buddha', label: 'Buddha' },
+    { value: 'Konghucu', label: 'Konghucu' },
+];
+
 export default function TambahMahasiswa({ prodis = [], dosens = [] }) {
     const { data, setData, post, processing, errors } = useForm({
         nama: '',
@@ -28,8 +37,13 @@ export default function TambahMahasiswa({ prodis = [], dosens = [] }) {
         tahun_masuk: new Date().getFullYear(),
         tanggal_lahir: '',
         jenis_kelamin: '',
+        agama: '',
         alamat: '',
         no_hp: '',
+        nama_ayah: '',
+        nama_ibu: '',
+        no_telp_ayah: '',
+        no_telp_ibu: '',
         status: 'aktif',
         foto: null,
     });
@@ -164,6 +178,15 @@ export default function TambahMahasiswa({ prodis = [], dosens = [] }) {
                                     </div>
                                 </FormField>
 
+                                <FormField label="Agama" required error={errors.agama}>
+                                    <SelectDropdown
+                                        value={data.agama}
+                                        onChange={(selected) => setData('agama', selected ? selected.value : '')}
+                                        options={agamaOptions}
+                                        placeholder="Pilih Agama"
+                                    />
+                                </FormField>
+
                                 <FormField label="Nomor Telepon" error={errors.no_hp}>
                                     <Input
                                         type="text"
@@ -171,6 +194,46 @@ export default function TambahMahasiswa({ prodis = [], dosens = [] }) {
                                         onChange={(event) => setData('no_hp', event.target.value)}
                                         placeholder="08xxxxxxxxxx"
                                         className={errors.no_hp ? 'border-red-300 focus-visible:ring-red-500' : ''}
+                                    />
+                                </FormField>
+
+                                <FormField label="Nama Ayah" error={errors.nama_ayah}>
+                                    <Input
+                                        type="text"
+                                        value={data.nama_ayah}
+                                        onChange={(event) => setData('nama_ayah', event.target.value)}
+                                        placeholder="Nama Ayah"
+                                        className={errors.nama_ayah ? 'border-red-300 focus-visible:ring-red-500' : ''}
+                                    />
+                                </FormField>
+
+                                <FormField label="Nama Ibu" error={errors.nama_ibu}>
+                                    <Input
+                                        type="text"
+                                        value={data.nama_ibu}
+                                        onChange={(event) => setData('nama_ibu', event.target.value)}
+                                        placeholder="Nama Ibu"
+                                        className={errors.nama_ibu ? 'border-red-300 focus-visible:ring-red-500' : ''}
+                                    />
+                                </FormField>
+
+                                <FormField label="No Telp Ayah" error={errors.no_telp_ayah}>
+                                    <Input
+                                        type="text"
+                                        value={data.no_telp_ayah}
+                                        onChange={(event) => setData('no_telp_ayah', event.target.value)}
+                                        placeholder="08xxxxxxxxxx"
+                                        className={errors.no_telp_ayah ? 'border-red-300 focus-visible:ring-red-500' : ''}
+                                    />
+                                </FormField>
+
+                                <FormField label="No Telp Ibu" error={errors.no_telp_ibu}>
+                                    <Input
+                                        type="text"
+                                        value={data.no_telp_ibu}
+                                        onChange={(event) => setData('no_telp_ibu', event.target.value)}
+                                        placeholder="08xxxxxxxxxx"
+                                        className={errors.no_telp_ibu ? 'border-red-300 focus-visible:ring-red-500' : ''}
                                     />
                                 </FormField>
 

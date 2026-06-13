@@ -5,6 +5,7 @@ export default function FormProfile({ mahasiswa }) {
     const { data, setData, patch, processing, errors } = useForm({
         alamat: mahasiswa?.alamat || '',
         no_hp: mahasiswa?.no_hp || '',
+        agama: mahasiswa?.agama || '',
         nama_ayah: mahasiswa?.nama_ayah || '',
         nama_ibu: mahasiswa?.nama_ibu || '',
         no_telp_ayah: mahasiswa?.no_telp_ayah || '',
@@ -61,6 +62,26 @@ export default function FormProfile({ mahasiswa }) {
                                 <label className="w-32 text-gray-700 font-medium mb-1 md:mb-0">Jurusan</label>
                                 <input type="text" value={mahasiswa?.jurusan} disabled
                                     className="flex-1 px-4 py-2 border border-gray-200 rounded-lg bg-gray-50 text-gray-500 cursor-not-allowed" />
+                            </div>
+
+                            <div className="flex flex-col md:flex-row md:items-start group">
+                                <label className="w-32 text-gray-700 font-medium mt-2 mb-1 md:mb-0">Agama</label>
+                                <div className="flex-1">
+                                    <select
+                                        value={data.agama}
+                                        onChange={e => setData('agama', e.target.value)}
+                                        className="w-full px-4 py-2 border border-blue-200 focus:border-blue-600 rounded-lg bg-blue-50/30 text-gray-800 focus:outline-none transition-colors"
+                                    >
+                                        <option value="">Pilih Agama</option>
+                                        <option value="Islam">Islam</option>
+                                        <option value="Kristen Protestan">Kristen Protestan</option>
+                                        <option value="Katolik">Katolik</option>
+                                        <option value="Hindu">Hindu</option>
+                                        <option value="Buddha">Buddha</option>
+                                        <option value="Konghucu">Konghucu</option>
+                                    </select>
+                                    {errors.agama && <p className="text-red-500 text-xs mt-1">{errors.agama}</p>}
+                                </div>
                             </div>
 
                             <div className="flex flex-col md:flex-row md:items-start group">

@@ -58,6 +58,11 @@ export default function Profile({ mahasiswa }) {
                                 <input type="text" value={mahasiswa.jurusan} disabled
                                     className="flex-1 px-4 py-2 border border-gray-200 rounded-lg bg-white text-gray-700 focus:outline-none" />
                             </div>
+                            <div className="flex items-center">
+                                <label className="w-32 text-gray-700 font-medium">Agama</label>
+                                <input type="text" value={mahasiswa.agama} disabled
+                                    className="flex-1 px-4 py-2 border border-gray-200 rounded-lg bg-white text-gray-700 focus:outline-none" />
+                            </div>
                         </div>
 
                         {/* Kolom Kanan */}
