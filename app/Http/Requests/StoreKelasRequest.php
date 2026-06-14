@@ -4,6 +4,7 @@ namespace App\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
 use App\Models\Kelas;
+use App\Models\MataKuliahPeriode;
 
 class StoreKelasRequest extends FormRequest
 {
@@ -29,8 +30,15 @@ class StoreKelasRequest extends FormRequest
     public function withValidator($validator)
     {
         $validator->after(function ($validator) {
+            $mkPeriode = MataKuliahPeriode::find($this->id_mk_periode);
+
+            if (! $mkPeriode) {
+                return;
+            }
+
             // Validasi bentrok dosen
             $bentrokDosen = Kelas::where('id_dosen', $this->id_dosen)
+                ->forPeriodeValue($mkPeriode->tahun_ajaran, $mkPeriode->jenis_semester)
                 ->where('hari', $this->hari)
                 ->where(function($q) {
                     $q->where('jam_mulai', '<', $this->jam_selesai)
@@ -44,6 +52,7 @@ class StoreKelasRequest extends FormRequest
 
             // Validasi bentrok ruangan
             $bentrokRuangan = Kelas::where('id_ruangan', $this->id_ruangan)
+                ->forPeriodeValue($mkPeriode->tahun_ajaran, $mkPeriode->jenis_semester)
                 ->where('hari', $this->hari)
                 ->where(function($q) {
                     $q->where('jam_mulai', '<', $this->jam_selesai)

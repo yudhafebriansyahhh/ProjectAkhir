@@ -120,8 +120,8 @@ export default function MahasiswaLayout({ children, title }) {
                     <div className="p-4 border-b border-gray-200">
                         <div className="flex items-center space-x-3">
                             <img
-                                className="w-12 h-12 rounded-full"
-                                src="/profile.png"
+                                className="w-12 h-12 rounded-full object-cover"
+                                src={auth?.user?.foto ? `/storage/${auth.user.foto}` : "/profile.png"}
                                 alt="Profile"
                             />
                             <div>
@@ -195,6 +195,18 @@ export default function MahasiswaLayout({ children, title }) {
                             </Link>
 
                             <Link
+                                href={route('mahasiswa.layanan.index')}
+                                className={`flex items-center space-x-3 px-4 py-3 rounded-lg transition-colors ${
+                                    isActive('mahasiswa.layanan.*') || isActive('mahasiswa.layanan.index')
+                                        ? 'bg-blue-600 text-white shadow-sm'
+                                        : 'text-gray-700 hover:bg-blue-50 hover:text-blue-700'
+                                }`}
+                            >
+                                <i className="fas fa-print w-5"></i>
+                                <span className="text-sm font-medium">Layanan</span>
+                            </Link>
+
+                            <Link
                                 href={route('mahasiswa.profile')}
                                 className={`flex items-center space-x-3 px-4 py-3 rounded-lg transition-colors ${
                                     isActive('mahasiswa.profile')
@@ -204,6 +216,18 @@ export default function MahasiswaLayout({ children, title }) {
                             >
                                 <i className="fas fa-user-circle w-5"></i>
                                 <span className="text-sm font-medium">Profile</span>
+                            </Link>
+
+                            <Link
+                                href={route('mahasiswa.registrasi')}
+                                className={`flex items-center space-x-3 px-4 py-3 rounded-lg transition-colors ${
+                                    isActive('mahasiswa.registrasi')
+                                        ? 'bg-blue-600 text-white shadow-sm'
+                                        : 'text-gray-700 hover:bg-blue-50 hover:text-blue-700'
+                                }`}
+                            >
+                                <i className="fas fa-clipboard-list w-5"></i>
+                                <span className="text-sm font-medium">Registrasi</span>
                             </Link>
                         </div>
                     </nav>

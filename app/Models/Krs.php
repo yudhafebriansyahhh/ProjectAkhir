@@ -56,6 +56,11 @@ class Krs extends Model
         return $this->status === 'approved';
     }
 
+    public function isDraft()
+    {
+        return $this->status === 'draft';
+    }
+
     public function isPending()
     {
         return $this->status === 'pending';

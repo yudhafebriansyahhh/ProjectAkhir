@@ -10,13 +10,15 @@ import { SelectDropdown } from '@/Components/ui/select-dropdown';
 
 const semesterOptions = Array.from({ length: 8 }, (_, index) => ({ value: String(index + 1), label: `Semester ${index + 1}` }));
 const statusOptions = [
-    { value: 'pending', label: 'Pending' },
+    { value: 'draft', label: 'Draft' },
+    { value: 'pending', label: 'Menunggu' },
     { value: 'approved', label: 'Disetujui' },
     { value: 'rejected', label: 'Ditolak' },
 ];
 
 const getStatusBadge = (status) => {
     const badges = {
+        draft: 'border-slate-200 bg-slate-50 text-slate-700',
         pending: 'border-amber-200 bg-amber-50 text-amber-700',
         approved: 'border-emerald-200 bg-emerald-50 text-emerald-700',
         rejected: 'border-red-200 bg-red-50 text-red-700',
@@ -26,7 +28,8 @@ const getStatusBadge = (status) => {
 
 const getStatusLabel = (status) => {
     const labels = {
-        pending: 'Pending',
+        draft: 'Draft',
+        pending: 'Menunggu',
         approved: 'Disetujui',
         rejected: 'Ditolak',
     };
@@ -149,9 +152,10 @@ export default function Index({ krs, stats = {}, prodis = [], tahunAjaranList = 
                 <div className="mx-auto w-full max-w-[1440px] space-y-4 md:space-y-5">
                     <PageHeader title="Monitoring KRS" description="Monitor pengisian KRS mahasiswa berdasarkan periode, prodi, semester, dan status." />
 
-                    <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+                    <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
                         <SummaryCard title="Total KRS" value={stats.total || 0} icon={FileText} tone="blue" />
-                        <SummaryCard title="Pending" value={stats.pending || 0} icon={Clock3} tone="amber" />
+                        <SummaryCard title="Draft" value={stats.draft || 0} icon={FileText} tone="blue" />
+                        <SummaryCard title="Menunggu" value={stats.pending || 0} icon={Clock3} tone="amber" />
                         <SummaryCard title="Disetujui" value={stats.approved || 0} icon={CheckCircle2} tone="emerald" />
                         <SummaryCard title="Ditolak" value={stats.rejected || 0} icon={XCircle} tone="violet" />
                     </div>

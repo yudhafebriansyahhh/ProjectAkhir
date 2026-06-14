@@ -124,8 +124,8 @@ export default function DosenLayout({ children, title }) {
                             <div className="flex items-center justify-center">
                                 <div className="w-12 h-12 bg-slate-700 rounded-full flex items-center justify-center">
                                     <img
-                                        className="w-12 h-12 rounded-full"
-                                        src="/profile.png"
+                                        className="w-12 h-12 rounded-full object-cover"
+                                        src={user?.foto ? `/storage/${user.foto}` : "/profile.png"}
                                         alt="Profile"
                                     />
                                 </div>
@@ -167,6 +167,35 @@ export default function DosenLayout({ children, title }) {
                             >
                                 <i className="fas fa-star w-5"></i>
                                 <span className="text-sm font-medium">Nilai</span>
+                            </Link>
+
+                            <Link
+                                href={route('dosen.acc-krs.index')}
+                                className={`flex items-center space-x-3 px-4 py-3 rounded-lg transition-colors ${
+                                    isActive('dosen.acc-krs.*')
+                                        ? 'bg-blue-600 text-white shadow-sm'
+                                        : 'text-gray-700 hover:bg-blue-50 hover:text-blue-700'
+                                }`}
+                            >
+                                <i className="fas fa-clipboard-check w-5"></i>
+                                <span className="text-sm font-medium flex-1">ACC KRS</span>
+                                {usePage().props.krsPendingCount > 0 && (
+                                    <span className="inline-flex items-center justify-center min-w-[1.5rem] h-6 px-1.5 text-xs font-bold leading-none text-red-100 bg-red-600 rounded-full">
+                                        {usePage().props.krsPendingCount}
+                                    </span>
+                                )}
+                            </Link>
+
+                            <Link
+                                href={route('dosen.mahasiswa-wali.index')}
+                                className={`flex items-center space-x-3 px-4 py-3 rounded-lg transition-colors ${
+                                    isActive('dosen.mahasiswa-wali.*')
+                                        ? 'bg-blue-600 text-white shadow-sm'
+                                        : 'text-gray-700 hover:bg-blue-50 hover:text-blue-700'
+                                }`}
+                            >
+                                <i className="fas fa-user-graduate w-5"></i>
+                                <span className="text-sm font-medium">Mahasiswa Wali</span>
                             </Link>
 
                             <Link

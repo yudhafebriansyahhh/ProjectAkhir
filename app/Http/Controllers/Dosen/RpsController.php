@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Rps;
 use App\Models\Kelas;
 use App\Models\MataKuliah;
+use App\Models\PeriodeRegistrasi;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
@@ -15,13 +16,15 @@ class RpsController extends Controller
     
     private function getMatkulDosen()
     {
-        $idDosen = optional(Auth::user())->id_dosen;
+        $idDosen = Auth::user()?->dosen?->id_dosen;
+        $periodeTerakhir = PeriodeRegistrasi::getPeriodeTerakhir();
 
      
         try {
-            if ($idDosen) {
+            if ($idDosen && $periodeTerakhir) {
                 $kelas = Kelas::with('mataKuliahPeriode.mataKuliah')
                     ->where('id_dosen', $idDosen)
+                    ->forPeriode($periodeTerakhir)
                     ->get();
 
                 $result = $kelas->filter(function ($item) {
@@ -43,13 +46,17 @@ class RpsController extends Controller
         } catch (\Throwable $e) {
          
         }
-        return MataKuliah::select('kode_matkul', 'nama_matkul')->get();
+        return collect();
     }
 
    
     public function index()
     {
-        $rps = Rps::with('mataKuliah')->get();
+        $kodeMatkul = $this->getMatkulDosen()->pluck('kode_matkul');
+
+        $rps = Rps::with('mataKuliah')
+            ->whereIn('kode_matkul', $kodeMatkul)
+            ->get();
 
         return inertia('Dosen/Rps', [
             'rps' => $rps
@@ -76,6 +83,10 @@ class RpsController extends Controller
             'judul'          => 'required|string',
             'file_rps'       => 'required|file|mimes:jpg,jpeg,pdf|max:10240',
         ]);
+
+        if (! $this->getMatkulDosen()->pluck('kode_matkul')->contains($validated['kode_matkul'])) {
+            abort(403, 'Mata kuliah tidak tersedia pada periode terbaru.');
+        }
 
         if ($request->hasFile('file_rps')) {
             $validated['file_path'] = $request->file('file_rps')->store('rps', 'public');
@@ -115,6 +126,10 @@ class RpsController extends Controller
         'judul'          => 'required|string',
         'file_rps'       => 'nullable|file|mimes:jpg,jpeg,pdf|max:10240',
     ]);
+
+    if (! $this->getMatkulDosen()->pluck('kode_matkul')->contains($validated['kode_matkul'])) {
+        abort(403, 'Mata kuliah tidak tersedia pada periode terbaru.');
+    }
 
     // Jika user upload file baru
     if ($request->hasFile('file_rps')) {

@@ -29,6 +29,7 @@ class UpdateDosenRequest extends FormRequest
             'alamat' => 'nullable|string',
             'no_hp' => 'nullable|string|max:15',
             'foto' => 'nullable|image|mimes:jpg,jpeg,png|max:2048',
+            'hapus_foto' => 'nullable|boolean',
         ];
     }
 

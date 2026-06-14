@@ -44,6 +44,11 @@ class PeriodeRegistrasi extends Model
             ->first();
     }
 
+    public static function getPeriodeTerakhir()
+    {
+        return self::orderByDesc('id_periode')->first();
+    }
+
     public function getDurasiAttribute()
     {
         return $this->tanggal_mulai->diffInDays($this->tanggal_selesai) + 1;

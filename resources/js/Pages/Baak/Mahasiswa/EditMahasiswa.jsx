@@ -45,6 +45,7 @@ export default function EditMahasiswa({ mahasiswa, prodis = [], dosens = [] }) {
         no_telp_ibu: mahasiswa.no_telp_ibu || '',
         status: mahasiswa.status || 'aktif',
         foto: null,
+        hapus_foto: false,
         _method: 'PUT',
     });
 
@@ -62,7 +63,7 @@ export default function EditMahasiswa({ mahasiswa, prodis = [], dosens = [] }) {
 
         if (!file) return;
 
-        setData('foto', file);
+        setData((prevData) => ({ ...prevData, foto: file, hapus_foto: false }));
         const reader = new FileReader();
         reader.onloadend = () => setPreviewImage(reader.result);
         reader.readAsDataURL(file);
@@ -70,7 +71,7 @@ export default function EditMahasiswa({ mahasiswa, prodis = [], dosens = [] }) {
 
     const clearImage = () => {
         setPreviewImage(null);
-        setData('foto', null);
+        setData((prevData) => ({ ...prevData, foto: null, hapus_foto: true }));
     };
 
     const handleResetPassword = () => {

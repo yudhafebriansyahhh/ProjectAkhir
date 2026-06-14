@@ -1,14 +1,13 @@
 import { useEffect, useRef } from 'react';
-import { Head, usePage } from '@inertiajs/react';
+import { Head, Link, usePage } from '@inertiajs/react';
 import MahasiswaLayout from '@/Layouts/MahasiswaLayout';
 
-export default function Index({ ipData = [], sksData = [], attendanceData = [], currentIpk = "0.00" }) {
+export default function Index({ ipData = [], sksData = [], attendanceData = [], currentIpk = "0.00", registrasiUlang = null, isProfileLengkap = true }) {
     const { auth } = usePage().props;
     const ipChartRef = useRef(null);
     const sksChartRef = useRef(null);
     const ipChartInstance = useRef(null);
     const sksChartInstance = useRef(null);
-
     const initCharts = () => {
         // Cek apakah Chart.js sudah loaded
         if (!window.Chart) {
@@ -169,6 +168,54 @@ export default function Index({ ipData = [], sksData = [], attendanceData = [], 
                 </div>
 
                 <div className="flex flex-col gap-4">
+                    {!isProfileLengkap && (
+                        <div className="rounded-lg border border-blue-200 bg-blue-50 px-5 py-4 text-blue-900 shadow-sm">
+                            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                                <div className="flex gap-3">
+                                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-blue-200 bg-white text-blue-600">
+                                        <i className="fa-solid fa-user-pen"></i>
+                                    </div>
+                                    <div>
+                                        <p className="font-bold">Profil Anda belum lengkap!</p>
+                                        <p className="mt-1 text-sm">
+                                            Silakan lengkapi data diri Anda (termasuk foto, alamat, dan kontak) untuk mempermudah layanan akademik.
+                                        </p>
+                                    </div>
+                                </div>
+                                <Link
+                                    href={route('mahasiswa.profile.perbarui-data')}
+                                    className="inline-flex w-full items-center justify-center rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-blue-700 sm:w-auto shrink-0 whitespace-nowrap"
+                                >
+                                    Lengkapi Profil
+                                </Link>
+                            </div>
+                        </div>
+                    )}
+
+                    {registrasiUlang?.periode && !registrasiUlang?.registrasi ? (
+                        <div className="rounded-lg border border-amber-200 bg-amber-50 px-5 py-4 text-amber-900 shadow-sm">
+                            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                                <div className="flex gap-3">
+                                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-amber-200 bg-white text-amber-600">
+                                        <i className="fa-solid fa-circle-exclamation"></i>
+                                    </div>
+                                    <div>
+                                        <p className="font-bold">Anda belum melakukan registrasi ulang.</p>
+                                        <p className="mt-1 text-sm">
+                                            Periode {registrasiUlang.periode.tahun_ajaran} - {registrasiUlang.periode.jenis_semester} sedang dibuka. Lengkapi registrasi sebelum mengisi KRS.
+                                        </p>
+                                    </div>
+                                </div>
+                                <Link
+                                    href={route('mahasiswa.registrasi')}
+                                    className="inline-flex w-full items-center justify-center rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-blue-700 sm:w-auto"
+                                >
+                                    Registrasi
+                                </Link>
+                            </div>
+                        </div>
+                    ) : null}
+
                     {/* IPK Card */}
                     <div className="bg-white px-6 py-6 rounded-lg shadow-sm border border-gray-200">
                         <div className="text-start">

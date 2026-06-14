@@ -32,6 +32,7 @@ class HandleInertiaRequests extends Middleware
     {
         $user = $request->user();
         $userName = null;
+        $userFoto = null;
 
         // Load nama user berdasarkan role dengan error handling
         if ($user) {
@@ -44,10 +45,12 @@ class HandleInertiaRequests extends Middleware
                     case 'dosen':
                         $dosen = \App\Models\Dosen::where('user_id', $user->id)->first();
                         $userName = $dosen?->nama ?? 'Dosen';
+                        $userFoto = $dosen?->foto;
                         break;
                     case 'mahasiswa':
                         $mahasiswa = \App\Models\Mahasiswa::where('user_id', $user->id)->first();
                         $userName = $mahasiswa?->nama ?? 'Mahasiswa';
+                        $userFoto = $mahasiswa?->foto;
                         break;
                     default:
                         $userName = $user->username ?? $user->email;
@@ -55,6 +58,28 @@ class HandleInertiaRequests extends Middleware
             } catch (\Exception $e) {
                 \Log::error('Error loading user name: ' . $e->getMessage());
                 $userName = $user->username ?? $user->email;
+            }
+        }
+
+        $pengajuanCounts = null;
+        $krsPendingCount = null;
+
+        if ($user) {
+            if ($user->role === 'baak') {
+                $pengajuanCounts = [
+                    'cetak_krs' => \App\Models\PengajuanLayanan::where('jenis_layanan', 'cetak_krs')->where('status', 'pending')->count(),
+                    'cetak_khs' => \App\Models\PengajuanLayanan::where('jenis_layanan', 'cetak_khs')->where('status', 'pending')->count(),
+                    'transkrip' => \App\Models\PengajuanLayanan::where('jenis_layanan', 'transkrip')->where('status', 'pending')->count(),
+                ];
+            } elseif ($user->role === 'dosen') {
+                $dosen = \App\Models\Dosen::where('user_id', $user->id)->first();
+                if ($dosen) {
+                    $krsPendingCount = \App\Models\Krs::where('status', 'pending')
+                        ->whereHas('mahasiswa', function ($query) use ($dosen) {
+                            $query->where('id_dosen_wali', $dosen->id_dosen);
+                        })
+                        ->count();
+                }
             }
         }
 
@@ -67,8 +92,11 @@ class HandleInertiaRequests extends Middleware
                     'email' => $user->email,
                     'username' => $user->username,
                     'role' => $user->role,
+                    'foto' => $userFoto,
                 ] : null,
             ],
+            'pengajuanCounts' => $pengajuanCounts,
+            'krsPendingCount' => $krsPendingCount,
             'flash' => [
                 'success' => fn () => $request->session()->get('success'),
                 'error' => fn () => $request->session()->get('error'),

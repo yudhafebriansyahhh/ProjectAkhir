@@ -4,6 +4,8 @@ use Illuminate\Support\Facades\Route;
 
 // BAAK
 use App\Http\Controllers\Baak\DashboardController;
+use App\Http\Controllers\Baak\CetakKhsController;
+use App\Http\Controllers\Baak\CetakKrsController;
 use App\Http\Controllers\Baak\JadwalKrsController;
 use App\Http\Controllers\Baak\KelasController;
 use App\Http\Controllers\Baak\KrsController;
@@ -17,6 +19,7 @@ use App\Http\Controllers\Baak\MahasiswaController as BaakMahasiswaController;
 use App\Http\Controllers\Baak\DosenController as BaakDosenController;
 use App\Http\Controllers\Baak\NilaiController;
 use App\Http\Controllers\Baak\RuanganController;
+use App\Http\Controllers\Baak\TranskripController;
 
 // DOSEN
 use App\Http\Controllers\Dosen\DosenController;
@@ -26,6 +29,7 @@ use App\Http\Controllers\Dosen\AbsensiController;
 
 // MAHASISWA
 use App\Http\Controllers\MahasiswaController;
+use App\Http\Controllers\Mahasiswa\LayananController as MahasiswaLayananController;
 
 
 // ======================================================================
@@ -78,6 +82,7 @@ Route::middleware(['auth', 'role:baak'])
         Route::resource('dosen', BaakDosenController::class);
 
         // Kelas
+        Route::get('kelas/arsip', [KelasController::class, 'arsip'])->name('kelas.arsip');
         Route::resource('kelas', KelasController::class);
         Route::post('kelas/get-mata-kuliah-by-periode', [KelasController::class, 'getMataKuliahByPeriode'])
             ->name('kelas.get-mata-kuliah-by-periode');
@@ -94,6 +99,23 @@ Route::middleware(['auth', 'role:baak'])
             Route::get('/', [KrsController::class, 'index'])->name('index');
             Route::get('/{krs}', [KrsController::class, 'show'])->name('show');
         });
+
+        Route::prefix('transkrip')->name('transkrip.')->group(function () {
+            Route::get('/', [TranskripController::class, 'index'])->name('index');
+            Route::get('/{mahasiswa}', [TranskripController::class, 'show'])->name('show');
+        });
+
+        Route::prefix('cetak-khs')->name('cetak-khs.')->group(function () {
+            Route::get('/', [CetakKhsController::class, 'index'])->name('index');
+            Route::get('/{krs}', [CetakKhsController::class, 'show'])->name('show');
+        });
+
+        Route::prefix('cetak-krs')->name('cetak-krs.')->group(function () {
+            Route::get('/', [CetakKrsController::class, 'index'])->name('index');
+            Route::get('/{krs}', [CetakKrsController::class, 'show'])->name('show');
+        });
+
+        Route::patch('/layanan/{id}/status', [TranskripController::class, 'updateStatus'])->name('layanan.update-status');
 
         // Mata Kuliah
         Route::get('mata-kuliah/export', [MataKuliahController::class, 'exportExcel'])->name('mata-kuliah.export');
@@ -164,10 +186,24 @@ Route::middleware(['auth', 'role:mahasiswa'])
     ->group(function () {
 
         Route::get('/dashboard', [MahasiswaController::class, 'dashboard'])->name('dashboard');
+        Route::get('/registrasi', [MahasiswaController::class, 'registrasi'])->name('registrasi');
+        Route::post('/registrasi-ulang', [MahasiswaController::class, 'store_registrasi_ulang'])->name('registrasi-ulang.store');
         Route::get('/nilai', [MahasiswaController::class, 'nilai'])->name('nilai');
         Route::get('/penjadwalan', [MahasiswaController::class, 'penjadwalan'])->name('penjadwalan');
         Route::get('/krs', [MahasiswaController::class, 'krs'])->name('krs');
+        Route::get('/krs/isi', [MahasiswaController::class, 'tambah_krs'])->name('krs.create');
+        Route::get('/tambah-krs', [MahasiswaController::class, 'tambah_krs'])->name('krs.create.legacy');
+        Route::post('/krs/ajukan', [MahasiswaController::class, 'submit_krs'])->name('krs.submit');
+        Route::post('/krs/kelas/{kelas}', [MahasiswaController::class, 'store_krs_item'])->name('krs.store-item');
+        Route::delete('/krs/detail/{detailKrs}', [MahasiswaController::class, 'destroy_krs_item'])->name('krs.destroy-item');
         Route::get('/absensi', [MahasiswaController::class, 'absensi'])->name('absensi');
+
+        // Layanan
+        Route::prefix('layanan')->name('layanan.')->group(function () {
+            Route::get('/', [App\Http\Controllers\Mahasiswa\LayananController::class, 'index'])->name('index');
+            Route::post('/', [App\Http\Controllers\Mahasiswa\LayananController::class, 'store'])->name('store');
+            Route::patch('/{id}/rate', [App\Http\Controllers\Mahasiswa\LayananController::class, 'rate'])->name('rate');
+        });
 
         // Profile
         Route::get('/profile', [MahasiswaController::class, 'profile'])->name('profile');
@@ -186,6 +222,11 @@ Route::middleware(['auth', 'role:dosen'])
     ->group(function () {
 
         Route::get('/dashboard', [DosenController::class, 'dashboard'])->name('dashboard');
+        Route::get('/mahasiswa-wali', [DosenController::class, 'mahasiswaWali'])->name('mahasiswa-wali.index');
+        Route::get('/mahasiswa-wali/{mahasiswa}', [DosenController::class, 'showMahasiswaWali'])->name('mahasiswa-wali.show');
+        Route::get('/acc-krs', [DosenController::class, 'accKrs'])->name('acc-krs.index');
+        Route::get('/acc-krs/{krs}', [DosenController::class, 'showAccKrs'])->name('acc-krs.show');
+        Route::patch('/acc-krs/{krs}', [DosenController::class, 'updateAccKrs'])->name('acc-krs.update');
 
         // Nilai
     Route::get('/nilai', [App\Http\Controllers\Dosen\NilaiController::class, 'index'])
@@ -247,9 +288,22 @@ Route::middleware(['auth', 'role:dosen'])
         // Debug query
         Route::get('/debug-mk', function() {
             $dosen = auth()->user()->dosen;
-            $mataKuliahList = \App\Models\MataKuliah::whereHas('periode.kelas', function ($q) use ($dosen) {
-                $q->where('id_dosen', $dosen->id_dosen);
-            })->distinct()->select('mata_kuliah.kode_matkul', 'mata_kuliah.nama_matkul')->get();
+            $periode = \App\Models\PeriodeRegistrasi::getPeriodeTerakhir();
+
+            $mataKuliahList = \App\Models\MataKuliah::when($periode, function ($query) use ($dosen, $periode) {
+                    $query->whereHas('periode', function ($q) use ($dosen, $periode) {
+                        $q->where('tahun_ajaran', $periode->tahun_ajaran)
+                            ->where('jenis_semester', $periode->jenis_semester)
+                            ->whereHas('kelas', function ($q) use ($dosen) {
+                                $q->where('id_dosen', $dosen->id_dosen);
+                            });
+                    });
+                }, function ($query) {
+                    $query->whereRaw('1 = 0');
+                })
+                ->distinct()
+                ->select('mata_kuliah.kode_matkul', 'mata_kuliah.nama_matkul')
+                ->get();
             return response()->json($mataKuliahList);
         });
     });

@@ -59,8 +59,15 @@ class PengaturanKrsController extends Controller
 
     public function create()
     {
+        $periodeSumber = MataKuliahPeriode::select('tahun_ajaran', 'jenis_semester')
+            ->distinct()
+            ->orderBy('tahun_ajaran', 'desc')
+            ->orderByRaw("FIELD(jenis_semester, 'ganjil', 'genap', 'pendek')")
+            ->get();
+
         return Inertia::render('Baak/PengaturanKrs/Create', [
             'periodes' => PeriodeRegistrasi::orderBy('tahun_ajaran', 'desc')->get(),
+            'periodeSumber' => $periodeSumber,
             'mataKuliah' => MataKuliah::with('prodi')
                 ->where('is_active', true)
                 ->orderBy('nama_matkul')
@@ -140,34 +147,75 @@ class PengaturanKrsController extends Controller
     {
         $request->validate([
             'from_periode' => 'required|string',
+            'kode_prodi' => 'nullable|exists:prodi,kode_prodi',
             'to_tahun_ajaran' => 'required|string',
             'to_jenis_semester' => 'required|in:ganjil,genap,pendek',
         ]);
 
-        [$fromTahun, $fromJenis] = explode('-', $request->from_periode);
+        $separator = str_contains($request->from_periode, '|') ? '|' : '-';
+        $fromParts = explode($separator, $request->from_periode, 2);
+
+        if (count($fromParts) !== 2 || ! in_array($fromParts[1], ['ganjil', 'genap', 'pendek'], true)) {
+            return redirect()
+                ->back()
+                ->with('error', 'Format periode sumber tidak valid.');
+        }
+
+        [$fromTahun, $fromJenis] = $fromParts;
+
+        if ($fromTahun === $request->to_tahun_ajaran && $fromJenis === $request->to_jenis_semester) {
+            return redirect()
+                ->back()
+                ->with('error', 'Periode tujuan harus berbeda dari periode sumber.');
+        }
 
         DB::beginTransaction();
 
         try {
             $pengaturanLama = MataKuliahPeriode::where('tahun_ajaran', $fromTahun)
                 ->where('jenis_semester', $fromJenis)
+                ->when($request->filled('kode_prodi'), fn ($query) => $query->where('kode_prodi', $request->kode_prodi))
                 ->get();
 
+            if ($pengaturanLama->isEmpty()) {
+                DB::rollBack();
+
+                return redirect()
+                    ->back()
+                    ->with('error', $request->filled('kode_prodi')
+                        ? 'Tidak ada pengaturan yang bisa disalin dari periode sumber untuk prodi yang dipilih.'
+                        : 'Tidak ada pengaturan yang bisa disalin dari periode sumber.');
+            }
+
+            $createdCount = 0;
+
             foreach ($pengaturanLama as $item) {
-                MataKuliahPeriode::create([
+                $copied = MataKuliahPeriode::firstOrCreate([
                     'kode_matkul' => $item->kode_matkul,
+                    'kode_prodi' => $item->kode_prodi,
                     'tahun_ajaran' => $request->to_tahun_ajaran,
                     'jenis_semester' => $request->to_jenis_semester,
                     'semester_ditawarkan' => $item->semester_ditawarkan,
+                ], [
                     'catatan' => 'Disalin dari periode ' . $fromTahun . ' ' . $fromJenis,
                 ]);
+
+                if ($copied->wasRecentlyCreated) {
+                    $createdCount++;
+                }
             }
 
             DB::commit();
 
+            if ($createdCount === 0) {
+                return redirect()
+                    ->back()
+                    ->with('success', 'Semua pengaturan dari periode sumber sudah ada di periode tujuan.');
+            }
+
             return redirect()
-                ->route('baak.pengaturan-krs.index')
-                ->with('success', "Berhasil menyalin {$pengaturanLama->count()} mata kuliah dari periode sebelumnya");
+                ->back()
+                ->with('success', "Berhasil menyalin {$createdCount} pengaturan mata kuliah dari periode sebelumnya");
 
         } catch (\Exception $e) {
             DB::rollBack();

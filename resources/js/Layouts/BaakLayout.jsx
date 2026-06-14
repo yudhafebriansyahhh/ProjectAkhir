@@ -7,7 +7,7 @@ import {
     Users, UserCheck, Presentation,
     DoorOpen, ClipboardList, Star,
     CalendarPlus, Clock, UserCheck2, Settings,
-    FileText, LogOut, ChevronDown, Menu, X
+    FileText, LogOut, ChevronDown, Menu, X, Printer
 } from "lucide-react";
 
 export default function BaakLayout({ children, title }) {
@@ -39,6 +39,9 @@ export default function BaakLayout({ children, title }) {
             "baak.pengaturan-krs"
         ])
     );
+    const [layananOpen, setLayananOpen] = useState(
+        isParentActive(["baak.transkrip", "baak.cetak-khs", "baak.cetak-krs"])
+    );
 
     useEffect(() => {
         setMasterDataOpen(
@@ -57,6 +60,9 @@ export default function BaakLayout({ children, title }) {
                 "baak.registrasi-semester",
                 "baak.pengaturan-krs"
             ])
+        );
+        setLayananOpen(
+            isParentActive(["baak.transkrip", "baak.cetak-khs", "baak.cetak-krs"])
         );
     }, [route().current()]);
 
@@ -142,7 +148,7 @@ export default function BaakLayout({ children, title }) {
         </Link>
     );
 
-    const DropdownMenu = ({ icon: Icon, label, isOpen, setIsOpen, isActiveParent, children: menuChildren }) => (
+    const DropdownMenu = ({ icon: Icon, label, isOpen, setIsOpen, isActiveParent, badgeCount, children: menuChildren }) => (
         <div>
             <button
                 onClick={() => setIsOpen(!isOpen)}
@@ -156,7 +162,14 @@ export default function BaakLayout({ children, title }) {
                     <Icon className="w-[18px] h-[18px]" />
                     <span className="text-sm font-medium">{label}</span>
                 </div>
-                <ChevronDown className={`w-4 h-4 transition-transform duration-300 ${isOpen ? "rotate-180" : ""}`} />
+                <div className="flex items-center space-x-2">
+                    {badgeCount > 0 && (
+                        <span className="flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-[10px] font-bold text-white">
+                            {badgeCount > 99 ? '99+' : badgeCount}
+                        </span>
+                    )}
+                    <ChevronDown className={`w-4 h-4 transition-transform duration-300 ${isOpen ? "rotate-180" : ""}`} />
+                </div>
             </button>
 
             <div className={`mt-1 space-y-0.5 overflow-hidden transition-all duration-300 ease-in-out ${isOpen ? "max-h-72 opacity-100" : "max-h-0 opacity-0"}`}>
@@ -165,17 +178,24 @@ export default function BaakLayout({ children, title }) {
         </div>
     );
 
-    const SubNavItem = ({ href, icon: Icon, label, active }) => (
+    const SubNavItem = ({ href, icon: Icon, label, active, badgeCount }) => (
         <Link
             href={href}
-            className={`flex items-center space-x-3 px-4 py-2 ml-6 rounded-lg text-sm transition-all duration-200 ${
+            className={`flex items-center justify-between px-4 py-2 ml-6 rounded-lg text-sm transition-all duration-200 ${
                 active
                     ? "bg-blue-600 text-white shadow-sm"
                     : "text-gray-500 hover:bg-blue-50 hover:text-blue-700"
             }`}
         >
-            <Icon className="w-4 h-4" />
-            <span>{label}</span>
+            <div className="flex items-center space-x-3">
+                <Icon className="w-4 h-4" />
+                <span>{label}</span>
+            </div>
+            {badgeCount > 0 && (
+                <span className={`flex h-4 min-w-4 px-1 items-center justify-center rounded-full text-[9px] font-bold ${active ? 'bg-white text-blue-600' : 'bg-red-500 text-white'}`}>
+                    {badgeCount > 99 ? '99+' : badgeCount}
+                </span>
+            )}
         </Link>
     );
 
@@ -338,6 +358,20 @@ export default function BaakLayout({ children, title }) {
                                 label="Laporan Akademik"
                                 active={isActive("baak.laporan.*")}
                             />
+
+                            {/* Layanan */}
+                            <DropdownMenu
+                                icon={Printer}
+                                label="Layanan"
+                                isOpen={layananOpen}
+                                setIsOpen={setLayananOpen}
+                                isActiveParent={isParentActive(["baak.transkrip", "baak.cetak-khs", "baak.cetak-krs"])}
+                                badgeCount={(usePage().props.pengajuanCounts?.cetak_krs || 0) + (usePage().props.pengajuanCounts?.cetak_khs || 0) + (usePage().props.pengajuanCounts?.transkrip || 0)}
+                            >
+                                <SubNavItem href={route("baak.transkrip.index")} icon={FileText} label="Cetak Transkrip" active={isActive("baak.transkrip")} badgeCount={usePage().props.pengajuanCounts?.transkrip || 0} />
+                                <SubNavItem href={route("baak.cetak-khs.index")} icon={FileText} label="Cetak KHS" active={isActive("baak.cetak-khs")} badgeCount={usePage().props.pengajuanCounts?.cetak_khs || 0} />
+                                <SubNavItem href={route("baak.cetak-krs.index")} icon={ClipboardList} label="Cetak KRS" active={isActive("baak.cetak-krs")} badgeCount={usePage().props.pengajuanCounts?.cetak_krs || 0} />
+                            </DropdownMenu>
 
                             <div className="h-4"></div>
                         </div>

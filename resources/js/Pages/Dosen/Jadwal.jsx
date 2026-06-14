@@ -6,6 +6,7 @@ export default function Jadwal() {
     const { props } = usePage();
     const jadwal = props.jadwal ?? [];
     const dosen = props.dosen ?? null;
+    const periode = props.periode ?? null;
 
     const [filterHari, setFilterHari] = useState("Semua");
     const [searchQuery, setSearchQuery] = useState("");
@@ -42,6 +43,9 @@ export default function Jadwal() {
                 <p className="text-gray-600">
                     Lihat jadwal mengajar Anda untuk semester ini.
                 </p>
+                <div className="mt-3 inline-flex items-center rounded-lg border border-blue-200 bg-blue-50 px-4 py-2 text-sm font-medium text-blue-700">
+                    Periode: {periode ? `${periode.tahun_ajaran} - ${periode.jenis_semester}` : 'Belum ada periode registrasi'}
+                </div>
             </div>
 
             {jadwal.length === 0 ? (

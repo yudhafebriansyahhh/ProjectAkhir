@@ -29,9 +29,15 @@ class UpdateKelasRequest extends FormRequest
     {
         $validator->after(function ($validator) {
             $kelasId = $this->route('kela'); // dari route parameter
+            $kelas = Kelas::with('mataKuliahPeriode')->find($kelasId);
+
+            if (! $kelas || ! $kelas->mataKuliahPeriode) {
+                return;
+            }
 
             // Validasi bentrok dosen (kecuali kelas ini sendiri)
             $bentrokDosen = Kelas::where('id_dosen', $this->id_dosen)
+                ->forPeriodeValue($kelas->mataKuliahPeriode->tahun_ajaran, $kelas->mataKuliahPeriode->jenis_semester)
                 ->where('hari', $this->hari)
                 ->where('id_kelas', '!=', $kelasId)
                 ->where(function($q) {
@@ -46,6 +52,7 @@ class UpdateKelasRequest extends FormRequest
 
             // Validasi bentrok ruangan
             $bentrokRuangan = Kelas::where('id_ruangan', $this->id_ruangan)
+                ->forPeriodeValue($kelas->mataKuliahPeriode->tahun_ajaran, $kelas->mataKuliahPeriode->jenis_semester)
                 ->where('hari', $this->hari)
                 ->where('id_kelas', '!=', $kelasId)
                 ->where(function($q) {

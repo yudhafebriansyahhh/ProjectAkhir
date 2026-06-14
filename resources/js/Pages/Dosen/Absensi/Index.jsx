@@ -2,8 +2,8 @@ import { useState, useMemo } from 'react';
 import { Head, Link, router } from '@inertiajs/react';
 import DosenLayout from '@/Layouts/DosenLayout';
 
-export default function AbsensiIndex({ tahunAjaranList, selectedTahunAjaran, mataKuliahList }) {
-    const [tahunAjaran, setTahunAjaran] = useState(selectedTahunAjaran);
+export default function AbsensiIndex({ tahunAjaranList = [], selectedTahunAjaran = '', mataKuliahList = [], periode = null }) {
+    const [tahunAjaran, setTahunAjaran] = useState(selectedTahunAjaran || '');
     const [searchQuery, setSearchQuery] = useState('');
 
     const filteredMataKuliah = useMemo(() => {
@@ -38,6 +38,9 @@ export default function AbsensiIndex({ tahunAjaranList, selectedTahunAjaran, mat
                     <p className="text-gray-600">
                         Kelola dan catat kehadiran mahasiswa di kelas Anda.
                     </p>
+                    <div className="mt-3 inline-flex items-center rounded-lg border border-blue-200 bg-blue-50 px-4 py-2 text-sm font-medium text-blue-700">
+                        Periode: {periode ? `${periode.tahun_ajaran} - ${periode.jenis_semester}` : 'Belum ada periode registrasi'}
+                    </div>
                 </div>
 
                 {/* Filter & Search */}
@@ -51,6 +54,7 @@ export default function AbsensiIndex({ tahunAjaranList, selectedTahunAjaran, mat
                             <select
                                 value={tahunAjaran}
                                 onChange={handleTahunAjaranChange}
+                                disabled={tahunAjaranList.length <= 1}
                                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-700 text-sm"
                             >
                                 {tahunAjaranList.map((ta) => (

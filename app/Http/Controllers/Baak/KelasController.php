@@ -20,55 +20,41 @@ class KelasController extends Controller
 {
     public function index(Request $request)
     {
-        $query = Kelas::with(['mataKuliahPeriode.mataKuliah.prodi', 'dosen.prodi', 'ruangan']);
+        $periodeTerakhir = PeriodeRegistrasi::getPeriodeTerakhir();
 
-        // Filter by Mata Kuliah
-        if ($request->filled('mata_kuliah')) {
-            $query->whereHas('mataKuliahPeriode', function ($q) use ($request) {
-                $q->where('kode_matkul', $request->mata_kuliah);
-            });
-        }
+        $query = Kelas::with(['mataKuliahPeriode.mataKuliah.prodi', 'dosen.prodi', 'ruangan'])
+            ->forPeriode($periodeTerakhir);
 
-        // Filter by Dosen
-        if ($request->filled('dosen')) {
-            $query->where('id_dosen', $request->dosen);
-        }
-
-        // Filter by Hari
-        if ($request->filled('hari')) {
-            $query->where('hari', $request->hari);
-        }
-
-        // Search
-        if ($request->filled('search')) {
-            $search = $request->search;
-            $query->where(function ($q) use ($search) {
-                $q->where('nama_kelas', 'like', "%{$search}%")
-                    ->orWhere('ruang_kelas', 'like', "%{$search}%")
-                    ->orWhereHas('ruangan', function ($q) use ($search) {
-                        $q->where('kode_ruangan', 'like', "%{$search}%")
-                            ->orWhere('nama_ruangan', 'like', "%{$search}%");
-                    })
-                    ->orWhereHas('mataKuliahPeriode.mataKuliah', function ($q) use ($search) {
-                        $q->where('nama_matkul', 'like', "%{$search}%")
-                            ->orWhere('kode_matkul', 'like', "%{$search}%");
-                    })
-                    ->orWhereHas('dosen', function ($q) use ($search) {
-                        $q->where('nama', 'like', "%{$search}%");
-                    });
-            });
-        }
+        $this->applyFilters($query, $request);
 
         $kelas = $query->withCount('detailKrs')->latest()->paginate(10)->withQueryString();
 
-        $mata_kuliah_list = MataKuliah::orderBy('nama_matkul')->get(['kode_matkul', 'nama_matkul']);
-        $dosen_list = Dosen::orderBy('nama')->get(['id_dosen', 'nama']);
+        return Inertia::render('Baak/Kelas/Index', [
+            'kelas' => $kelas,
+            ...$this->getFilterOptions(),
+            'filters' => $request->only(['search', 'mata_kuliah', 'dosen', 'hari']),
+            'periode_terakhir' => $periodeTerakhir,
+            'isArchive' => false,
+        ]);
+    }
+
+    public function arsip(Request $request)
+    {
+        $periodeTerakhir = PeriodeRegistrasi::getPeriodeTerakhir();
+
+        $query = Kelas::with(['mataKuliahPeriode.mataKuliah.prodi', 'dosen.prodi', 'ruangan'])
+            ->archivedFromPeriode($periodeTerakhir);
+
+        $this->applyFilters($query, $request);
+
+        $kelas = $query->withCount('detailKrs')->latest()->paginate(10)->withQueryString();
 
         return Inertia::render('Baak/Kelas/Index', [
             'kelas' => $kelas,
-            'mata_kuliah_list' => $mata_kuliah_list,
-            'dosen_list' => $dosen_list,
+            ...$this->getFilterOptions(),
             'filters' => $request->only(['search', 'mata_kuliah', 'dosen', 'hari']),
+            'periode_terakhir' => $periodeTerakhir,
+            'isArchive' => true,
         ]);
     }
 
@@ -121,7 +107,9 @@ class KelasController extends Controller
             $request->id_dosen,
             $request->hari,
             $request->jam_mulai,
-            $request->jam_selesai
+            $request->jam_selesai,
+            $mkPeriode->tahun_ajaran,
+            $mkPeriode->jenis_semester
         );
 
         if ($bentrokDosen) {
@@ -139,7 +127,9 @@ class KelasController extends Controller
             $request->id_ruangan,
             $request->hari,
             $request->jam_mulai,
-            $request->jam_selesai
+            $request->jam_selesai,
+            $mkPeriode->tahun_ajaran,
+            $mkPeriode->jenis_semester
         );
 
         if ($bentrokRuangan) {
@@ -170,13 +160,21 @@ class KelasController extends Controller
 
     public function show($id)
     {
+        $periodeTerakhir = PeriodeRegistrasi::getPeriodeTerakhir();
+
         $kelas = Kelas::with([
             'mataKuliahPeriode.mataKuliah.prodi',
+            'mataKuliahPeriode.prodi',
             'dosen.prodi',
             'ruangan',
             'detailKrs.krs.mahasiswa.prodi',
             'bobotNilai'
         ])->findOrFail($id);
+
+        $isArchived = ! $periodeTerakhir
+            || ! $kelas->mataKuliahPeriode
+            || $kelas->mataKuliahPeriode->tahun_ajaran !== $periodeTerakhir->tahun_ajaran
+            || $kelas->mataKuliahPeriode->jenis_semester !== $periodeTerakhir->jenis_semester;
 
         // Get mahasiswa yang mengambil kelas ini
         $mahasiswa = $kelas->detailKrs()
@@ -192,6 +190,7 @@ class KelasController extends Controller
         return Inertia::render('Baak/Kelas/Show', [
             'kelas' => $kelas,
             'mahasiswa' => $mahasiswa,
+            'isArchived' => $isArchived,
         ]);
     }
 
@@ -218,7 +217,8 @@ class KelasController extends Controller
 
     public function update(UpdateKelasRequest $request, $id)
     {
-        $kelas = Kelas::findOrFail($id);
+        $kelas = Kelas::with('mataKuliahPeriode')->findOrFail($id);
+        $mkPeriode = $kelas->mataKuliahPeriode;
 
         // Check bentrok jadwal dosen (exclude kelas ini)
         $bentrokDosen = $this->checkBentrokDosen(
@@ -226,12 +226,16 @@ class KelasController extends Controller
             $request->hari,
             $request->jam_mulai,
             $request->jam_selesai,
+            $mkPeriode?->tahun_ajaran,
+            $mkPeriode?->jenis_semester,
             $id
         );
 
         if ($bentrokDosen) {
             return back()->withErrors([
-                'id_dosen' => 'Dosen sudah mengajar di waktu yang sama: ' . $bentrokDosen->mataKuliah->nama_matkul . ' - Kelas ' . $bentrokDosen->nama_kelas
+                'id_dosen' => 'Dosen sudah mengajar di waktu yang sama: ' .
+                    ($bentrokDosen->mataKuliahPeriode->mataKuliah->nama_matkul ?? '-') .
+                    ' - Kelas ' . $bentrokDosen->nama_kelas
             ])->withInput();
         }
 
@@ -243,6 +247,8 @@ class KelasController extends Controller
             $request->hari,
             $request->jam_mulai,
             $request->jam_selesai,
+            $mkPeriode?->tahun_ajaran,
+            $mkPeriode?->jenis_semester,
             $id
         );
 
@@ -279,9 +285,10 @@ class KelasController extends Controller
     }
 
     // Helper Methods
-    private function checkBentrokDosen($id_dosen, $hari, $jam_mulai, $jam_selesai, $exclude_id = null)
+    private function checkBentrokDosen($id_dosen, $hari, $jam_mulai, $jam_selesai, $tahunAjaran, $jenisSemester, $exclude_id = null)
     {
         $query = Kelas::with('mataKuliahPeriode.mataKuliah')
+            ->forPeriodeValue($tahunAjaran, $jenisSemester)
             ->where('id_dosen', $id_dosen)
             ->where('hari', $hari)
             ->where(function ($q) use ($jam_mulai, $jam_selesai) {
@@ -296,9 +303,10 @@ class KelasController extends Controller
         return $query->first();
     }
 
-    private function checkBentrokRuangan($id_ruangan, $hari, $jam_mulai, $jam_selesai, $exclude_id = null)
+    private function checkBentrokRuangan($id_ruangan, $hari, $jam_mulai, $jam_selesai, $tahunAjaran, $jenisSemester, $exclude_id = null)
     {
         $query = Kelas::with('mataKuliahPeriode.mataKuliah')
+            ->forPeriodeValue($tahunAjaran, $jenisSemester)
             ->where('id_ruangan', $id_ruangan)
             ->where('hari', $hari)
             ->where(function ($q) use ($jam_mulai, $jam_selesai) {
@@ -311,5 +319,49 @@ class KelasController extends Controller
         }
 
         return $query->first();
+    }
+
+    private function applyFilters($query, Request $request): void
+    {
+        if ($request->filled('mata_kuliah')) {
+            $query->whereHas('mataKuliahPeriode', function ($q) use ($request) {
+                $q->where('kode_matkul', $request->mata_kuliah);
+            });
+        }
+
+        if ($request->filled('dosen')) {
+            $query->where('id_dosen', $request->dosen);
+        }
+
+        if ($request->filled('hari')) {
+            $query->where('hari', $request->hari);
+        }
+
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->where(function ($q) use ($search) {
+                $q->where('nama_kelas', 'like', "%{$search}%")
+                    ->orWhere('ruang_kelas', 'like', "%{$search}%")
+                    ->orWhereHas('ruangan', function ($q) use ($search) {
+                        $q->where('kode_ruangan', 'like', "%{$search}%")
+                            ->orWhere('nama_ruangan', 'like', "%{$search}%");
+                    })
+                    ->orWhereHas('mataKuliahPeriode.mataKuliah', function ($q) use ($search) {
+                        $q->where('nama_matkul', 'like', "%{$search}%")
+                            ->orWhere('kode_matkul', 'like', "%{$search}%");
+                    })
+                    ->orWhereHas('dosen', function ($q) use ($search) {
+                        $q->where('nama', 'like', "%{$search}%");
+                    });
+            });
+        }
+    }
+
+    private function getFilterOptions(): array
+    {
+        return [
+            'mata_kuliah_list' => MataKuliah::orderBy('nama_matkul')->get(['kode_matkul', 'nama_matkul']),
+            'dosen_list' => Dosen::orderBy('nama')->get(['id_dosen', 'nama']),
+        ];
     }
 }

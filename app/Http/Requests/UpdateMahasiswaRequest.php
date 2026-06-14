@@ -29,6 +29,7 @@ class UpdateMahasiswaRequest extends FormRequest
             'no_telp_ibu' => ['nullable', 'string', 'max:15'],
             'status' => ['required', Rule::in(['aktif', 'lulus', 'keluar', 'DO'])],
             'foto' => ['nullable', 'image', 'mimes:jpeg,png,jpg', 'max:2048'],
+            'hapus_foto' => ['nullable', 'boolean'],
         ];
     }
 

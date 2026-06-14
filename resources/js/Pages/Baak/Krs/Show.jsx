@@ -10,6 +10,7 @@ import { SelectDropdown } from '@/Components/ui/select-dropdown';
 
 const getStatusBadge = (status) => {
     const badges = {
+        draft: 'border-slate-200 bg-slate-50 text-slate-700',
         pending: 'border-amber-200 bg-amber-50 text-amber-700',
         approved: 'border-emerald-200 bg-emerald-50 text-emerald-700',
         rejected: 'border-red-200 bg-red-50 text-red-700',
@@ -19,6 +20,7 @@ const getStatusBadge = (status) => {
 
 const getStatusLabel = (status) => {
     const labels = {
+        draft: 'Draft',
         pending: 'Menunggu',
         approved: 'Disetujui',
         rejected: 'Ditolak',

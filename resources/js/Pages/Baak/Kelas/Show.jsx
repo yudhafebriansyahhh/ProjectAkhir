@@ -18,7 +18,7 @@ const InfoItem = ({ label, value, children }) => (
     </div>
 );
 
-export default function Show({ kelas, mahasiswa = [] }) {
+export default function Show({ kelas, mahasiswa = [], isArchived = false }) {
     const progress = kelas.kapasitas ? Math.min(100, Math.round((mahasiswa.length / kelas.kapasitas) * 100)) : 0;
     const isFull = mahasiswa.length >= (kelas.kapasitas || 0);
 
@@ -79,9 +79,9 @@ export default function Show({ kelas, mahasiswa = [] }) {
             <div className="min-h-screen bg-slate-50 px-3 py-4 sm:px-4 sm:py-5 md:px-6 lg:px-8">
                 <div className="mx-auto w-full max-w-[1440px] space-y-4 md:space-y-5">
                     <div>
-                        <Link href={route('baak.kelas.index')} className="mb-3 inline-flex items-center gap-2 text-sm font-semibold text-blue-600 hover:text-blue-700">
+                        <Link href={isArchived ? route('baak.kelas.arsip') : route('baak.kelas.index')} className="mb-3 inline-flex items-center gap-2 text-sm font-semibold text-blue-600 hover:text-blue-700">
                             <ArrowLeft className="h-4 w-4" />
-                            Kembali ke Daftar
+                            {isArchived ? 'Kembali ke Arsip' : 'Kembali ke Daftar'}
                         </Link>
                         <PageHeader
                             title={`${course(kelas)?.nama_matkul || '-'} - Kelas ${kelas.nama_kelas}`}
@@ -109,18 +109,20 @@ export default function Show({ kelas, mahasiswa = [] }) {
                                     <h2 className="break-words text-lg font-bold text-slate-950">Informasi Kelas</h2>
                                     <p className="mt-1 text-sm text-slate-500">Detail kelas, dosen pengampu, jadwal, dan kapasitas.</p>
                                 </div>
-                                <div className="grid gap-2 sm:grid-cols-2">
-                                    <Link href={route('baak.kelas.edit', kelas.id_kelas)}>
-                                        <Button variant="outline" className="w-full gap-2 text-amber-600">
-                                            <Pencil className="h-4 w-4" />
-                                            Edit
+                                {!isArchived && (
+                                    <div className="grid gap-2 sm:grid-cols-2">
+                                        <Link href={route('baak.kelas.edit', kelas.id_kelas)}>
+                                            <Button variant="outline" className="w-full gap-2 text-amber-600">
+                                                <Pencil className="h-4 w-4" />
+                                                Edit
+                                            </Button>
+                                        </Link>
+                                        <Button type="button" variant="outline" className="w-full gap-2 text-red-600" onClick={handleDelete}>
+                                            <Trash2 className="h-4 w-4" />
+                                            Hapus
                                         </Button>
-                                    </Link>
-                                    <Button type="button" variant="outline" className="w-full gap-2 text-red-600" onClick={handleDelete}>
-                                        <Trash2 className="h-4 w-4" />
-                                        Hapus
-                                    </Button>
-                                </div>
+                                    </div>
+                                )}
                             </div>
 
                             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">

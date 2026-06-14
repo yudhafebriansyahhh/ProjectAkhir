@@ -8,6 +8,7 @@ use App\Models\NilaiMahasiswa;
 use App\Models\BobotNilai;
 use App\Models\Prodi;
 use App\Models\MataKuliah;
+use App\Models\PeriodeRegistrasi;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 
@@ -20,17 +21,12 @@ class NilaiController extends Controller
     {
         $dosen = auth()->user()->dosen;
         
-        $periodeAktif = \App\Models\PeriodeRegistrasi::getPeriodeAktif();
-        $idPeriodeAktif = $periodeAktif ? $periodeAktif->id_periode : null;
+        $periodeAktif = PeriodeRegistrasi::getPeriodeTerakhir();
 
         // Ambil kelas yang diampu dosen ini untuk ditampilkan
-        $kelasList = Kelas::with(['mataKuliahPeriode.mataKuliah', 'mataKuliahPeriode.periode'])
+        $kelasList = Kelas::with(['mataKuliahPeriode.mataKuliah'])
             ->where('id_dosen', $dosen->id_dosen)
-            ->when($idPeriodeAktif, function ($query) use ($idPeriodeAktif) {
-                $query->whereHas('mataKuliahPeriode', function ($q) use ($idPeriodeAktif) {
-                    $q->where('id_periode', $idPeriodeAktif);
-                });
-            })
+            ->forPeriode($periodeAktif)
             ->get()
             ->map(function ($kelas) {
                 // Return data yang diperlukan untuk UI
@@ -43,8 +39,8 @@ class NilaiController extends Controller
                         'sks' => $kelas->mataKuliahPeriode->mataKuliah->sks ?? 0,
                     ],
                     'periode' => [
-                        'tahun_ajaran' => $kelas->mataKuliahPeriode->periode->tahun_ajaran ?? '-',
-                        'jenis_semester' => $kelas->mataKuliahPeriode->periode->jenis_semester ?? '-',
+                        'tahun_ajaran' => $kelas->mataKuliahPeriode->tahun_ajaran ?? '-',
+                        'jenis_semester' => $kelas->mataKuliahPeriode->jenis_semester ?? '-',
                     ],
                     'hari' => $kelas->hari,
                     'jam_mulai' => $kelas->jam_mulai ? \Carbon\Carbon::parse($kelas->jam_mulai)->format('H:i') : null,
@@ -68,12 +64,12 @@ class NilaiController extends Controller
         // Validasi dan ambil data kelas
         $kelas = Kelas::with([
             'mataKuliahPeriode.mataKuliah',
-            'mataKuliahPeriode.periode',
             'detailKrs.krs.mahasiswa',
             'nilais'
         ])
         ->where('id_kelas', $idKelas)
         ->where('id_dosen', $dosen->id_dosen)
+        ->forPeriode(PeriodeRegistrasi::getPeriodeTerakhir())
         ->firstOrFail();
 
         $mahasiswaList = [];
@@ -107,8 +103,8 @@ class NilaiController extends Controller
                     'sks' => $kelas->mataKuliahPeriode->mataKuliah->sks ?? 0,
                 ],
                 'periode' => [
-                    'tahun_ajaran' => $kelas->mataKuliahPeriode->periode->tahun_ajaran ?? '-',
-                    'jenis_semester' => $kelas->mataKuliahPeriode->periode->jenis_semester ?? '-',
+                    'tahun_ajaran' => $kelas->mataKuliahPeriode->tahun_ajaran ?? '-',
+                    'jenis_semester' => $kelas->mataKuliahPeriode->jenis_semester ?? '-',
                 ],
             ],
             'mahasiswaList' => $mahasiswaList,
@@ -120,6 +116,7 @@ class NilaiController extends Controller
      */
     public function create(Request $request)
     {
+        $dosen = auth()->user()->dosen;
         $idMahasiswa = $request->id_mahasiswa;
         $idKelas = $request->id_kelas;
 
@@ -127,6 +124,10 @@ class NilaiController extends Controller
             'mataKuliahPeriode.mataKuliah',
             'bobotNilai'
         ])->findOrFail($idKelas);
+
+        if (! $this->kelasAktifDosen($kelas, $dosen)) {
+            abort(403, 'Unauthorized');
+        }
 
         $mahasiswa = \App\Models\Mahasiswa::findOrFail($idMahasiswa);
 
@@ -176,6 +177,8 @@ class NilaiController extends Controller
      */
     public function store(Request $request)
     {
+        $dosen = auth()->user()->dosen;
+
         $validated = $request->validate([
             'id_mahasiswa' => 'required|exists:mahasiswa,id_mahasiswa',
             'id_kelas' => 'required|exists:kelas,id_kelas',
@@ -183,6 +186,11 @@ class NilaiController extends Controller
             'nilai_uts' => 'required|numeric|min:0|max:100',
             'nilai_uas' => 'required|numeric|min:0|max:100',
         ]);
+
+        $kelas = Kelas::with('mataKuliahPeriode')->findOrFail($validated['id_kelas']);
+        if (! $this->kelasAktifDosen($kelas, $dosen)) {
+            abort(403, 'Unauthorized');
+        }
 
         // Cek duplikasi
         $exists = NilaiMahasiswa::where('id_mahasiswa', $validated['id_mahasiswa'])
@@ -213,11 +221,17 @@ class NilaiController extends Controller
      */
     public function edit($idNilai)
     {
+        $dosen = auth()->user()->dosen;
+
         $nilai = NilaiMahasiswa::with([
             'mahasiswa',
             'kelas.mataKuliahPeriode.mataKuliah',
             'kelas.bobotNilai'
         ])->findOrFail($idNilai);
+
+        if (! $this->kelasAktifDosen($nilai->kelas, $dosen)) {
+            abort(403, 'Unauthorized');
+        }
 
         // Cek apakah nilai sudah dikunci
         if ($nilai->is_locked) {
@@ -266,7 +280,12 @@ class NilaiController extends Controller
      */
     public function update(Request $request, $idNilai)
     {
-        $nilai = NilaiMahasiswa::findOrFail($idNilai);
+        $dosen = auth()->user()->dosen;
+        $nilai = NilaiMahasiswa::with('kelas.mataKuliahPeriode')->findOrFail($idNilai);
+
+        if (! $this->kelasAktifDosen($nilai->kelas, $dosen)) {
+            abort(403, 'Unauthorized');
+        }
 
         // Cek apakah nilai sudah dikunci
         if ($nilai->is_locked) {
@@ -298,6 +317,7 @@ class NilaiController extends Controller
                 $q->where('mata_kuliah.kode_matkul', $kodeMk);
             })
             ->where('id_dosen', $dosen->id_dosen)
+            ->forPeriode(PeriodeRegistrasi::getPeriodeTerakhir())
             ->get()
             ->map(function ($kelas) {
                 return [
@@ -307,5 +327,17 @@ class NilaiController extends Controller
             });
 
         return response()->json($kelasList);
+    }
+
+    private function kelasAktifDosen(Kelas $kelas, $dosen): bool
+    {
+        $periode = PeriodeRegistrasi::getPeriodeTerakhir();
+
+        return $dosen
+            && (int) $kelas->id_dosen === (int) $dosen->id_dosen
+            && $kelas->mataKuliahPeriode
+            && $periode
+            && $kelas->mataKuliahPeriode->tahun_ajaran === $periode->tahun_ajaran
+            && $kelas->mataKuliahPeriode->jenis_semester === $periode->jenis_semester;
     }
 }

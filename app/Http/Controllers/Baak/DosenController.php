@@ -141,6 +141,13 @@ class DosenController extends Controller
                 Storage::disk('public')->delete($dosen->foto);
             }
             $data['foto'] = $request->file('foto')->store('dosen', 'public');
+        } elseif ($request->boolean('hapus_foto')) {
+            if ($dosen->foto) {
+                Storage::disk('public')->delete($dosen->foto);
+            }
+            $data['foto'] = null;
+        } else {
+            unset($data['foto']);
         }
 
         // Update dosen

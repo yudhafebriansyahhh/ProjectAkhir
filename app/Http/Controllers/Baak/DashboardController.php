@@ -36,10 +36,10 @@ class DashboardController extends Controller
 
         $totalMataKuliah = MataKuliah::where('is_active', 1)->count();
 
-        $periodeAktif = PeriodeRegistrasi::where('status', 'aktif')->first();
+        $periodeAktif = PeriodeRegistrasi::getPeriodeTerakhir();
 
-        // Total Kelas - SEMUA KELAS (tidak filter periode)
-        $totalKelas = Kelas::count();
+        // Total kelas pada periode terakhir. Kelas periode lama tetap tersimpan sebagai history.
+        $totalKelas = Kelas::forPeriode($periodeAktif)->count();
 
         // ==========================================
         // CHART DATA

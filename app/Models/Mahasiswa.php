@@ -48,6 +48,16 @@ class Mahasiswa extends Model
         return $this->hasMany(Krs::class, 'id_mahasiswa', 'id_mahasiswa');
     }
 
+    public function nilais()
+    {
+        return $this->hasMany(NilaiMahasiswa::class, 'id_mahasiswa', 'id_mahasiswa');
+    }
+
+    public function pengajuanLayanan()
+    {
+        return $this->hasMany(PengajuanLayanan::class, 'id_mahasiswa', 'id_mahasiswa');
+    }
+
     // Get semester ke berapa (termasuk cuti)
     public function getSemesterKeAttribute()
     {

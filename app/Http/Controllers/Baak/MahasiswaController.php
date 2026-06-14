@@ -381,6 +381,13 @@ class MahasiswaController extends Controller
                 Storage::disk('public')->delete($mahasiswa->foto);
             }
             $data['foto'] = $request->file('foto')->store('mahasiswa', 'public');
+        } elseif ($request->boolean('hapus_foto')) {
+            if ($mahasiswa->foto) {
+                Storage::disk('public')->delete($mahasiswa->foto);
+            }
+            $data['foto'] = null;
+        } else {
+            unset($data['foto']);
         }
 
         $mahasiswa->update($data);

@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { Head, Link, router, usePage } from '@inertiajs/react';
-import { BookOpen, CalendarDays, Clock, Eye, Pencil, RefreshCcw, Trash2, Users } from 'lucide-react';
+import { Archive, ArrowLeft, BookOpen, CalendarDays, Clock, Eye, Pencil, RefreshCcw, Trash2, Users } from 'lucide-react';
 import BaakLayout from '@/Layouts/BaakLayout';
 import { Badge } from '@/Components/ui/badge';
 import { Button } from '@/Components/ui/button';
@@ -15,7 +15,7 @@ const roomLabel = (item) => item.ruangan?.kode_ruangan || item.ruang_kelas || '-
 const course = (item) => item.mata_kuliah_periode?.mata_kuliah;
 const period = (item) => item.mata_kuliah_periode;
 
-export default function Index({ kelas, mata_kuliah_list = [], dosen_list = [], filters = {} }) {
+export default function Index({ kelas, mata_kuliah_list = [], dosen_list = [], filters = {}, isArchive = false }) {
     const { flash = {} } = usePage().props;
     const [search, setSearch] = useState(filters.search || '');
     const [mataKuliah, setMataKuliah] = useState(filters.mata_kuliah || '');
@@ -27,6 +27,11 @@ export default function Index({ kelas, mata_kuliah_list = [], dosen_list = [], f
     const hasFilters = Boolean(search || mataKuliah || dosen || hari);
     const mataKuliahOptions = mata_kuliah_list.map((mk) => ({ value: mk.kode_matkul, label: mk.nama_matkul }));
     const dosenOptions = dosen_list.map((item) => ({ value: item.id_dosen, label: item.nama }));
+    const listRoute = isArchive ? 'baak.kelas.arsip' : 'baak.kelas.index';
+    const title = isArchive ? 'Arsip Kelas' : 'Data Kelas';
+    const description = isArchive
+        ? 'Lihat kelas dari periode sebelumnya sebagai record history akademik.'
+        : 'Kelola kelas perkuliahan aktif pada periode terbaru.';
 
     useEffect(() => {
         if (isFirstRender.current) {
@@ -36,7 +41,7 @@ export default function Index({ kelas, mata_kuliah_list = [], dosen_list = [], f
 
         const timeout = setTimeout(() => {
             router.get(
-                route('baak.kelas.index'),
+                route(listRoute),
                 { search, mata_kuliah: mataKuliah, dosen, hari },
                 { preserveState: true, preserveScroll: true, replace: true },
             );
@@ -50,7 +55,7 @@ export default function Index({ kelas, mata_kuliah_list = [], dosen_list = [], f
         setMataKuliah('');
         setDosen('');
         setHari('');
-        router.get(route('baak.kelas.index'), {}, { preserveState: true, preserveScroll: true, replace: true });
+        router.get(route(listRoute), {}, { preserveState: true, preserveScroll: true, replace: true });
     };
 
     const handleDelete = (item) => {
@@ -79,23 +84,27 @@ export default function Index({ kelas, mata_kuliah_list = [], dosen_list = [], f
     const renderActions = (item, compact = false) => {
         if (compact) {
             return (
-                <div className="grid grid-cols-3 gap-2 border-t border-slate-100 pt-3">
+                <div className={`grid gap-2 border-t border-slate-100 pt-3 ${isArchive ? 'grid-cols-1' : 'grid-cols-3'}`}>
                     <Link href={route('baak.kelas.show', item.id_kelas)}>
                         <Button variant="outline" size="sm" className="w-full gap-1.5 text-blue-600">
                             <Eye className="h-3.5 w-3.5" />
                             Detail
                         </Button>
                     </Link>
-                    <Link href={route('baak.kelas.edit', item.id_kelas)}>
-                        <Button variant="outline" size="sm" className="w-full gap-1.5 text-amber-600">
-                            <Pencil className="h-3.5 w-3.5" />
-                            Edit
-                        </Button>
-                    </Link>
-                    <Button type="button" variant="outline" size="sm" className="w-full gap-1.5 text-red-600" onClick={() => handleDelete(item)}>
-                        <Trash2 className="h-3.5 w-3.5" />
-                        Hapus
-                    </Button>
+                    {!isArchive && (
+                        <>
+                            <Link href={route('baak.kelas.edit', item.id_kelas)}>
+                                <Button variant="outline" size="sm" className="w-full gap-1.5 text-amber-600">
+                                    <Pencil className="h-3.5 w-3.5" />
+                                    Edit
+                                </Button>
+                            </Link>
+                            <Button type="button" variant="outline" size="sm" className="w-full gap-1.5 text-red-600" onClick={() => handleDelete(item)}>
+                                <Trash2 className="h-3.5 w-3.5" />
+                                Hapus
+                            </Button>
+                        </>
+                    )}
                 </div>
             );
         }
@@ -107,14 +116,18 @@ export default function Index({ kelas, mata_kuliah_list = [], dosen_list = [], f
                         <Eye className="h-4 w-4" />
                     </Button>
                 </Link>
-                <Link href={route('baak.kelas.edit', item.id_kelas)}>
-                    <Button variant="ghost" size="icon" className="h-8 w-8 text-amber-600" title="Edit">
-                        <Pencil className="h-4 w-4" />
-                    </Button>
-                </Link>
-                <Button type="button" variant="ghost" size="icon" className="h-8 w-8 text-red-600" title="Hapus" onClick={() => handleDelete(item)}>
-                    <Trash2 className="h-4 w-4" />
-                </Button>
+                {!isArchive && (
+                    <>
+                        <Link href={route('baak.kelas.edit', item.id_kelas)}>
+                            <Button variant="ghost" size="icon" className="h-8 w-8 text-amber-600" title="Edit">
+                                <Pencil className="h-4 w-4" />
+                            </Button>
+                        </Link>
+                        <Button type="button" variant="ghost" size="icon" className="h-8 w-8 text-red-600" title="Hapus" onClick={() => handleDelete(item)}>
+                            <Trash2 className="h-4 w-4" />
+                        </Button>
+                    </>
+                )}
             </div>
         );
     };
@@ -169,20 +182,30 @@ export default function Index({ kelas, mata_kuliah_list = [], dosen_list = [], f
     );
 
     return (
-        <BaakLayout title="Data Kelas">
-            <Head title="Data Kelas" />
+        <BaakLayout title={title}>
+            <Head title={title} />
 
             <div className="min-h-screen bg-slate-50 px-3 py-4 sm:px-4 sm:py-5 md:px-6 lg:px-8">
                 <div className="mx-auto w-full max-w-[1440px] space-y-4 md:space-y-5">
                     <PageHeader
-                        title="Data Kelas"
-                        description="Kelola kelas perkuliahan, jadwal, dosen, ruangan, dan kapasitas mahasiswa."
-                        actionHref={route('baak.kelas.create')}
-                        actionLabel="Tambah Kelas"
-                    />
+                        title={title}
+                        description={description}
+                        actionHref={isArchive ? route('baak.kelas.index') : route('baak.kelas.create')}
+                        actionLabel={isArchive ? 'Kelas Aktif' : 'Tambah Kelas'}
+                        actionIcon={isArchive ? ArrowLeft : undefined}
+                    >
+                        {!isArchive && (
+                            <Link href={route('baak.kelas.arsip')} className="w-full sm:w-auto">
+                                <Button variant="outline" className="h-10 w-full gap-2 sm:w-auto">
+                                    <Archive className="h-4 w-4" />
+                                    Arsip Kelas
+                                </Button>
+                            </Link>
+                        )}
+                    </PageHeader>
 
                     <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-                        <SummaryCard title="Total Kelas" value={kelas.total || 0} icon={BookOpen} tone="blue" />
+                        <SummaryCard title={isArchive ? 'Total Arsip' : 'Total Kelas'} value={kelas.total || 0} icon={BookOpen} tone="blue" />
                         <SummaryCard title="Data Halaman Ini" value={kelasData.length} icon={CalendarDays} tone="violet" />
                         <SummaryCard title="Mahasiswa Terdaftar" value={kelasData.reduce((sum, item) => sum + (item.detail_krs_count || 0), 0)} icon={Users} tone="emerald" />
                         <SummaryCard title="Hari Aktif" value={new Set(kelasData.map((item) => item.hari).filter(Boolean)).size} icon={Clock} tone="amber" />

@@ -11,6 +11,7 @@ use App\Models\Pertemuan;
 use App\Models\Absensi;
 use App\Models\DetailKrs;
 use App\Models\Mahasiswa;
+use App\Models\PeriodeRegistrasi;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
@@ -21,24 +22,27 @@ class AbsensiController extends Controller
     public function index()
     {
         $dosen = auth()->user()->dosen;
+        $periodeTerakhir = PeriodeRegistrasi::getPeriodeTerakhir();
 
-        // Get tahun ajaran yang tersedia
-        $tahunAjaranList = MataKuliahPeriode::query()
-            ->join('kelas', 'mata_kuliah_periode.id_mk_periode', '=', 'kelas.id_mk_periode')
-            ->where('kelas.id_dosen', $dosen->id_dosen)
-            ->distinct()
-            ->orderBy('mata_kuliah_periode.tahun_ajaran', 'desc')
-            ->pluck('mata_kuliah_periode.tahun_ajaran');
+        if (! $periodeTerakhir) {
+            return Inertia::render('Dosen/Absensi/Index', [
+                'tahunAjaranList' => [],
+                'selectedTahunAjaran' => null,
+                'mataKuliahList' => [],
+                'periode' => null,
+            ]);
+        }
 
-        // Default: ambil tahun ajaran terbaru
-        $selectedTahunAjaran = request('tahun_ajaran', $tahunAjaranList->first());
+        $tahunAjaranList = collect([$periodeTerakhir->tahun_ajaran]);
+        $selectedTahunAjaran = $periodeTerakhir->tahun_ajaran;
 
-        // Get mata kuliah berdasarkan tahun ajaran
+        // Get mata kuliah berdasarkan periode terbaru
         $mataKuliahList = MataKuliahPeriode::query()
             ->join('kelas', 'mata_kuliah_periode.id_mk_periode', '=', 'kelas.id_mk_periode')
             ->join('mata_kuliah', 'mata_kuliah_periode.kode_matkul', '=', 'mata_kuliah.kode_matkul')
             ->where('kelas.id_dosen', $dosen->id_dosen)
-            ->where('mata_kuliah_periode.tahun_ajaran', $selectedTahunAjaran)
+            ->where('mata_kuliah_periode.tahun_ajaran', $periodeTerakhir->tahun_ajaran)
+            ->where('mata_kuliah_periode.jenis_semester', $periodeTerakhir->jenis_semester)
             ->select(
                 'mata_kuliah_periode.id_mk_periode',
                 'mata_kuliah.kode_matkul',
@@ -63,6 +67,7 @@ class AbsensiController extends Controller
             'tahunAjaranList' => $tahunAjaranList,
             'selectedTahunAjaran' => $selectedTahunAjaran,
             'mataKuliahList' => $mataKuliahList,
+            'periode' => $this->formatPeriode($periodeTerakhir),
         ]);
     }
 
@@ -70,13 +75,19 @@ class AbsensiController extends Controller
     public function showMataKuliah($idMkPeriode)
     {
         $dosen = auth()->user()->dosen;
+        $periodeTerakhir = PeriodeRegistrasi::getPeriodeTerakhir();
 
         // Load mata kuliah periode dengan relasi mata kuliah
         $mataKuliahPeriode = MataKuliahPeriode::with('mataKuliah')
             ->findOrFail($idMkPeriode);
 
+        if (! $this->mataKuliahPeriodeAktif($mataKuliahPeriode, $periodeTerakhir)) {
+            abort(404);
+        }
+
         $kelasList = Kelas::where('id_mk_periode', $idMkPeriode)
             ->where('id_dosen', $dosen->id_dosen)
+            ->forPeriode($periodeTerakhir)
             ->get()
             ->map(function ($kelas) {
                 // Hitung jumlah mahasiswa
@@ -113,12 +124,12 @@ class AbsensiController extends Controller
     public function showKelas($idKelas)
     {
         $dosen = auth()->user()->dosen;
+        $periodeTerakhir = PeriodeRegistrasi::getPeriodeTerakhir();
 
         $kelas = Kelas::with(['mataKuliahPeriode.mataKuliah', 'dosen'])
             ->findOrFail($idKelas);
 
-        // Authorization check
-        if ($kelas->id_dosen !== $dosen->id_dosen) {
+        if (! $this->kelasAktifDosen($kelas, $dosen, $periodeTerakhir)) {
             abort(403, 'Unauthorized');
         }
 
@@ -181,9 +192,11 @@ class AbsensiController extends Controller
     public function getKelasByMataKuliah($idMkPeriode)
     {
         $dosen = auth()->user()->dosen;
+        $periodeTerakhir = PeriodeRegistrasi::getPeriodeTerakhir();
 
         $kelasList = Kelas::where('id_mk_periode', $idMkPeriode)
             ->where('id_dosen', $dosen->id_dosen)
+            ->forPeriode($periodeTerakhir)
             ->select('id_kelas', 'nama_kelas', 'hari', 'jam_mulai', 'jam_selesai', 'ruang_kelas')
             ->get();
 
@@ -193,6 +206,16 @@ class AbsensiController extends Controller
     // GET KELAS DATA (Mahasiswa + Pertemuan count)
     public function getKelasData($idKelas)
     {
+        $dosen = auth()->user()->dosen;
+        $periodeTerakhir = PeriodeRegistrasi::getPeriodeTerakhir();
+
+        $kelas = Kelas::with(['mataKuliahPeriode.mataKuliah'])
+            ->findOrFail($idKelas);
+
+        if (! $this->kelasAktifDosen($kelas, $dosen, $periodeTerakhir)) {
+            abort(403, 'Unauthorized');
+        }
+
         // Get mahasiswa yang terdaftar di kelas
         $mahasiswa = DetailKrs::query()
             ->join('krs', 'detail_krs.id_krs', '=', 'krs.id_krs')
@@ -210,10 +233,6 @@ class AbsensiController extends Controller
         // Get jumlah pertemuan yang sudah ada
         $totalPertemuan = Pertemuan::where('id_kelas', $idKelas)->count();
 
-        // Get kelas info
-        $kelas = Kelas::with(['mataKuliahPeriode.mataKuliah'])
-            ->findOrFail($idKelas);
-
         return response()->json([
             'mahasiswa' => $mahasiswa,
             'totalPertemuan' => $totalPertemuan,
@@ -225,12 +244,12 @@ class AbsensiController extends Controller
     public function create($idKelas)
     {
         $dosen = auth()->user()->dosen;
+        $periodeTerakhir = PeriodeRegistrasi::getPeriodeTerakhir();
 
         $kelas = Kelas::with(['mataKuliahPeriode.mataKuliah', 'dosen'])
             ->findOrFail($idKelas);
 
-        // Authorization check
-        if ($kelas->id_dosen !== $dosen->id_dosen) {
+        if (! $this->kelasAktifDosen($kelas, $dosen, $periodeTerakhir)) {
             abort(403, 'Unauthorized');
         }
 
@@ -282,6 +301,14 @@ class AbsensiController extends Controller
     // STORE - Simpan Absensi
     public function store(StoreAbsensiRequest $request)
     {
+        $dosen = auth()->user()->dosen;
+        $periodeTerakhir = PeriodeRegistrasi::getPeriodeTerakhir();
+        $kelas = Kelas::with('mataKuliahPeriode')->findOrFail($request->id_kelas);
+
+        if (! $this->kelasAktifDosen($kelas, $dosen, $periodeTerakhir)) {
+            abort(403, 'Unauthorized');
+        }
+
         DB::transaction(function () use ($request) {
             // Create pertemuan
             $pertemuan = Pertemuan::create([
@@ -312,14 +339,14 @@ class AbsensiController extends Controller
     public function edit($idPertemuan)
     {
         $dosen = auth()->user()->dosen;
+        $periodeTerakhir = PeriodeRegistrasi::getPeriodeTerakhir();
 
         $pertemuan = Pertemuan::with([
             'kelas.mataKuliahPeriode.mataKuliah',
             'absensis.mahasiswa'
         ])->findOrFail($idPertemuan);
 
-        // Authorization check
-        if ($pertemuan->kelas->id_dosen !== $dosen->id_dosen) {
+        if (! $this->kelasAktifDosen($pertemuan->kelas, $dosen, $periodeTerakhir)) {
             abort(403, 'Unauthorized');
         }
 
@@ -332,11 +359,11 @@ class AbsensiController extends Controller
     public function update(UpdateAbsensiRequest $request, $idPertemuan)
     {
         $dosen = auth()->user()->dosen;
+        $periodeTerakhir = PeriodeRegistrasi::getPeriodeTerakhir();
 
-        $pertemuan = Pertemuan::findOrFail($idPertemuan);
+        $pertemuan = Pertemuan::with('kelas.mataKuliahPeriode')->findOrFail($idPertemuan);
 
-        // Authorization check
-        if ($pertemuan->kelas->id_dosen !== $dosen->id_dosen) {
+        if (! $this->kelasAktifDosen($pertemuan->kelas, $dosen, $periodeTerakhir)) {
             abort(403, 'Unauthorized');
         }
 
@@ -363,11 +390,11 @@ class AbsensiController extends Controller
     public function destroy($idPertemuan)
     {
         $dosen = auth()->user()->dosen;
+        $periodeTerakhir = PeriodeRegistrasi::getPeriodeTerakhir();
 
-        $pertemuan = Pertemuan::findOrFail($idPertemuan);
+        $pertemuan = Pertemuan::with('kelas.mataKuliahPeriode')->findOrFail($idPertemuan);
 
-        // Authorization check
-        if ($pertemuan->kelas->id_dosen !== $dosen->id_dosen) {
+        if (! $this->kelasAktifDosen($pertemuan->kelas, $dosen, $periodeTerakhir)) {
             abort(403, 'Unauthorized');
         }
 
@@ -376,5 +403,32 @@ class AbsensiController extends Controller
 
         return redirect()->route('dosen.absensi.history')
             ->with('success', 'Pertemuan dan absensi berhasil dihapus!');
+    }
+
+    private function mataKuliahPeriodeAktif(MataKuliahPeriode $mataKuliahPeriode, ?PeriodeRegistrasi $periode): bool
+    {
+        return $periode
+            && $mataKuliahPeriode->tahun_ajaran === $periode->tahun_ajaran
+            && $mataKuliahPeriode->jenis_semester === $periode->jenis_semester;
+    }
+
+    private function kelasAktifDosen(Kelas $kelas, $dosen, ?PeriodeRegistrasi $periode): bool
+    {
+        return $dosen
+            && (int) $kelas->id_dosen === (int) $dosen->id_dosen
+            && $kelas->mataKuliahPeriode
+            && $this->mataKuliahPeriodeAktif($kelas->mataKuliahPeriode, $periode);
+    }
+
+    private function formatPeriode(?PeriodeRegistrasi $periode): ?array
+    {
+        if (! $periode) {
+            return null;
+        }
+
+        return [
+            'tahun_ajaran' => $periode->tahun_ajaran,
+            'jenis_semester' => ucfirst($periode->jenis_semester),
+        ];
     }
 }

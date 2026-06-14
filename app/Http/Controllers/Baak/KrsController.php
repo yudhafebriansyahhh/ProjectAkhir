@@ -68,6 +68,7 @@ class KrsController extends Controller
         // Get statistics
         $stats = [
             'total' => Krs::count(),
+            'draft' => Krs::where('status', 'draft')->count(),
             'pending' => Krs::where('status', 'pending')->count(),
             'approved' => Krs::where('status', 'approved')->count(),
             'rejected' => Krs::where('status', 'rejected')->count(),

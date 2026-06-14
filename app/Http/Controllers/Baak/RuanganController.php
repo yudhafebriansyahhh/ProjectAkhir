@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreRuanganRequest;
 use App\Http\Requests\UpdateRuanganRequest;
 use App\Models\Kelas;
+use App\Models\PeriodeRegistrasi;
 use App\Models\Ruangan;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -18,8 +19,11 @@ class RuanganController extends Controller
     {
         $search = $request->string('search')->toString();
         $status = $request->string('status')->toString();
+        $periodeTerakhir = PeriodeRegistrasi::getPeriodeTerakhir();
 
-        $ruangan = Ruangan::withCount('kelas')
+        $ruangan = Ruangan::withCount([
+            'kelas' => fn ($query) => $query->forPeriode($periodeTerakhir),
+        ])
             ->when($search, function ($query) use ($search) {
                 $query->where(function ($query) use ($search) {
                     $query->where('kode_ruangan', 'like', "%{$search}%")
@@ -32,8 +36,9 @@ class RuanganController extends Controller
             ->paginate(10)
             ->withQueryString();
 
-        $scheduleRooms = Ruangan::with(['kelas' => function ($query) {
+        $scheduleRooms = Ruangan::with(['kelas' => function ($query) use ($periodeTerakhir) {
             $query->with(['mataKuliahPeriode.mataKuliah', 'dosen'])
+                ->forPeriode($periodeTerakhir)
                 ->orderByRaw("FIELD(hari, 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu')")
                 ->orderBy('jam_mulai');
         }])
@@ -76,7 +81,7 @@ class RuanganController extends Controller
                 'total' => Ruangan::count(),
                 'aktif' => Ruangan::where('is_active', true)->count(),
                 'nonaktif' => Ruangan::where('is_active', false)->count(),
-                'dipakai' => Ruangan::whereHas('kelas')->count(),
+                'dipakai' => Ruangan::whereHas('kelas', fn ($query) => $query->forPeriode($periodeTerakhir))->count(),
             ],
         ]);
     }
@@ -96,11 +101,16 @@ class RuanganController extends Controller
 
     public function show(Ruangan $ruangan)
     {
-        $ruangan->load(['kelas' => function ($query) {
+        $periodeTerakhir = PeriodeRegistrasi::getPeriodeTerakhir();
+
+        $ruangan->load(['kelas' => function ($query) use ($periodeTerakhir) {
             $query->with(['mataKuliahPeriode.mataKuliah', 'dosen'])
+                ->forPeriode($periodeTerakhir)
                 ->orderByRaw("FIELD(hari, 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu')")
                 ->orderBy('jam_mulai');
-        }])->loadCount('kelas');
+        }])->loadCount([
+            'kelas' => fn ($query) => $query->forPeriode($periodeTerakhir),
+        ]);
 
         return Inertia::render('Baak/Ruangan/Show', [
             'ruangan' => $ruangan,

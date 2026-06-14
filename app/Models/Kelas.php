@@ -68,6 +68,39 @@ class Kelas extends Model
         return $this->hasOne(BobotNilai::class, 'id_kelas', 'id_kelas');
     }
 
+    public function scopeForPeriode($query, ?PeriodeRegistrasi $periode)
+    {
+        if (! $periode) {
+            return $query->whereRaw('1 = 0');
+        }
+
+        return $query->forPeriodeValue($periode->tahun_ajaran, $periode->jenis_semester);
+    }
+
+    public function scopeForPeriodeValue($query, ?string $tahunAjaran, ?string $jenisSemester)
+    {
+        if (! $tahunAjaran || ! $jenisSemester) {
+            return $query->whereRaw('1 = 0');
+        }
+
+        return $query->whereHas('mataKuliahPeriode', function ($query) use ($tahunAjaran, $jenisSemester) {
+            $query->where('tahun_ajaran', $tahunAjaran)
+                ->where('jenis_semester', $jenisSemester);
+        });
+    }
+
+    public function scopeArchivedFromPeriode($query, ?PeriodeRegistrasi $periode)
+    {
+        if (! $periode) {
+            return $query;
+        }
+
+        return $query->whereDoesntHave('mataKuliahPeriode', function ($query) use ($periode) {
+            $query->where('tahun_ajaran', $periode->tahun_ajaran)
+                ->where('jenis_semester', $periode->jenis_semester);
+        });
+    }
+
     // Helper: Dapatkan data mata kuliah langsung
     public function getMataKuliahAttribute()
     {

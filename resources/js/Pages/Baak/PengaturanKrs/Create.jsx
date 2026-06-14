@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Head, Link, useForm } from '@inertiajs/react';
+import { Copy } from 'lucide-react';
 import BaakLayout from '@/Layouts/BaakLayout';
+import Modal from '@/Components/Modal';
 import { Button } from '@/Components/ui/button';
 import { Badge } from '@/Components/ui/badge';
 import { Card, CardContent } from '@/Components/ui/card';
@@ -20,6 +22,19 @@ const semesterTypeOptions = [
     { value: 'pendek', label: 'Pendek' },
 ];
 
+const generateTahunAjaran = () => {
+    const now = new Date();
+    const currentYear = now.getFullYear();
+    const currentMonth = now.getMonth() + 1;
+
+    return currentMonth >= 7 ? `${currentYear}/${currentYear + 1}` : `${currentYear - 1}/${currentYear}`;
+};
+
+const getDefaultJenisSemester = () => {
+    const currentMonth = new Date().getMonth() + 1;
+    return currentMonth >= 7 ? 'ganjil' : 'genap';
+};
+
 const getKategoriBadge = (kategori) => {
     const badges = {
         wajib: 'border-rose-200 bg-rose-50 text-rose-700',
@@ -30,7 +45,7 @@ const getKategoriBadge = (kategori) => {
     return badges[kategori] || 'border-slate-200 bg-slate-50 text-slate-700';
 };
 
-export default function Create({ mataKuliah = [], prodis = [] }) {
+export default function Create({ mataKuliah = [], prodis = [], periodeSumber = [] }) {
     const { data, setData, post, processing, errors } = useForm({
         tahun_ajaran: '',
         jenis_semester: '',
@@ -38,17 +53,23 @@ export default function Create({ mataKuliah = [], prodis = [] }) {
         semester_ditawarkan: '',
         mata_kuliah: [],
     });
+    const {
+        data: copyData,
+        setData: setCopyData,
+        post: postCopy,
+        processing: copyProcessing,
+        errors: copyErrors,
+        reset: resetCopyForm,
+    } = useForm({
+        from_periode: '',
+        kode_prodi: '',
+        to_tahun_ajaran: generateTahunAjaran(),
+        to_jenis_semester: getDefaultJenisSemester(),
+    });
 
     const [searchMk, setSearchMk] = useState('');
     const [filterKategori, setFilterKategori] = useState('');
-
-    const generateTahunAjaran = () => {
-        const now = new Date();
-        const currentYear = now.getFullYear();
-        const currentMonth = now.getMonth() + 1;
-
-        return currentMonth >= 7 ? `${currentYear}/${currentYear + 1}` : `${currentYear - 1}/${currentYear}`;
-    };
+    const [isCopyModalOpen, setIsCopyModalOpen] = useState(false);
 
     useEffect(() => {
         if (!data.tahun_ajaran) {
@@ -117,7 +138,23 @@ export default function Create({ mataKuliah = [], prodis = [] }) {
         post(route('baak.pengaturan-krs.store'));
     };
 
+    const handleCopySubmit = (e) => {
+        e.preventDefault();
+
+        postCopy(route('baak.pengaturan-krs.copy'), {
+            preserveScroll: true,
+            onSuccess: () => {
+                resetCopyForm('from_periode', 'kode_prodi');
+                setIsCopyModalOpen(false);
+            },
+        });
+    };
+
     const prodiOptions = prodis.map((prodi) => ({ value: prodi.kode_prodi, label: prodi.nama_prodi }));
+    const copySourceOptions = periodeSumber.map((periode) => ({
+        value: `${periode.tahun_ajaran}|${periode.jenis_semester}`,
+        label: `${periode.tahun_ajaran} - ${periode.jenis_semester.charAt(0).toUpperCase() + periode.jenis_semester.slice(1)}`,
+    }));
     const semesterOptions = getSemesterOptions().map((semester) => ({
         value: String(semester),
         label: `Semester ${semester}`,
@@ -142,11 +179,23 @@ export default function Create({ mataKuliah = [], prodis = [] }) {
                     <PageHeader
                         title="Set Mata Kuliah KRS"
                         description="Pilih mata kuliah yang akan ditawarkan untuk satu semester tertentu."
-                    />
+                    >
+                        <Button
+                            type="button"
+                            variant="outline"
+                            className="w-full gap-2 text-blue-700 sm:w-auto"
+                            onClick={() => setIsCopyModalOpen(true)}
+                            disabled={copySourceOptions.length === 0}
+                        >
+                            <Copy className="h-4 w-4" />
+                            Copy Konfigurasi
+                        </Button>
+                    </PageHeader>
 
                     <div className="rounded-lg border border-blue-200 bg-blue-50 p-4 text-sm text-blue-800">
                         <p className="mb-1 font-semibold">Cara Kerja</p>
                         <ul className="list-inside list-disc space-y-1">
+                            <li>Gunakan tombol Copy Konfigurasi untuk menyalin setup mata kuliah dari periode sebelumnya</li>
                             <li>Pilih periode, prodi, dan semester yang akan di-setup</li>
                             <li>Centang mata kuliah yang ditawarkan di semester tersebut</li>
                             <li>Mata kuliah umum dan mata kuliah prodi akan ditampilkan</li>
@@ -456,6 +505,94 @@ export default function Create({ mataKuliah = [], prodis = [] }) {
                     </form>
                 </div>
             </div>
+
+            <Modal show={isCopyModalOpen} onClose={() => setIsCopyModalOpen(false)} maxWidth="xl">
+                <div className="p-6">
+                    <div className="flex items-start gap-3">
+                        <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-blue-50 text-blue-600">
+                            <Copy className="h-5 w-5" />
+                        </span>
+                        <div className="min-w-0">
+                            <h2 className="text-lg font-semibold text-slate-950">Copy Konfigurasi KRS</h2>
+                            <p className="mt-1 text-sm text-slate-600">
+                                Salin mata kuliah yang ditawarkan dari satu periode ke periode tujuan untuk semua prodi atau prodi tertentu.
+                            </p>
+                        </div>
+                    </div>
+
+                    <form onSubmit={handleCopySubmit} className="mt-6 space-y-4">
+                        <FormField label="Periode Sumber" required error={copyErrors.from_periode}>
+                            <SelectDropdown
+                                value={copyData.from_periode}
+                                onChange={(selected) => setCopyData('from_periode', selected ? selected.value : '')}
+                                options={copySourceOptions}
+                                placeholder="Pilih periode sumber"
+                                isDisabled={copySourceOptions.length === 0}
+                            />
+                        </FormField>
+
+                        <FormField label="Lingkup Prodi" error={copyErrors.kode_prodi} hint="Kosongkan untuk menyalin semua prodi.">
+                            <SelectDropdown
+                                value={copyData.kode_prodi}
+                                onChange={(selected) => setCopyData('kode_prodi', selected ? selected.value : '')}
+                                options={prodiOptions}
+                                placeholder="Semua Prodi"
+                            />
+                        </FormField>
+
+                        <FormField label="Tahun Ajaran Tujuan" required error={copyErrors.to_tahun_ajaran}>
+                            <div className="flex gap-2">
+                                <input
+                                    type="text"
+                                    value={copyData.to_tahun_ajaran}
+                                    onChange={(event) => setCopyData('to_tahun_ajaran', event.target.value)}
+                                    placeholder="2026/2027"
+                                    maxLength={9}
+                                    className={`h-10 min-w-0 flex-1 rounded-lg border px-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                                        copyErrors.to_tahun_ajaran ? 'border-red-500' : 'border-slate-200'
+                                    }`}
+                                />
+                                <Button type="button" variant="outline" onClick={() => setCopyData('to_tahun_ajaran', generateTahunAjaran())}>
+                                    Auto
+                                </Button>
+                            </div>
+                        </FormField>
+
+                        <FormField label="Semester Tujuan" required error={copyErrors.to_jenis_semester}>
+                            <SelectDropdown
+                                value={copyData.to_jenis_semester}
+                                onChange={(selected) => setCopyData('to_jenis_semester', selected ? selected.value : '')}
+                                options={semesterTypeOptions}
+                                placeholder="Pilih semester tujuan"
+                                isSearchable={false}
+                            />
+                        </FormField>
+
+                        <div className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800">
+                            Data yang sudah ada di periode tujuan akan dilewati otomatis.
+                        </div>
+
+                        <div className="flex flex-col-reverse gap-3 pt-2 sm:flex-row sm:justify-end">
+                            <Button type="button" variant="outline" onClick={() => setIsCopyModalOpen(false)}>
+                                Batal
+                            </Button>
+                            <Button
+                                type="submit"
+                                className="gap-2"
+                                disabled={
+                                    copyProcessing ||
+                                    !copyData.from_periode ||
+                                    !copyData.to_tahun_ajaran ||
+                                    !copyData.to_jenis_semester
+                                }
+                            >
+                                <Copy className="h-4 w-4" />
+                                {copyProcessing ? 'Menyalin...' : 'Copy Konfigurasi'}
+                            </Button>
+                        </div>
+                    </form>
+                </div>
+            </Modal>
         </BaakLayout>
     );
 }
