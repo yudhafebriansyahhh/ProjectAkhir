@@ -191,7 +191,7 @@ export default function Dashboard({ stats, charts, alerts, recent_activities, pe
                             headerClassName="space-y-0"
                             action={
                                 <Badge className="shrink-0 rounded-md bg-blue-50 px-2.5 py-1 text-xs font-semibold text-blue-700 hover:bg-blue-50">
-                                    Bulanan
+                                    Tahunan
                                 </Badge>
                             }
                         >

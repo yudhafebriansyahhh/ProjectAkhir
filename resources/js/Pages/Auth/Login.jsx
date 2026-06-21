@@ -30,19 +30,19 @@ export default function Login({ status, canResetPassword }) {
 
             <div className="flex w-full min-w-0 flex-col justify-center">
                 <div className="w-full min-w-0">
-                    <div className="mb-7 block lg:hidden">
+                    <div className="mb-5 block lg:hidden sm:mb-7">
                         <img
-                            className="mx-auto mb-3 h-24 w-24 rounded-full bg-white p-2 shadow-sm sm:h-28 sm:w-28"
+                            className="mx-auto mb-3 h-20 w-20 rounded-full bg-white p-2 shadow-sm sm:h-28 sm:w-28"
                             src="/ITBR.jpeg"
                             alt="ITB Riau Logo"
                         />
-                        <h1 className="text-center text-lg font-semibold text-gray-800 sm:text-xl">
+                        <h1 className="text-center text-base font-semibold text-gray-800 sm:text-xl">
                             Sistem Akademik ITB RIAU
                         </h1>
                     </div>
 
-                    <div className="mb-7">
-                        <h1 className="mb-2 text-2xl font-bold text-gray-800 sm:text-3xl">Masuk</h1>
+                    <div className="mb-5 sm:mb-7">
+                        <h1 className="mb-1.5 text-2xl font-bold text-gray-800 sm:mb-2 sm:text-3xl">Masuk</h1>
                         <p className="text-sm leading-relaxed text-gray-600 sm:text-base">
                             Masuk ke akun Anda untuk melanjutkan
                         </p>
@@ -54,7 +54,7 @@ export default function Login({ status, canResetPassword }) {
                         </div>
                     )}
 
-                    <form onSubmit={submit} className="space-y-5">
+                    <form onSubmit={submit} className="space-y-4 sm:space-y-5">
                         <div className="space-y-2">
                             <label htmlFor="username" className="block text-sm font-semibold text-gray-700">
                                 Username
@@ -65,8 +65,9 @@ export default function Login({ status, canResetPassword }) {
                                 name="username"
                                 value={data.username}
                                 onChange={(e) => setData('username', e.target.value)}
-                                className="h-11 w-full rounded-lg border border-gray-200 bg-white px-4 text-sm text-gray-700 placeholder:text-gray-400 focus:border-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-100"
+                                className="h-11 w-full rounded-lg border border-gray-200 bg-white px-3.5 text-sm text-gray-700 placeholder:text-gray-400 focus:border-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-100 sm:px-4"
                                 placeholder="Masukkan NIM/NIP/Email"
+                                autoComplete="username"
                                 autoFocus
                             />
                             <InputError message={errors.username} className="mt-2" />
@@ -85,8 +86,9 @@ export default function Login({ status, canResetPassword }) {
                                     name="password"
                                     value={data.password}
                                     onChange={(e) => setData('password', e.target.value)}
-                                    className="h-11 w-full rounded-lg border border-gray-200 bg-white px-4 pr-11 text-sm text-gray-700 placeholder:text-gray-400 focus:border-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-100"
+                                    className="h-11 w-full rounded-lg border border-gray-200 bg-white px-3.5 pr-11 text-sm text-gray-700 placeholder:text-gray-400 focus:border-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-100 sm:px-4"
                                     placeholder="Masukkan password Anda"
+                                    autoComplete="current-password"
                                 />
                                 <button
                                     type="button"
@@ -117,7 +119,7 @@ export default function Login({ status, canResetPassword }) {
                         <button
                             type="submit"
                             disabled={processing}
-                            className="h-11 w-full rounded-lg bg-blue-600 px-4 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
+                            className="h-11 w-full rounded-lg bg-blue-600 px-4 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50 sm:h-12"
                         >
                             {processing ? 'Memproses...' : 'Masuk ke Akun'}
                         </button>

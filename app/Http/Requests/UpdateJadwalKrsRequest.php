@@ -49,7 +49,10 @@ class UpdateJadwalKrsRequest extends FormRequest
                     ->where('id_jadwal', '!=', $jadwalId)
                     ->where('kode_prodi', $this->route('jadwalKrs')->kode_prodi)
                     ->where('tahun_ajaran', $this->route('jadwalKrs')->tahun_ajaran)
-                    ->whereRaw("JSON_CONTAINS(semester_list, '\"$semester\"')")
+                    ->where(function ($query) use ($semester) {
+                        $query->whereJsonContains('semester_list', (int) $semester)
+                            ->orWhereJsonContains('semester_list', (string) $semester);
+                    })
                     ->exists();
 
                 if ($exists) {

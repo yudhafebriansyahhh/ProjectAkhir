@@ -9,8 +9,12 @@ const oddSemesters = [1, 3, 5, 7, 9, 11, 13];
 const evenSemesters = [2, 4, 6, 8, 10, 12, 14];
 const allSemesters = Array.from({ length: 14 }, (_, index) => index + 1);
 
-export default function Create({ prodiList }) {
+export default function Create({ prodiList, activePeriode = null }) {
     const getDefaultTahunAjaran = () => {
+        if (activePeriode?.tahun_ajaran) {
+            return activePeriode.tahun_ajaran;
+        }
+
         const year = new Date().getFullYear();
         const month = new Date().getMonth() + 1;
 
@@ -30,7 +34,7 @@ export default function Create({ prodiList }) {
 
     useEffect(() => {
         setData('tahun_ajaran', getDefaultTahunAjaran());
-    }, []);
+    }, [activePeriode?.tahun_ajaran]);
 
     const handleSemesterToggle = (semester) => {
         const currentList = [...data.semester_list];
@@ -135,6 +139,11 @@ export default function Create({ prodiList }) {
                                             errors.tahun_ajaran ? 'border-red-500' : 'border-gray-300'
                                         }`}
                                     />
+                                    {activePeriode?.tahun_ajaran ? (
+                                        <p className="mt-1 text-xs text-slate-500">
+                                            Mengikuti periode aktif: {activePeriode.tahun_ajaran} - {activePeriode.jenis_semester}
+                                        </p>
+                                    ) : null}
                                 </FormField>
                             </div>
 
