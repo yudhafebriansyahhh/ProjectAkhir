@@ -281,6 +281,13 @@ Route::middleware(['auth', 'role:dosen'])
             Route::delete('/{id}', [RpsController::class, 'destroy'])->name('destroy');
         });
 
+        // Profile
+        Route::get('/profile', [DosenController::class, 'profile'])->name('profile');
+        Route::get('/perbarui-data', [DosenController::class, 'perbarui_data'])->name('profile.perbarui-data');
+        Route::patch('/perbarui-data', [DosenController::class, 'update_profile'])->name('profile.update-data');
+        Route::get('/ganti-password', [DosenController::class, 'ganti_password'])->name('profile.ganti-password');
+        Route::put('/ganti-password', [DosenController::class, 'update_password'])->name('profile.update-password');
+
         // API
         Route::get('/api/kelas-by-matkul/{idMkPeriode}', [AbsensiController::class, 'getKelasByMataKuliah']);
         Route::get('/api/kelas-data/{idKelas}', [AbsensiController::class, 'getKelasData']);

@@ -235,6 +235,18 @@ export default function DosenLayout({ children, title }) {
                                 <span className="text-sm font-medium">Jadwal Kelas</span>
                             </Link>
 
+                            <Link
+                                href={route('dosen.profile')}
+                                className={`flex items-center space-x-3 px-4 py-3 rounded-lg transition-colors ${
+                                    isActive('dosen.profile') || isActive('dosen.profile.*')
+                                        ? 'bg-blue-600 text-white shadow-sm'
+                                        : 'text-gray-700 hover:bg-blue-50 hover:text-blue-700'
+                                }`}
+                            >
+                                <i className="fas fa-user-circle w-5"></i>
+                                <span className="text-sm font-medium">Profil</span>
+                            </Link>
+
                         </div>
                     </nav>
 

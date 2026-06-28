@@ -57,4 +57,10 @@ class Dosen extends Model
     {
         return $this->mahasiswaBimbingan()->count();
     }
+
+    // Get foto URL
+    public function getFotoUrlAttribute()
+    {
+        return $this->foto ? asset('storage/' . $this->foto) : null;
+    }
 }
