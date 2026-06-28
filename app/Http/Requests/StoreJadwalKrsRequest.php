@@ -52,7 +52,10 @@ class StoreJadwalKrsRequest extends FormRequest
                 $exists = \DB::table('jadwal_pengisian_krs')
                     ->where('kode_prodi', $this->kode_prodi)
                     ->where('tahun_ajaran', $this->tahun_ajaran)
-                    ->whereRaw("JSON_CONTAINS(semester_list, '\"$semester\"')")
+                    ->where(function ($query) use ($semester) {
+                        $query->whereJsonContains('semester_list', (int) $semester)
+                            ->orWhereJsonContains('semester_list', (string) $semester);
+                    })
                     ->exists();
 
                 if ($exists) {

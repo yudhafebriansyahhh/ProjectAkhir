@@ -809,7 +809,7 @@ class MahasiswaController extends Controller
 
     private function getKrsContext($mahasiswa): array
     {
-        $periode = PeriodeRegistrasi::getPeriodeTerakhir();
+        $periode = PeriodeRegistrasi::getPeriodeAktif();
 
         if (! $periode) {
             return [
@@ -818,7 +818,7 @@ class MahasiswaController extends Controller
                 'jadwal' => null,
                 'currentKrs' => null,
                 'canFillKrs' => false,
-                'message' => 'Belum ada periode registrasi.',
+                'message' => 'Belum ada periode registrasi aktif.',
             ];
         }
 

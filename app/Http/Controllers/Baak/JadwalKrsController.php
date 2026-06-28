@@ -52,9 +52,14 @@ class JadwalKrsController extends Controller
 
     public function create()
     {
+        $activePeriode = PeriodeRegistrasi::getPeriodeAktif();
+
         return Inertia::render('Baak/JadwalKrs/Create', [
             'prodiList' => Prodi::orderBy('nama_prodi')->get(),
-            'periodeList' => PeriodeRegistrasi::where('status', 'aktif')->get(),
+            'periodeList' => PeriodeRegistrasi::where('status', 'aktif')
+                ->orderByDesc('id_periode')
+                ->get(),
+            'activePeriode' => $activePeriode,
         ]);
     }
 
@@ -89,7 +94,7 @@ class JadwalKrsController extends Controller
         $hasMahasiswa = \DB::table('krs')
             ->join('mahasiswa', 'krs.id_mahasiswa', '=', 'mahasiswa.id_mahasiswa')
             ->where('mahasiswa.kode_prodi', $jadwalKrs->kode_prodi)
-            ->where('krs.semester', $jadwalKrs->semester)
+            ->whereIn('krs.semester', $jadwalKrs->semester_list ?? [])
             ->where('krs.tahun_ajaran', $jadwalKrs->tahun_ajaran)
             ->exists();
 
