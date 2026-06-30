@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { Head, Link, router } from '@inertiajs/react';
-import { Eye, FileText, GraduationCap, Printer, RefreshCcw, Search, UserCheck, Users } from 'lucide-react';
+import { CheckCircle2, Eye, FileText, GraduationCap, Printer, RefreshCcw, Search, UserCheck, Users } from 'lucide-react';
 import BaakLayout from '@/Layouts/BaakLayout';
 import { Badge } from '@/Components/ui/badge';
 import { Button } from '@/Components/ui/button';
