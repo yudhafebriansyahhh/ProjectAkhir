@@ -231,7 +231,7 @@ class NilaiController extends Controller
         // Hitung nilai akhir
         $nilai->hitungNilaiAkhir();
 
-        return redirect()->route('dosen.nilai')->with('success', 'Nilai berhasil disimpan.');
+        return redirect()->route('dosen.nilai.show', $validated['id_kelas'])->with('success', 'Nilai berhasil disimpan.');
     }
 
     /**
@@ -341,7 +341,7 @@ class NilaiController extends Controller
         ]);
         $nilai->hitungNilaiAkhir();
 
-        return redirect()->route('dosen.nilai')->with('success', 'Nilai berhasil diupdate.');
+        return redirect()->route('dosen.nilai.show', $nilai->id_kelas)->with('success', 'Nilai berhasil diupdate.');
     }
 
     /**

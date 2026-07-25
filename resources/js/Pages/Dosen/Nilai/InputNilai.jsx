@@ -268,7 +268,7 @@ export default function InputNilai({ mahasiswa, kelas, bobot }) {
                             {/* Action Buttons */}
                             <div className="mt-6 flex gap-3">
                                 <Link
-                                    href={route('dosen.nilai')}
+                                    href={route('dosen.nilai.show', kelas?.id_kelas)}
                                     className="px-6 py-2 text-sm bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 focus:outline-none transition-all duration-200 font-medium"
                                 >
                                     Batal
