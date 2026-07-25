@@ -99,7 +99,7 @@ export default function ShowKelas({ kelas, mahasiswaList }) {
                             </h1>
                             <div className="flex items-center gap-4 text-blue-100 text-sm">
                                 <span className="flex items-center">
-                                    <i className="fas fa-code mr-2"></i>
+                                    <i className=""></i>
                                     {kodeMatkul}
                                 </span>
                                 <span className="flex items-center">

@@ -74,7 +74,11 @@ export default function Registrasi({ mahasiswa = {}, registrasiUlang = {} }) {
                         <div className="rounded-lg bg-rose-50 px-5 py-5 text-rose-900">
                             <div className="flex gap-4">
                                 <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg border border-rose-200 bg-white text-rose-700">
-                                    <i className="fa-solid fa-shield-halved text-xl"></i>
+                                    {registrasi ? (
+                                        <i className="fa-solid fa-check text-xl"></i>
+                                    ) : (
+                                        <i className="fa-solid fa-xmark text-xl"></i>
+                                    )}
                                 </div>
                                 <div>
                                     <h2 className="text-lg font-bold">
