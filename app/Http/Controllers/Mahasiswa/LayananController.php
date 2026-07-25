@@ -33,7 +33,7 @@ class LayananController extends Controller
             ->whereNull('rating')
             ->first();
 
-        return Inertia::render('Mahasiswa/Layanan/Index', [
+        return Inertia::render('Mahasiswa/Layanan/Layanan', [
             'pengajuans' => $pengajuans,
             'krsList' => $krsList,
             'unratedPengajuan' => $unratedPengajuan,

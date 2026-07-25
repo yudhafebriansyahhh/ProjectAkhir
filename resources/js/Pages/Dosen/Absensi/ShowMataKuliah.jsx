@@ -54,7 +54,7 @@ export default function ShowMataKuliah({ mataKuliah, kelasList }) {
                                 </span>
                             </div>
                         </div>
-                        <div className="bg-white bg-opacity-20 rounded-lg px-4 py-2">
+                        <div className="bg-white bg-opacity-20 rounded-lg px-4 py-2 text-center">
                             <div className="text-3xl font-bold">{kelasList?.length || 0}</div>
                             <div className="text-sm text-blue-100">Kelas</div>
                         </div>

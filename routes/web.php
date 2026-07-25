@@ -22,13 +22,22 @@ use App\Http\Controllers\Baak\RuanganController;
 use App\Http\Controllers\Baak\TranskripController;
 
 // DOSEN
-use App\Http\Controllers\Dosen\DosenController;
+use App\Http\Controllers\Dosen\DashboardController as DosenDashboardController;
+use App\Http\Controllers\Dosen\MahasiswaWaliController as DosenMahasiswaWaliController;
+use App\Http\Controllers\Dosen\AccKrsController as DosenAccKrsController;
+use App\Http\Controllers\Dosen\ProfileController as DosenProfileController;
 use App\Http\Controllers\Dosen\JadwalController;
 use App\Http\Controllers\Dosen\RpsController;
 use App\Http\Controllers\Dosen\AbsensiController;
 
 // MAHASISWA
-use App\Http\Controllers\MahasiswaController;
+use App\Http\Controllers\Mahasiswa\DashboardController as MahasiswaDashboardController;
+use App\Http\Controllers\Mahasiswa\RegistrasiController as MahasiswaRegistrasiController;
+use App\Http\Controllers\Mahasiswa\KrsController as MahasiswaKrsController;
+use App\Http\Controllers\Mahasiswa\PenjadwalanController as MahasiswaPenjadwalanController;
+use App\Http\Controllers\Mahasiswa\AbsensiController as MahasiswaAbsensiController;
+use App\Http\Controllers\Mahasiswa\NilaiController as MahasiswaNilaiController;
+use App\Http\Controllers\Mahasiswa\ProfileController as MahasiswaProfileController;
 use App\Http\Controllers\Mahasiswa\LayananController as MahasiswaLayananController;
 
 
@@ -185,31 +194,31 @@ Route::middleware(['auth', 'role:mahasiswa'])
     ->name('mahasiswa.')
     ->group(function () {
 
-        Route::get('/dashboard', [MahasiswaController::class, 'dashboard'])->name('dashboard');
-        Route::get('/registrasi', [MahasiswaController::class, 'registrasi'])->name('registrasi');
-        Route::post('/registrasi-ulang', [MahasiswaController::class, 'store_registrasi_ulang'])->name('registrasi-ulang.store');
-        Route::get('/nilai', [MahasiswaController::class, 'nilai'])->name('nilai');
-        Route::get('/penjadwalan', [MahasiswaController::class, 'penjadwalan'])->name('penjadwalan');
-        Route::get('/krs', [MahasiswaController::class, 'krs'])->name('krs');
-        Route::get('/krs/isi', [MahasiswaController::class, 'tambah_krs'])->name('krs.create');
-        Route::get('/tambah-krs', [MahasiswaController::class, 'tambah_krs'])->name('krs.create.legacy');
-        Route::post('/krs/ajukan', [MahasiswaController::class, 'submit_krs'])->name('krs.submit');
-        Route::post('/krs/kelas/{kelas}', [MahasiswaController::class, 'store_krs_item'])->name('krs.store-item');
-        Route::delete('/krs/detail/{detailKrs}', [MahasiswaController::class, 'destroy_krs_item'])->name('krs.destroy-item');
-        Route::get('/absensi', [MahasiswaController::class, 'absensi'])->name('absensi');
+        Route::get('/dashboard', [MahasiswaDashboardController::class, 'index'])->name('dashboard');
+        Route::get('/registrasi', [MahasiswaRegistrasiController::class, 'index'])->name('registrasi');
+        Route::post('/registrasi-ulang', [MahasiswaRegistrasiController::class, 'store'])->name('registrasi-ulang.store');
+        Route::get('/nilai', [MahasiswaNilaiController::class, 'index'])->name('nilai');
+        Route::get('/penjadwalan', [MahasiswaPenjadwalanController::class, 'index'])->name('penjadwalan');
+        Route::get('/krs', [MahasiswaKrsController::class, 'index'])->name('krs');
+        Route::get('/krs/isi', [MahasiswaKrsController::class, 'create'])->name('krs.create');
+        Route::get('/tambah-krs', [MahasiswaKrsController::class, 'create'])->name('krs.create.legacy');
+        Route::post('/krs/ajukan', [MahasiswaKrsController::class, 'submit'])->name('krs.submit');
+        Route::post('/krs/kelas/{kelas}', [MahasiswaKrsController::class, 'storeItem'])->name('krs.store-item');
+        Route::delete('/krs/detail/{detailKrs}', [MahasiswaKrsController::class, 'destroyItem'])->name('krs.destroy-item');
+        Route::get('/absensi', [MahasiswaAbsensiController::class, 'index'])->name('absensi');
 
         // Layanan
         Route::prefix('layanan')->name('layanan.')->group(function () {
-            Route::get('/', [App\Http\Controllers\Mahasiswa\LayananController::class, 'index'])->name('index');
-            Route::post('/', [App\Http\Controllers\Mahasiswa\LayananController::class, 'store'])->name('store');
-            Route::patch('/{id}/rate', [App\Http\Controllers\Mahasiswa\LayananController::class, 'rate'])->name('rate');
+            Route::get('/', [MahasiswaLayananController::class, 'index'])->name('index');
+            Route::post('/', [MahasiswaLayananController::class, 'store'])->name('store');
+            Route::patch('/{id}/rate', [MahasiswaLayananController::class, 'rate'])->name('rate');
         });
 
         // Profile
-        Route::get('/profile', [MahasiswaController::class, 'profile'])->name('profile');
-        Route::get('/perbarui-data', [MahasiswaController::class, 'perbarui_data'])->name('profile.perbarui-data');
-        Route::patch('/perbarui-data', [MahasiswaController::class, 'update_profile'])->name('profile.update-data');
-        Route::get('/ganti-password', [MahasiswaController::class, 'ganti_password'])->name('profile.ganti-password');
+        Route::get('/profile', [MahasiswaProfileController::class, 'index'])->name('profile');
+        Route::get('/perbarui-data', [MahasiswaProfileController::class, 'edit'])->name('profile.perbarui-data');
+        Route::patch('/perbarui-data', [MahasiswaProfileController::class, 'update'])->name('profile.update-data');
+        Route::get('/ganti-password', [MahasiswaProfileController::class, 'gantiPassword'])->name('profile.ganti-password');
     });
 
 
@@ -221,12 +230,12 @@ Route::middleware(['auth', 'role:dosen'])
     ->name('dosen.')
     ->group(function () {
 
-        Route::get('/dashboard', [DosenController::class, 'dashboard'])->name('dashboard');
-        Route::get('/mahasiswa-wali', [DosenController::class, 'mahasiswaWali'])->name('mahasiswa-wali.index');
-        Route::get('/mahasiswa-wali/{mahasiswa}', [DosenController::class, 'showMahasiswaWali'])->name('mahasiswa-wali.show');
-        Route::get('/acc-krs', [DosenController::class, 'accKrs'])->name('acc-krs.index');
-        Route::get('/acc-krs/{krs}', [DosenController::class, 'showAccKrs'])->name('acc-krs.show');
-        Route::patch('/acc-krs/{krs}', [DosenController::class, 'updateAccKrs'])->name('acc-krs.update');
+        Route::get('/dashboard', [DosenDashboardController::class, 'index'])->name('dashboard');
+        Route::get('/mahasiswa-wali', [DosenMahasiswaWaliController::class, 'index'])->name('mahasiswa-wali.index');
+        Route::get('/mahasiswa-wali/{mahasiswa}', [DosenMahasiswaWaliController::class, 'show'])->name('mahasiswa-wali.show');
+        Route::get('/acc-krs', [DosenAccKrsController::class, 'index'])->name('acc-krs.index');
+        Route::get('/acc-krs/{krs}', [DosenAccKrsController::class, 'show'])->name('acc-krs.show');
+        Route::patch('/acc-krs/{krs}', [DosenAccKrsController::class, 'update'])->name('acc-krs.update');
 
         // Nilai
     Route::get('/nilai', [App\Http\Controllers\Dosen\NilaiController::class, 'index'])
@@ -282,11 +291,11 @@ Route::middleware(['auth', 'role:dosen'])
         });
 
         // Profile
-        Route::get('/profile', [DosenController::class, 'profile'])->name('profile');
-        Route::get('/perbarui-data', [DosenController::class, 'perbarui_data'])->name('profile.perbarui-data');
-        Route::patch('/perbarui-data', [DosenController::class, 'update_profile'])->name('profile.update-data');
-        Route::get('/ganti-password', [DosenController::class, 'ganti_password'])->name('profile.ganti-password');
-        Route::put('/ganti-password', [DosenController::class, 'update_password'])->name('profile.update-password');
+        Route::get('/profile', [DosenProfileController::class, 'index'])->name('profile');
+        Route::get('/perbarui-data', [DosenProfileController::class, 'edit'])->name('profile.perbarui-data');
+        Route::patch('/perbarui-data', [DosenProfileController::class, 'update'])->name('profile.update-data');
+        Route::get('/ganti-password', [DosenProfileController::class, 'gantiPassword'])->name('profile.ganti-password');
+        Route::put('/ganti-password', [DosenProfileController::class, 'updatePassword'])->name('profile.update-password');
 
         // API
         Route::get('/api/kelas-by-matkul/{idMkPeriode}', [AbsensiController::class, 'getKelasByMataKuliah']);

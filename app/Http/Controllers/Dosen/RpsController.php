@@ -58,7 +58,7 @@ class RpsController extends Controller
             ->whereIn('kode_matkul', $kodeMatkul)
             ->get();
 
-        return inertia('Dosen/Rps', [
+        return inertia('Dosen/Rps/Rps', [
             'rps' => $rps
         ]);
     }
@@ -69,7 +69,7 @@ class RpsController extends Controller
         $mataKuliah = $this->getMatkulDosen();
 
         // kirim dua nama prop supaya safe dengan komponen yang berbeda
-        return inertia('Dosen/TambahRps', [
+        return inertia('Dosen/Rps/TambahRps', [
             'matkul' => $mataKuliah,
             'mataKuliah' => $mataKuliah,
         ]);
@@ -109,7 +109,7 @@ class RpsController extends Controller
         $mataKuliah = $this->getMatkulDosen();
 
         
-        return inertia('Dosen/EditRps', [
+        return inertia('Dosen/Rps/EditRps', [
             'rps' => $rps,
             'matkul' => $mataKuliah,
             'mataKuliah' => $mataKuliah,
