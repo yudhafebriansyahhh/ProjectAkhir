@@ -6,7 +6,10 @@ export default function EditNilai({ nilai: initialNilai, mahasiswa, kelas, bobot
     const { data, setData, put, processing, errors } = useForm({
         nilai_tugas: initialNilai?.nilai_tugas || '',
         nilai_uts: initialNilai?.nilai_uts || '',
-        nilai_uas: initialNilai?.nilai_uas || ''
+        nilai_uas: initialNilai?.nilai_uas || '',
+        bobot_tugas: bobot?.tugas || 30,
+        bobot_uts: bobot?.uts || 35,
+        bobot_uas: bobot?.uas || 35
     });
 
     const [nilaiAkhir, setNilaiAkhir] = useState(0);
@@ -14,12 +17,12 @@ export default function EditNilai({ nilai: initialNilai, mahasiswa, kelas, bobot
     // Hitung nilai akhir otomatis
     useEffect(() => {
         const total = (
-            (parseFloat(data.nilai_tugas) || 0) * (bobot?.tugas / 100 || 0.30) +
-            (parseFloat(data.nilai_uts) || 0) * (bobot?.uts / 100 || 0.35) +
-            (parseFloat(data.nilai_uas) || 0) * (bobot?.uas / 100 || 0.35)
+            (parseFloat(data.nilai_tugas) || 0) * ((parseFloat(data.bobot_tugas) || 0) / 100) +
+            (parseFloat(data.nilai_uts) || 0) * ((parseFloat(data.bobot_uts) || 0) / 100) +
+            (parseFloat(data.nilai_uas) || 0) * ((parseFloat(data.bobot_uas) || 0) / 100)
         );
         setNilaiAkhir(total.toFixed(2));
-    }, [data.nilai_tugas, data.nilai_uts, data.nilai_uas, bobot]);
+    }, [data.nilai_tugas, data.nilai_uts, data.nilai_uas, data.bobot_tugas, data.bobot_uts, data.bobot_uas]);
 
     const handleInputChange = (e) => {
         const { name, value } = e.target;
@@ -34,16 +37,31 @@ export default function EditNilai({ nilai: initialNilai, mahasiswa, kelas, bobot
     const handleSubmit = (e) => {
         e.preventDefault();
 
-        if (data.nilai_tugas === '' || data.nilai_uts === '' || data.nilai_uas === '') {
+        if (data.nilai_tugas === '' || data.nilai_uts === '' || data.nilai_uas === '' || data.bobot_tugas === '' || data.bobot_uts === '' || data.bobot_uas === '') {
             if (window.Swal) {
                 window.Swal.fire({
                     title: 'Data Tidak Lengkap',
-                    text: 'Silakan isi semua komponen nilai (Tugas, UTS, UAS).',
+                    text: 'Silakan isi semua komponen nilai dan bobot (Tugas, UTS, UAS).',
                     icon: 'warning',
                     confirmButtonColor: '#2563eb',
                 });
             } else {
-                alert('Silakan isi semua komponen nilai (Tugas, UTS, UAS).');
+                alert('Silakan isi semua komponen nilai dan bobot (Tugas, UTS, UAS).');
+            }
+            return;
+        }
+
+        const totalBobot = (parseFloat(data.bobot_tugas) || 0) + (parseFloat(data.bobot_uts) || 0) + (parseFloat(data.bobot_uas) || 0);
+        if (totalBobot !== 100) {
+            if (window.Swal) {
+                window.Swal.fire({
+                    title: 'Bobot Tidak Valid',
+                    text: 'Total bobot harus 100%. Saat ini: ' + totalBobot + '%',
+                    icon: 'warning',
+                    confirmButtonColor: '#2563eb',
+                });
+            } else {
+                alert('Total bobot harus 100%. Saat ini: ' + totalBobot + '%');
             }
             return;
         }
@@ -168,33 +186,54 @@ export default function EditNilai({ nilai: initialNilai, mahasiswa, kelas, bobot
 
                                     <div className="space-y-3">
                                         <div className="flex items-center gap-4">
-                                            <label className="w-16 text-gray-700 font-medium text-sm">Bobot</label>
-                                            <input
-                                                type="text"
-                                                value={`${bobot?.tugas || 30}%`}
-                                                readOnly
-                                                className="flex-1 px-4 py-2 border border-gray-200 rounded-lg bg-gray-50 focus:outline-none text-gray-600 cursor-not-allowed"
-                                            />
+                                            <label className="w-16 text-gray-700 font-medium text-sm">Bobot Tugas</label>
+                                            <div className="flex-1">
+                                                <input
+                                                    type="number"
+                                                    name="bobot_tugas"
+                                                    value={data.bobot_tugas}
+                                                    onChange={handleInputChange}
+                                                    min="20"
+                                                    max="30"
+                                                    step="5"
+                                                    className={`w-full px-4 py-2 border ${errors.bobot_tugas ? 'border-red-500 focus:border-red-600' : 'border-gray-300 focus:border-blue-600'} rounded-lg bg-white focus:outline-none text-gray-700`}
+                                                />
+                                                {errors.bobot_tugas && <p className="text-red-500 text-xs mt-1">{errors.bobot_tugas}</p>}
+                                            </div>
                                         </div>
 
                                         <div className="flex items-center gap-4">
-                                            <label className="w-16 text-gray-700 font-medium text-sm">Bobot</label>
-                                            <input
-                                                type="text"
-                                                value={`${bobot?.uts || 35}%`}
-                                                readOnly
-                                                className="flex-1 px-4 py-2 border border-gray-200 rounded-lg bg-gray-50 focus:outline-none text-gray-600 cursor-not-allowed"
-                                            />
+                                            <label className="w-16 text-gray-700 font-medium text-sm">Bobot UTS</label>
+                                            <div className="flex-1">
+                                                <input
+                                                    type="number"
+                                                    name="bobot_uts"
+                                                    value={data.bobot_uts}
+                                                    onChange={handleInputChange}
+                                                    min="25"
+                                                    max="30"
+                                                    step="5"
+                                                    className={`w-full px-4 py-2 border ${errors.bobot_uts ? 'border-red-500 focus:border-red-600' : 'border-gray-300 focus:border-blue-600'} rounded-lg bg-white focus:outline-none text-gray-700`}
+                                                />
+                                                {errors.bobot_uts && <p className="text-red-500 text-xs mt-1">{errors.bobot_uts}</p>}
+                                            </div>
                                         </div>
 
                                         <div className="flex items-center gap-4">
-                                            <label className="w-16 text-gray-700 font-medium text-sm">Bobot</label>
-                                            <input
-                                                type="text"
-                                                value={`${bobot?.uas || 35}%`}
-                                                readOnly
-                                                className="flex-1 px-4 py-2 border border-gray-200 rounded-lg bg-gray-50 focus:outline-none text-gray-600 cursor-not-allowed"
-                                            />
+                                            <label className="w-16 text-gray-700 font-medium text-sm">Bobot UAS</label>
+                                            <div className="flex-1">
+                                                <input
+                                                    type="number"
+                                                    name="bobot_uas"
+                                                    value={data.bobot_uas}
+                                                    onChange={handleInputChange}
+                                                    min="35"
+                                                    max="40"
+                                                    step="5"
+                                                    className={`w-full px-4 py-2 border ${errors.bobot_uas ? 'border-red-500 focus:border-red-600' : 'border-gray-300 focus:border-blue-600'} rounded-lg bg-white focus:outline-none text-gray-700`}
+                                                />
+                                                {errors.bobot_uas && <p className="text-red-500 text-xs mt-1">{errors.bobot_uas}</p>}
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
@@ -205,8 +244,8 @@ export default function EditNilai({ nilai: initialNilai, mahasiswa, kelas, bobot
                                 <div className="bg-blue-50 rounded-lg p-4">
                                     <div className="flex items-center justify-between">
                                         <div>
-                                            <h5 className="text-sm font-medium text-blue-900">Total Bobot: 100%</h5>
-                                            <p className="text-xs text-blue-700 mt-1">Tugas ({bobot?.tugas || 30}%) + UTS ({bobot?.uts || 35}%) + UAS ({bobot?.uas || 35}%)</p>
+                                            <h5 className="text-sm font-medium text-blue-900">Total Bobot: {((parseFloat(data.bobot_tugas) || 0) + (parseFloat(data.bobot_uts) || 0) + (parseFloat(data.bobot_uas) || 0))}%</h5>
+                                            <p className="text-xs text-blue-700 mt-1">Tugas ({data.bobot_tugas}%) + UTS ({data.bobot_uts}%) + UAS ({data.bobot_uas}%)</p>
                                         </div>
                                         <div className="text-right">
                                             <p className="text-sm font-medium text-blue-900">Nilai Akhir:</p>

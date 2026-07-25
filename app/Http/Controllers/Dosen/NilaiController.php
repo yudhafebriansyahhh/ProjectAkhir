@@ -185,7 +185,14 @@ class NilaiController extends Controller
             'nilai_tugas' => 'required|numeric|min:0|max:100',
             'nilai_uts' => 'required|numeric|min:0|max:100',
             'nilai_uas' => 'required|numeric|min:0|max:100',
+            'bobot_tugas' => 'required|numeric|min:20|max:30|multiple_of:5',
+            'bobot_uts' => 'required|numeric|min:25|max:30|multiple_of:5',
+            'bobot_uas' => 'required|numeric|min:35|max:40|multiple_of:5',
         ]);
+
+        if ($validated['bobot_tugas'] + $validated['bobot_uts'] + $validated['bobot_uas'] !== 100) {
+            return back()->withErrors(['bobot_tugas' => 'Total bobot harus 100%'])->withInput();
+        }
 
         $kelas = Kelas::with('mataKuliahPeriode')->findOrFail($validated['id_kelas']);
         if (! $this->kelasAktifDosen($kelas, $dosen)) {
@@ -200,6 +207,17 @@ class NilaiController extends Controller
         if ($exists) {
             return back()->with('error', 'Nilai untuk mahasiswa ini sudah ada.');
         }
+
+        // Update bobot
+        $bobotNilai = BobotNilai::firstOrCreate(
+            ['id_kelas' => $validated['id_kelas']],
+            ['bobot_tugas' => 30, 'bobot_uts' => 35, 'bobot_uas' => 35]
+        );
+        $bobotNilai->update([
+            'bobot_tugas' => $validated['bobot_tugas'],
+            'bobot_uts' => $validated['bobot_uts'],
+            'bobot_uas' => $validated['bobot_uas'],
+        ]);
 
         // Buat nilai baru
         $nilai = NilaiMahasiswa::create([
@@ -296,9 +314,31 @@ class NilaiController extends Controller
             'nilai_tugas' => 'required|numeric|min:0|max:100',
             'nilai_uts' => 'required|numeric|min:0|max:100',
             'nilai_uas' => 'required|numeric|min:0|max:100',
+            'bobot_tugas' => 'required|numeric|min:20|max:30|multiple_of:5',
+            'bobot_uts' => 'required|numeric|min:25|max:30|multiple_of:5',
+            'bobot_uas' => 'required|numeric|min:35|max:40|multiple_of:5',
         ]);
 
-        $nilai->update($validated);
+        if ($validated['bobot_tugas'] + $validated['bobot_uts'] + $validated['bobot_uas'] !== 100) {
+            return back()->withErrors(['bobot_tugas' => 'Total bobot harus 100%'])->withInput();
+        }
+
+        // Update bobot
+        $bobotNilai = BobotNilai::firstOrCreate(
+            ['id_kelas' => $nilai->id_kelas],
+            ['bobot_tugas' => 30, 'bobot_uts' => 35, 'bobot_uas' => 35]
+        );
+        $bobotNilai->update([
+            'bobot_tugas' => $validated['bobot_tugas'],
+            'bobot_uts' => $validated['bobot_uts'],
+            'bobot_uas' => $validated['bobot_uas'],
+        ]);
+
+        $nilai->update([
+            'nilai_tugas' => $validated['nilai_tugas'],
+            'nilai_uts' => $validated['nilai_uts'],
+            'nilai_uas' => $validated['nilai_uas'],
+        ]);
         $nilai->hitungNilaiAkhir();
 
         return redirect()->route('dosen.nilai')->with('success', 'Nilai berhasil diupdate.');
