@@ -58,18 +58,6 @@ export default function Show({ krs, totalSks, mataKuliahList = [], allKrsList = 
         router.get(route('baak.krs.show', selected.value));
     };
 
-    const handleComingSoon = () => {
-        if (window.Swal) {
-            window.Swal.fire({
-                icon: 'info',
-                title: 'Coming Soon',
-                text: 'Fitur cetak KRS akan segera tersedia',
-                confirmButtonText: 'OK',
-                confirmButtonColor: '#3B82F6',
-            });
-        }
-    };
-
     const columns = [
         { key: 'number', header: 'No', headerClassName: 'w-[56px]', cellClassName: 'font-medium text-slate-500', render: (_item, index) => index + 1 },
         { key: 'kode', header: 'Kode', render: (item) => <Badge variant="outline" className="bg-blue-50 font-mono text-blue-700">{item.kode_matkul || '-'}</Badge> },
@@ -148,10 +136,12 @@ export default function Show({ krs, totalSks, mataKuliahList = [], allKrsList = 
                                 <p className="mb-2 text-sm font-semibold text-slate-700">Pilih Semester</p>
                                 <SelectDropdown value={selectedKrsId} onChange={handleChangeSemester} options={semesterOptions} placeholder="Pilih semester..." isClearable={false} />
                             </div>
-                            <Button type="button" className="w-full gap-2 lg:w-auto" onClick={handleComingSoon}>
-                                <Printer className="h-4 w-4" />
-                                Cetak
-                            </Button>
+                            <Link href={route('baak.cetak-krs.show', selectedKrsId)} className="w-full lg:w-auto">
+                                <Button type="button" className="w-full gap-2">
+                                    <Printer className="h-4 w-4" />
+                                    Cetak
+                                </Button>
+                            </Link>
                         </CardContent>
                     </Card>
 
