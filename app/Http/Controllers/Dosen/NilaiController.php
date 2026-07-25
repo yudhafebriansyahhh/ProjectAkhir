@@ -186,7 +186,7 @@ class NilaiController extends Controller
             'nilai_uts' => 'required|numeric|min:0|max:100',
             'nilai_uas' => 'required|numeric|min:0|max:100',
             'bobot_tugas' => 'required|numeric|min:20|max:30|multiple_of:5',
-            'bobot_uts' => 'required|numeric|min:25|max:30|multiple_of:5',
+            'bobot_uts' => 'required|numeric|min:35|max:40|multiple_of:5',
             'bobot_uas' => 'required|numeric|min:35|max:40|multiple_of:5',
         ]);
 
