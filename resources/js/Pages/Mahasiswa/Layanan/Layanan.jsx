@@ -83,8 +83,8 @@ export default function LayananIndex({ pengajuans, krsList, unratedPengajuan }) 
     return (
         <MahasiswaLayout title="Layanan Akademik">
             <Head title="Layanan Akademik" />
-            <div className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
-                <div className="flex justify-between items-center mb-6 px-4 sm:px-0">
+            <div className="container mx-auto px-4 py-8">
+                <div className="flex justify-between items-center mb-6">
                     <div>
                         <h2 className="text-2xl font-bold text-gray-800">Layanan Akademik</h2>
                         <p className="text-sm text-gray-500 mt-1">Kelola dan pantau pengajuan dokumen akademik Anda.</p>
@@ -98,7 +98,7 @@ export default function LayananIndex({ pengajuans, krsList, unratedPengajuan }) 
 
                 {unratedPengajuan ? (
                     // Mandatory Rating Alert Section
-                    <div className="bg-amber-50 border border-amber-200 rounded-xl p-6 shadow-sm mx-4 sm:mx-0">
+                    <div className="bg-amber-50 border border-amber-200 rounded-xl p-6 shadow-sm">
                         <div className="flex items-start">
                             <div className="flex-shrink-0">
                                 <AlertCircle className="h-6 w-6 text-amber-600" aria-hidden="true" />
@@ -157,7 +157,7 @@ export default function LayananIndex({ pengajuans, krsList, unratedPengajuan }) 
                     </div>
                 ) : (
                     // Normal Layanan Index Table
-                    <Card className="border-0 shadow-sm rounded-lg overflow-hidden mx-4 sm:mx-0">
+                    <Card className="border-0 shadow-sm rounded-lg overflow-hidden">
                         <div className="overflow-x-auto">
                             <table className="min-w-full divide-y divide-gray-100">
                                 <thead className="bg-gray-50">
