@@ -25,7 +25,7 @@ export default function Penjadwalan({ semesters = [] }) {
         <MahasiswaLayout title="Penjadwalan">
             <Head title="Penjadwalan" />
 
-            <div className="container mx-auto px-4 py-8 max-w-[600px] sm:max-w-full">
+            <div className="container mx-auto px-4 py-8">
                 {/* Header Section */}
                 <div className="mb-8">
                     <h1 className="text-2xl font-bold text-gray-800 mb-2">Penjadwalan</h1>

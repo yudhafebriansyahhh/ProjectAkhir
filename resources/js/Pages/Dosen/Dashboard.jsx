@@ -94,7 +94,7 @@ export default function Index({ dosen, stats, daftar_kelas, jadwal_hari_ini, gra
                 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
             </Head>
 
-            <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-blue-100">
+            <div>
                 <div className="container mx-auto px-4 py-8">
                     
                     {/* Header Section */}

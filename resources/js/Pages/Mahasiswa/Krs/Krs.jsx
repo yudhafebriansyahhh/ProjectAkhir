@@ -60,7 +60,7 @@ export default function Krs({ semesterAktif = '-', krsStatus = null, mataKuliah 
         <MahasiswaLayout title="Kartu Rencana Studi (KRS)">
             <Head title="Kartu Rencana Studi (KRS)" />
 
-            <div className="container mx-auto px-4 py-8 max-w-[600px] sm:max-w-full ">
+            <div className="container mx-auto px-4 py-8">
                 <div className="mb-8">
                     <h1 className="text-2xl font-bold text-gray-700 mb-2">Kartu Rencana Studi (KRS)</h1>
                     <p className="text-gray-600">Kelola pengambilan mata kuliah untuk semester mendatang dan lihat riwayat KRS Anda.</p>

@@ -152,10 +152,13 @@ export default function Index({ mahasiswa, stats = {}, filters = {} }) {
         <DosenLayout title="Mahasiswa Wali">
             <Head title="Mahasiswa Wali" />
 
-            <div className="min-h-screen bg-slate-50 px-3 py-4 sm:px-4 sm:py-5 md:px-6 lg:px-8">
-                <div className="mx-auto w-full max-w-[1440px] space-y-4 md:space-y-5">
-                    <PageHeader title="Mahasiswa Wali" description="Daftar mahasiswa yang berada di bawah bimbingan akademik Anda." />
+            <div className="container mx-auto px-4 py-8">
+                <div className="mb-8">
+                    <h1 className="text-2xl font-bold text-gray-800 mb-2">Mahasiswa Wali</h1>
+                    <p className="text-gray-600">Daftar mahasiswa yang berada di bawah bimbingan akademik Anda.</p>
+                </div>
 
+                <div className="flex flex-col gap-6">
                     <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
                         <SummaryCard title="Total Mahasiswa Wali" value={stats.total || 0} icon={Users} tone="blue" />
                         <SummaryCard title="Mahasiswa Aktif" value={stats.aktif || 0} icon={UserCheck} tone="emerald" />

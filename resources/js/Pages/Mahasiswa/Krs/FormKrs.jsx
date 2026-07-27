@@ -24,7 +24,7 @@ export default function FormKrs({
         <MahasiswaLayout title="Pengisian Kartu Rencana Studi (KRS)">
             <Head title="Pengisian Kartu Rencana Studi (KRS)" />
 
-            <div className="container max-w-6xl mx-auto px-4 py-8">
+            <div className="container mx-auto px-4 py-8">
                 <div className="mb-8">
                     <h1 className="text-2xl font-bold text-gray-700 mb-2">Pengisian Kartu Rencana Studi (KRS)</h1>
                     <p className="text-gray-600">

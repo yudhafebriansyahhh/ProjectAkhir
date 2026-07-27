@@ -243,8 +243,8 @@ export default function DetailMahasiswa({
         <DosenLayout title="Detail Mahasiswa Wali">
             <Head title={`Detail ${mahasiswa.nama}`} />
 
-            <div className="min-h-screen min-w-0 bg-slate-50 px-3 py-4 sm:px-4 sm:py-5 md:px-6 lg:px-8">
-                <div className="mx-auto w-full min-w-0 max-w-[1440px] space-y-4 md:space-y-5">
+            <div className="container mx-auto px-4 py-8">
+                <div className="flex flex-col gap-6">
                     <div className="min-w-0">
                         <Link href={route('dosen.mahasiswa-wali.index')} className="mb-3 inline-flex items-center gap-2 text-sm font-semibold text-blue-600 hover:text-blue-700">
                             <ArrowLeft className="h-4 w-4" />

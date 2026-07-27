@@ -35,7 +35,7 @@ export default function Jadwal() {
     }, [jadwal]);
 
     return (
-        <div className="container mx-auto px-4 py-8 max-w-[600px] sm:max-w-full">
+        <div className="container mx-auto px-4 py-8">
                 
             {/* Header Section */}
             <div className="mb-8">

@@ -82,8 +82,8 @@ export default function FormProfile({ mahasiswa }) {
         <MahasiswaLayout title="Perbarui Data Profil">
             <Head title="Perbarui Data Profil" />
 
-            <div className="min-h-screen bg-slate-50 px-3 py-4 sm:px-4 sm:py-5 md:px-6 lg:px-8">
-                <div className="mx-auto w-full max-w-5xl space-y-4 md:space-y-5">
+            <div className="container mx-auto px-4 py-8">
+                <div className="flex flex-col gap-6 max-w-5xl mx-auto">
                     <PageHeader
                         title="Perbarui Data Profil"
                         description="Lengkapi dan perbarui informasi data diri Anda."

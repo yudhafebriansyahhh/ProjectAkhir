@@ -51,7 +51,7 @@ export default function Rps({ rps }) {
                 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
             </Head>
 
-            <div className="container mx-auto px-4 py-8 max-w-[600px] sm:max-w-full">
+            <div className="container mx-auto px-4 py-8">
 
                 {/* Header Section */}
                 <div className="mb-8">

@@ -24,7 +24,7 @@ export default function Absensi({ semesters = [] }) {
         <MahasiswaLayout title="Absensi">
             <Head title="Absensi" />
 
-            <div className="container mx-auto px-4 py-8 max-w-[600px] sm:max-w-full">
+            <div className="container mx-auto px-4 py-8">
                 <div className="mb-8">
                     <h1 className="text-2xl font-bold text-gray-700 mb-2">Absensi</h1>
                     <p className="text-gray-600">Pantau kehadiran Anda di setiap mata kuliah dan pastikan memenuhi syarat minimal kehadiran.</p>
