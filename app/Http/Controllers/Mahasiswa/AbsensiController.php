@@ -21,17 +21,9 @@ class AbsensiController extends Controller
         }
 
         $mahasiswa = $user->mahasiswa;
-        $periodeTerakhir = PeriodeRegistrasi::getPeriodeTerakhir();
 
         $krsList = Krs::where('id_mahasiswa', $mahasiswa->id_mahasiswa)
             ->where('status', 'approved')
-            ->when($periodeTerakhir, function ($query) use ($periodeTerakhir) {
-                $query->where('tahun_ajaran', $periodeTerakhir->tahun_ajaran)
-                    ->whereHas('detailKrs.kelas.mataKuliahPeriode', function ($q) use ($periodeTerakhir) {
-                        $q->where('tahun_ajaran', $periodeTerakhir->tahun_ajaran)
-                            ->where('jenis_semester', $periodeTerakhir->jenis_semester);
-                    });
-            }, fn ($query) => $query->whereRaw('1 = 0'))
             ->orderBy('semester', 'asc')
             ->with([
                 'detailKrs.kelas.mataKuliahPeriode.mataKuliah',
@@ -54,9 +46,6 @@ class AbsensiController extends Controller
                 }
 
                 $mkp = $kelas->mataKuliahPeriode;
-                if (! $this->kelasPadaPeriode($kelas, $periodeTerakhir)) {
-                    continue;
-                }
 
                 $mk = $mkp ? $mkp->mataKuliah : null;
                 $dosen = $kelas->dosen;
