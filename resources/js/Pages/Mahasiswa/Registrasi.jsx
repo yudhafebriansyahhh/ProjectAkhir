@@ -60,13 +60,6 @@ export default function Registrasi({ mahasiswa = {}, registrasiUlang = {} }) {
             <div className="container mx-auto px-4 py-8">
                 <div className="mb-8">
                     <h1 className="text-3xl font-bold text-gray-900">Registrasi</h1>
-                    <div className="mt-2 flex items-center gap-2 text-sm font-semibold">
-                        <Link href={route('mahasiswa.dashboard')} className="text-gray-400 hover:text-blue-600">
-                            Home
-                        </Link>
-                        <span className="text-gray-400">-</span>
-                        <span className="text-gray-900">Registrasi</span>
-                    </div>
                 </div>
 
                 <div className="rounded-lg border border-gray-200 bg-white p-4 shadow-sm sm:p-6">
