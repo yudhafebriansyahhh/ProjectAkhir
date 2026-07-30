@@ -138,11 +138,11 @@ export default function Penjadwalan({ semesters = [] }) {
                                                 </td>
                                                 <td className="px-6 py-4 whitespace-nowrap text-center text-sm">
                                                     {mk.rps ? (
-                                                        <button type="button"
+                                                        <a href={mk.rps} target="_blank" rel="noopener noreferrer"
                                                             className="inline-flex items-center px-3 py-1.5 border gap-2 border-green-300 text-green-700 bg-green-50 hover:bg-green-100 rounded-lg text-xs font-semibold transition duration-200">
                                                             <i className="fa-regular fa-file-lines"></i>
                                                             <span>RPS</span>
-                                                        </button>
+                                                        </a>
                                                     ) : (
                                                         <span
                                                             className="inline-flex items-center px-3 py-1.5 gap-2 bg-gray-100 text-gray-500 rounded-lg text-xs font-semibold">

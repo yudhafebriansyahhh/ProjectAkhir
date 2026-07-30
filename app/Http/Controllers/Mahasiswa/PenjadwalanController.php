@@ -55,6 +55,10 @@ class PenjadwalanController extends Controller
                     $jamSelesai = $kelas->jam_selesai ? \Carbon\Carbon::parse($kelas->jam_selesai)->format('H:i') : '-';
                     $jadwalJam = ($jamMulai !== '-' && $jamSelesai !== '-') ? "{$jamMulai}-{$jamSelesai}" : '-';
 
+                    // Check if RPS exists
+                    $rps = \App\Models\Rps::where('kode_matkul', $mk->kode_matkul)->latest('created_at')->first();
+                    $rpsUrl = $rps && $rps->file_path ? asset('storage/' . $rps->file_path) : false;
+
                     $jadwalArr[] = [
                         'kode' => $mk->kode_matkul,
                         'nama' => $mk->nama_matkul,
@@ -64,7 +68,7 @@ class PenjadwalanController extends Controller
                         'ruang' => $kelas->ruangan?->kode_ruangan ?? $kelas->ruang_kelas ?? '-',
                         'sks' => $mk->sks,
                         'kelas' => $kelas->nama_kelas,
-                        'rps' => false,
+                        'rps' => $rpsUrl,
                     ];
                 }
             }
