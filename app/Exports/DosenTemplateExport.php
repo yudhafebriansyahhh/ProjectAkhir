@@ -6,13 +6,15 @@ use Maatwebsite\Excel\Concerns\FromArray;
 use Maatwebsite\Excel\Concerns\WithHeadings;
 use Maatwebsite\Excel\Concerns\WithStyles;
 use Maatwebsite\Excel\Concerns\WithColumnWidths;
+use Maatwebsite\Excel\Concerns\WithColumnFormatting;
+use PhpOffice\PhpSpreadsheet\Style\NumberFormat;
 use Maatwebsite\Excel\Concerns\WithCustomValueBinder;
 use Maatwebsite\Excel\Concerns\WithEvents;
 use Maatwebsite\Excel\Events\AfterSheet;
 use PhpOffice\PhpSpreadsheet\Cell\StringValueBinder;
 use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
 
-class DosenTemplateExport extends StringValueBinder implements FromArray, WithHeadings, WithStyles, WithColumnWidths, WithCustomValueBinder, WithEvents
+class DosenTemplateExport extends StringValueBinder implements FromArray, WithHeadings, WithStyles, WithColumnWidths, WithCustomValueBinder, WithEvents, WithColumnFormatting
 {
     public function array(): array
     {
@@ -46,7 +48,7 @@ class DosenTemplateExport extends StringValueBinder implements FromArray, WithHe
             ['1. Kolom nip dan nama_dosen WAJIB diisi.'],
             ['2. Kolom kode_prodi diisi dengan kode prodi (lihat tabel di sebelah kanan).'],
             ['3. Kolom jenis_kelamin diisi dengan Laki-laki atau Perempuan.'],
-            ['4. Hapus baris contoh data (baris 8 dan 9) sebelum melakukan import data Anda.'],
+            ['4. Hapus baris contoh data (baris 9 dan 10) sebelum melakukan import data Anda.'],
             [],
             [
                 'nip',
@@ -79,6 +81,19 @@ class DosenTemplateExport extends StringValueBinder implements FromArray, WithHe
             'E' => 18,
             'F' => 15,
             'G' => 40,
+        ];
+    }
+
+    public function columnFormats(): array
+    {
+        return [
+            'A' => NumberFormat::FORMAT_TEXT,
+            'B' => NumberFormat::FORMAT_TEXT,
+            'C' => NumberFormat::FORMAT_TEXT,
+            'D' => NumberFormat::FORMAT_TEXT,
+            'E' => NumberFormat::FORMAT_TEXT,
+            'F' => NumberFormat::FORMAT_TEXT,
+            'G' => NumberFormat::FORMAT_TEXT,
         ];
     }
 

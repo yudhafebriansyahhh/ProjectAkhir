@@ -6,6 +6,7 @@ import { Badge } from '@/Components/ui/badge';
 import { Button } from '@/Components/ui/button';
 import { Card, CardContent } from '@/Components/ui/card';
 import { CardGrid, DataTable, EmptyState, PageHeader, SummaryCard } from '@/Components/ui/data-display';
+import { SelectDropdown } from '@/Components/ui/select-dropdown';
 
 const getGenderBadge = (gender) => {
     if (gender === 'Laki-laki') return 'bg-blue-50 text-blue-700 border-blue-200';
@@ -33,8 +34,21 @@ const InfoItem = ({ label, value, className = '' }) => (
     </div>
 );
 
-export default function Show({ dosen }) {
+export default function Show({ dosen, periode_list = [], selected_periode_id = 'semua' }) {
     const [activeTab, setActiveTab] = useState('biodata');
+
+    const handlePeriodeChange = (selected) => {
+        const value = selected ? selected.value : 'semua';
+        router.get(route('baak.dosen.show', dosen.id_dosen), { periode_id: value }, { preserveState: true, preserveScroll: true });
+    };
+
+    const periodeOptions = [
+        { value: 'semua', label: 'Semua Tahun Ajaran' },
+        ...periode_list.map((p) => ({
+            value: p.id_periode,
+            label: `${p.tahun_ajaran} - ${p.jenis_semester.charAt(0).toUpperCase() + p.jenis_semester.slice(1)}`
+        }))
+    ];
 
     const handleResetPassword = () => {
         const resetPassword = () => {
@@ -92,6 +106,19 @@ export default function Show({ dosen }) {
         { key: 'hari', header: 'Hari', headerClassName: 'text-center', cellClassName: 'text-center', render: (item) => item.hari || '-' },
         { key: 'jam', header: 'Jam', headerClassName: 'text-center', cellClassName: 'text-center', render: (item) => `${formatTime(item.jam_mulai)} - ${formatTime(item.jam_selesai)}` },
         { key: 'ruang', header: 'Ruang', headerClassName: 'text-center', cellClassName: 'text-center', render: (item) => item.ruang_kelas || '-' },
+        {
+            key: 'aksi',
+            header: 'Aksi',
+            headerClassName: 'text-center',
+            cellClassName: 'text-center',
+            render: (item) => (
+                <Link href={route('baak.kelas.show', item.id_kelas)}>
+                    <Button variant="outline" size="sm" className="h-8 border-blue-200 bg-blue-50 text-xs font-semibold text-blue-700 hover:bg-blue-100 hover:text-blue-800">
+                        Detail
+                    </Button>
+                </Link>
+            ),
+        },
     ];
 
     const mahasiswaColumns = [
@@ -130,6 +157,13 @@ export default function Show({ dosen }) {
                     <InfoItem label="Hari" value={kelas.hari} />
                     <InfoItem label="Jam" value={`${formatTime(kelas.jam_mulai)} - ${formatTime(kelas.jam_selesai)}`} />
                     <InfoItem label="Ruang" value={kelas.ruang_kelas} />
+                </div>
+                <div className="pt-2">
+                    <Link href={route('baak.kelas.show', kelas.id_kelas)}>
+                        <Button variant="outline" size="sm" className="w-full border-blue-200 bg-blue-50 text-blue-700 hover:bg-blue-100 hover:text-blue-800">
+                            Detail Kelas
+                        </Button>
+                    </Link>
                 </div>
             </CardContent>
         </Card>
@@ -259,6 +293,16 @@ export default function Show({ dosen }) {
 
                             {activeTab === 'kelas' ? (
                                 <div className="space-y-4">
+                                    <div className="max-w-sm">
+                                        <SelectDropdown
+                                            value={selected_periode_id}
+                                            onChange={handlePeriodeChange}
+                                            options={periodeOptions}
+                                            placeholder="Pilih Tahun Ajaran"
+                                            isSearchable={false}
+                                            isClearable={false}
+                                        />
+                                    </div>
                                     <DataTable
                                         columns={kelasColumns}
                                         data={dosen.kelas || []}

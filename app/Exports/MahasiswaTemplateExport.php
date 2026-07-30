@@ -6,13 +6,15 @@ use Maatwebsite\Excel\Concerns\FromArray;
 use Maatwebsite\Excel\Concerns\WithHeadings;
 use Maatwebsite\Excel\Concerns\WithStyles;
 use Maatwebsite\Excel\Concerns\WithColumnWidths;
+use Maatwebsite\Excel\Concerns\WithColumnFormatting;
+use PhpOffice\PhpSpreadsheet\Style\NumberFormat;
 use Maatwebsite\Excel\Concerns\WithCustomValueBinder;
 use Maatwebsite\Excel\Concerns\WithEvents;
 use Maatwebsite\Excel\Events\AfterSheet;
 use PhpOffice\PhpSpreadsheet\Cell\StringValueBinder;
 use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
 
-class MahasiswaTemplateExport extends StringValueBinder implements FromArray, WithHeadings, WithStyles, WithColumnWidths, WithCustomValueBinder, WithEvents
+class MahasiswaTemplateExport extends StringValueBinder implements FromArray, WithHeadings, WithStyles, WithColumnWidths, WithCustomValueBinder, WithEvents, WithColumnFormatting
 {
     public function array(): array
     {
@@ -53,6 +55,7 @@ class MahasiswaTemplateExport extends StringValueBinder implements FromArray, Wi
             ['2. Kolom kode_prodi diisi dengan kode prodi (lihat tabel di sebelah kanan).'],
             ['3. Kolom nip_dosen_wali opsional (kosongkan jika belum ada dosen wali).'],
             ['4. Hapus baris contoh data (baris 8 dan 9) sebelum melakukan import data Anda.'],
+            ['5. Kolom status dapat diisi dengan: aktif, nonaktif, lulus, keluar, atau DO (default: aktif).'],
             [],
             [
                 'nim',
@@ -91,6 +94,22 @@ class MahasiswaTemplateExport extends StringValueBinder implements FromArray, Wi
             'H' => 15,
             'I' => 30,
             'J' => 15,
+        ];
+    }
+
+    public function columnFormats(): array
+    {
+        return [
+            'A' => NumberFormat::FORMAT_TEXT,
+            'B' => NumberFormat::FORMAT_TEXT,
+            'C' => NumberFormat::FORMAT_TEXT,
+            'D' => NumberFormat::FORMAT_TEXT,
+            'E' => NumberFormat::FORMAT_TEXT,
+            'F' => NumberFormat::FORMAT_TEXT,
+            'G' => NumberFormat::FORMAT_TEXT,
+            'H' => NumberFormat::FORMAT_TEXT,
+            'I' => NumberFormat::FORMAT_TEXT,
+            'J' => NumberFormat::FORMAT_TEXT,
         ];
     }
 

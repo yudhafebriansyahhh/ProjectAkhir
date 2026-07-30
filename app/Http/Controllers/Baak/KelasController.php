@@ -27,7 +27,11 @@ class KelasController extends Controller
 
         $this->applyFilters($query, $request);
 
-        $kelas = $query->withCount('detailKrs')->latest()->paginate(10)->withQueryString();
+        $kelas = $query->withCount(['detailKrs' => function ($q) {
+            $q->whereHas('krs', function ($k) {
+                $k->where('status', 'approved');
+            });
+        }])->latest()->paginate(10)->withQueryString();
 
         return Inertia::render('Baak/Kelas/Index', [
             'kelas' => $kelas,
@@ -47,12 +51,16 @@ class KelasController extends Controller
 
         $this->applyFilters($query, $request);
 
-        $kelas = $query->withCount('detailKrs')->latest()->paginate(10)->withQueryString();
+        $kelas = $query->withCount(['detailKrs' => function ($q) {
+            $q->whereHas('krs', function ($k) {
+                $k->where('status', 'approved');
+            });
+        }])->latest()->paginate(10)->withQueryString();
 
         return Inertia::render('Baak/Kelas/Index', [
             'kelas' => $kelas,
             ...$this->getFilterOptions(),
-            'filters' => $request->only(['search', 'mata_kuliah', 'dosen', 'hari']),
+            'filters' => $request->only(['search', 'mata_kuliah', 'dosen', 'hari', 'periode_id']),
             'periode_terakhir' => $periodeTerakhir,
             'isArchive' => true,
         ]);
@@ -176,16 +184,32 @@ class KelasController extends Controller
             || $kelas->mataKuliahPeriode->tahun_ajaran !== $periodeTerakhir->tahun_ajaran
             || $kelas->mataKuliahPeriode->jenis_semester !== $periodeTerakhir->jenis_semester;
 
-        // Get mahasiswa yang mengambil kelas ini
+        // Get mahasiswa yang mengambil kelas ini (hanya yang KRS-nya approved)
         $mahasiswa = $kelas->detailKrs()
             ->with(['krs.mahasiswa.prodi'])
             ->whereHas('krs', function ($q) {
                 $q->where('status', 'approved');
             })
             ->get()
-            ->map(function ($detail) {
-                return $detail->krs->mahasiswa;
-            });
+            ->map(function ($detail) use ($kelas) {
+                $mhs = $detail->krs->mahasiswa;
+                
+                if ($mhs && $kelas->mataKuliahPeriode) {
+                    $tahunMasuk = (int) $mhs->tahun_masuk;
+                    $tahunAjaranKelas = (int) explode('/', $kelas->mataKuliahPeriode->tahun_ajaran)[0];
+                    $jenisSemester = strtolower($kelas->mataKuliahPeriode->jenis_semester);
+                    
+                    $selisihTahun = max(0, $tahunAjaranKelas - $tahunMasuk);
+                    
+                    // Jika jenis_semester genap, tambah 2, jika ganjil/pendek tambah 1
+                    $tambahanSemester = ($jenisSemester === 'genap') ? 2 : 1;
+                    
+                    $mhs->semester_aktif = ($selisihTahun * 2) + $tambahanSemester;
+                }
+                
+                return $mhs;
+            })
+            ->filter(); // Hapus item null jika ada relasi yang rusak
 
         return Inertia::render('Baak/Kelas/Show', [
             'kelas' => $kelas,
@@ -337,6 +361,16 @@ class KelasController extends Controller
             $query->where('hari', $request->hari);
         }
 
+        if ($request->filled('periode_id')) {
+            $periode = PeriodeRegistrasi::find($request->periode_id);
+            if ($periode) {
+                $query->whereHas('mataKuliahPeriode', function ($q) use ($periode) {
+                    $q->where('tahun_ajaran', $periode->tahun_ajaran)
+                      ->where('jenis_semester', $periode->jenis_semester);
+                });
+            }
+        }
+
         if ($request->filled('search')) {
             $search = $request->search;
             $query->where(function ($q) use ($search) {
@@ -362,6 +396,7 @@ class KelasController extends Controller
         return [
             'mata_kuliah_list' => MataKuliah::orderBy('nama_matkul')->get(['kode_matkul', 'nama_matkul']),
             'dosen_list' => Dosen::orderBy('nama')->get(['id_dosen', 'nama']),
+            'periode_list' => PeriodeRegistrasi::orderByDesc('id_periode')->get(['id_periode', 'tahun_ajaran', 'jenis_semester']),
         ];
     }
 }

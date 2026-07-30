@@ -331,43 +331,11 @@ export default function Dashboard({ stats, charts, alerts, recent_activities, pe
                         </DashboardPanel>
                     </section>
 
-                    <section className="grid grid-cols-1 gap-4 md:gap-5 xl:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)]">
-                        <DashboardPanel
-                            title="Aktivitas Terbaru"
-                            description="Riwayat pembaruan akademik terakhir."
-                            headerClassName="space-y-0"
-                            action={<Activity className="h-5 w-5 shrink-0 text-slate-400" />}
-                        >
-                            {activities.length > 0 ? (
-                                <div className="divide-y divide-slate-100">
-                                    {activities.slice(0, 6).map((activity, index) => (
-                                        <div key={`${activity.type}-${index}`} className="flex items-center gap-3 py-3 first:pt-0 last:pb-0">
-                                            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-slate-100">
-                                                {activity.type === 'krs_approved' ? (
-                                                    <CheckCircle2 className="h-4 w-4 text-emerald-600" />
-                                                ) : (
-                                                    <FileText className="h-4 w-4 text-blue-600" />
-                                                )}
-                                            </div>
-                                            <div className="min-w-0 flex-1">
-                                                <p className="truncate text-sm font-medium text-slate-700">{activity.message}</p>
-                                                <p className="mt-0.5 text-xs text-slate-400">{activity.time}</p>
-                                            </div>
-                                        </div>
-                                    ))}
-                                </div>
-                            ) : (
-                                <div className="flex h-44 flex-col items-center justify-center text-center">
-                                    <Activity className="mb-3 h-8 w-8 text-slate-300" />
-                                    <p className="text-sm font-medium text-slate-500">Belum ada aktivitas</p>
-                                </div>
-                            )}
-                        </DashboardPanel>
-
+                    <section className="grid grid-cols-1 gap-4 md:gap-5">
                         <DashboardPanel
                             title="Akses Cepat"
                             description="Navigasi fitur utama BAAK."
-                            contentClassName="grid grid-cols-2 gap-3"
+                            contentClassName="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5"
                         >
                             {quickActions.map((action) => (
                                 <QuickActionCard key={action.label} action={action} />

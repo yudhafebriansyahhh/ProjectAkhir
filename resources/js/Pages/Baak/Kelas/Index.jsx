@@ -15,18 +15,23 @@ const roomLabel = (item) => item.ruangan?.kode_ruangan || item.ruang_kelas || '-
 const course = (item) => item.mata_kuliah_periode?.mata_kuliah;
 const period = (item) => item.mata_kuliah_periode;
 
-export default function Index({ kelas, mata_kuliah_list = [], dosen_list = [], filters = {}, isArchive = false }) {
+export default function Index({ kelas, mata_kuliah_list = [], dosen_list = [], periode_list = [], filters = {}, isArchive = false }) {
     const { flash = {} } = usePage().props;
     const [search, setSearch] = useState(filters.search || '');
     const [mataKuliah, setMataKuliah] = useState(filters.mata_kuliah || '');
     const [dosen, setDosen] = useState(filters.dosen || '');
     const [hari, setHari] = useState(filters.hari || '');
+    const [periodeId, setPeriodeId] = useState(filters.periode_id || '');
     const isFirstRender = useRef(true);
 
     const kelasData = kelas.data || [];
-    const hasFilters = Boolean(search || mataKuliah || dosen || hari);
+    const hasFilters = Boolean(search || mataKuliah || dosen || hari || periodeId);
     const mataKuliahOptions = mata_kuliah_list.map((mk) => ({ value: mk.kode_matkul, label: mk.nama_matkul }));
     const dosenOptions = dosen_list.map((item) => ({ value: item.id_dosen, label: item.nama }));
+    const periodeOptions = periode_list.map((p) => ({
+        value: p.id_periode,
+        label: `${p.tahun_ajaran} - ${p.jenis_semester.charAt(0).toUpperCase() + p.jenis_semester.slice(1)}`
+    }));
     const listRoute = isArchive ? 'baak.kelas.arsip' : 'baak.kelas.index';
     const title = isArchive ? 'Arsip Kelas' : 'Data Kelas';
     const description = isArchive
@@ -42,19 +47,20 @@ export default function Index({ kelas, mata_kuliah_list = [], dosen_list = [], f
         const timeout = setTimeout(() => {
             router.get(
                 route(listRoute),
-                { search, mata_kuliah: mataKuliah, dosen, hari },
+                { search, mata_kuliah: mataKuliah, dosen, hari, periode_id: periodeId },
                 { preserveState: true, preserveScroll: true, replace: true },
             );
         }, 350);
 
         return () => clearTimeout(timeout);
-    }, [search, mataKuliah, dosen, hari]);
+    }, [search, mataKuliah, dosen, hari, periodeId]);
 
     const handleReset = () => {
         setSearch('');
         setMataKuliah('');
         setDosen('');
         setHari('');
+        setPeriodeId('');
         router.get(route(listRoute), {}, { preserveState: true, preserveScroll: true, replace: true });
     };
 
@@ -212,10 +218,13 @@ export default function Index({ kelas, mata_kuliah_list = [], dosen_list = [], f
                     </div>
 
                     <Card className="rounded-lg border-slate-200 shadow-sm">
-                        <CardContent className="grid gap-3 p-4 lg:grid-cols-[minmax(0,1.3fr)_minmax(180px,1fr)_minmax(180px,1fr)_minmax(150px,0.7fr)_auto]">
+                        <CardContent className={`grid gap-3 p-4 ${isArchive ? 'lg:grid-cols-[minmax(0,1.5fr)_minmax(160px,1fr)_minmax(140px,1fr)_minmax(170px,1fr)_minmax(130px,0.8fr)_auto]' : 'lg:grid-cols-[minmax(0,1.3fr)_minmax(180px,1fr)_minmax(180px,1fr)_minmax(150px,0.7fr)_auto]'}`}>
                             <SearchInput value={search} onChange={setSearch} onClear={() => setSearch('')} placeholder="Cari kelas, mata kuliah, dosen, atau ruang..." />
                             <SelectDropdown value={mataKuliah} onChange={(selected) => setMataKuliah(selected ? selected.value : '')} options={mataKuliahOptions} placeholder="Semua Mata Kuliah" />
                             <SelectDropdown value={dosen} onChange={(selected) => setDosen(selected ? selected.value : '')} options={dosenOptions} placeholder="Semua Dosen" />
+                            {isArchive && (
+                                <SelectDropdown value={periodeId} onChange={(selected) => setPeriodeId(selected ? selected.value : '')} options={periodeOptions} placeholder="Semua Tahun Ajaran" isSearchable={false} />
+                            )}
                             <SelectDropdown value={hari} onChange={(selected) => setHari(selected ? selected.value : '')} options={hariOptions} placeholder="Semua Hari" isSearchable={false} />
                             <Button type="button" variant="outline" className="w-full gap-2 lg:w-auto" onClick={handleReset} disabled={!hasFilters}>
                                 <RefreshCcw className="h-4 w-4" />

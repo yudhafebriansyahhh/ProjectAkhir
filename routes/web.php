@@ -203,6 +203,7 @@ Route::middleware(['auth', 'role:mahasiswa'])
         Route::get('/krs/isi', [MahasiswaKrsController::class, 'create'])->name('krs.create');
         Route::get('/tambah-krs', [MahasiswaKrsController::class, 'create'])->name('krs.create.legacy');
         Route::post('/krs/ajukan', [MahasiswaKrsController::class, 'submit'])->name('krs.submit');
+        Route::post('/krs/reset/{krs}', [MahasiswaKrsController::class, 'reset'])->name('krs.reset');
         Route::post('/krs/kelas/{kelas}', [MahasiswaKrsController::class, 'storeItem'])->name('krs.store-item');
         Route::delete('/krs/detail/{detailKrs}', [MahasiswaKrsController::class, 'destroyItem'])->name('krs.destroy-item');
         Route::get('/absensi', [MahasiswaAbsensiController::class, 'index'])->name('absensi');

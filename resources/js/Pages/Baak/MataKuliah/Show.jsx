@@ -19,6 +19,7 @@ import { Badge } from '@/Components/ui/badge';
 import { Button } from '@/Components/ui/button';
 import { Card, CardContent } from '@/Components/ui/card';
 import { CardGrid, DataTable, EmptyState, PageHeader, SummaryCard } from '@/Components/ui/data-display';
+import { SelectDropdown } from '@/Components/ui/select-dropdown';
 
 const getKategoriBadge = (kategori) => {
     const badges = {
@@ -50,9 +51,22 @@ const formatTimeRange = (kelas) => {
     return `${start} - ${end}`;
 };
 
-export default function Show({ mata_kuliah, kelas = [] }) {
+export default function Show({ mata_kuliah, kelas = [], periode_list = [], selected_periode_id = 'semua' }) {
     const [activeTab, setActiveTab] = useState('info');
     const kelasData = kelas || [];
+
+    const handlePeriodeChange = (selected) => {
+        const value = selected ? selected.value : 'semua';
+        router.get(route('baak.mata-kuliah.show', mata_kuliah.kode_matkul), { periode_id: value }, { preserveState: true, preserveScroll: true });
+    };
+
+    const periodeOptions = [
+        { value: 'semua', label: 'Semua Tahun Ajaran' },
+        ...periode_list.map((p) => ({
+            value: p.id_periode,
+            label: `${p.tahun_ajaran} - ${p.jenis_semester.charAt(0).toUpperCase() + p.jenis_semester.slice(1)}`
+        }))
+    ];
 
     const handleToggleStatus = () => {
         const action = mata_kuliah.is_active ? 'nonaktifkan' : 'aktifkan';
@@ -97,7 +111,6 @@ export default function Show({ mata_kuliah, kelas = [] }) {
         { label: 'Kode Mata Kuliah', value: mata_kuliah.kode_matkul || '-' },
         { label: 'Nama Mata Kuliah', value: mata_kuliah.nama_matkul || '-' },
         { label: 'SKS', value: `${mata_kuliah.sks || '-'} SKS` },
-        { label: 'Semester', value: mata_kuliah.semester ? `Semester ${mata_kuliah.semester}` : '-' },
         {
             label: 'Program Studi',
             value: mata_kuliah.prodi ? mata_kuliah.prodi.nama_prodi : 'Semua Prodi (Mata Kuliah Umum)',
@@ -159,6 +172,19 @@ export default function Show({ mata_kuliah, kelas = [] }) {
             cellClassName: 'text-center',
             render: (item) => `${item.kapasitas || 0} mhs`,
         },
+        {
+            key: 'aksi',
+            header: 'Aksi',
+            headerClassName: 'text-center',
+            cellClassName: 'text-center',
+            render: (item) => (
+                <Link href={route('baak.kelas.show', item.id_kelas)}>
+                    <Button variant="outline" size="sm" className="h-8 border-blue-200 bg-blue-50 text-xs font-semibold text-blue-700 hover:bg-blue-100 hover:text-blue-800">
+                        Detail
+                    </Button>
+                </Link>
+            ),
+        },
     ];
 
     const renderKelasCard = (item, index, key) => (
@@ -190,6 +216,13 @@ export default function Show({ mata_kuliah, kelas = [] }) {
                         <Users className="h-4 w-4 text-slate-400" />
                         <span>{item.kapasitas || 0} mahasiswa</span>
                     </p>
+                </div>
+                <div className="pt-2">
+                    <Link href={route('baak.kelas.show', item.id_kelas)}>
+                        <Button variant="outline" size="sm" className="w-full border-blue-200 bg-blue-50 text-blue-700 hover:bg-blue-100 hover:text-blue-800">
+                            Detail Kelas
+                        </Button>
+                    </Link>
                 </div>
             </CardContent>
         </Card>
@@ -309,6 +342,16 @@ export default function Show({ mata_kuliah, kelas = [] }) {
 
                             {activeTab === 'kelas' ? (
                                 <div className="space-y-4">
+                                    <div className="max-w-sm">
+                                        <SelectDropdown
+                                            value={selected_periode_id}
+                                            onChange={handlePeriodeChange}
+                                            options={periodeOptions}
+                                            placeholder="Pilih Tahun Ajaran"
+                                            isSearchable={false}
+                                            isClearable={false}
+                                        />
+                                    </div>
                                     <DataTable
                                         columns={kelasColumns}
                                         data={kelasData}

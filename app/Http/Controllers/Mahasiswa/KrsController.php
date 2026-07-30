@@ -115,11 +115,10 @@ class KrsController extends Controller
 
         $kelas = Kelas::with(['mataKuliahPeriode.mataKuliah', 'dosen', 'ruangan'])
             ->withCount('detailKrs')
-            ->whereHas('mataKuliahPeriode', function ($query) use ($mahasiswa, $registrasi, $periode) {
+            ->whereHas('mataKuliahPeriode', function ($query) use ($mahasiswa, $periode) {
                 $query->where('tahun_ajaran', $periode->tahun_ajaran)
                     ->where('jenis_semester', $periode->jenis_semester)
-                    ->where('kode_prodi', $mahasiswa->kode_prodi)
-                    ->where('semester_ditawarkan', $registrasi->semester);
+                    ->where('kode_prodi', $mahasiswa->kode_prodi);
             })
             ->orderBy('hari')
             ->orderBy('jam_mulai')
@@ -129,6 +128,7 @@ class KrsController extends Controller
                 'nama_kelas' => $kelas->nama_kelas,
                 'kode_matkul' => $kelas->mataKuliahPeriode?->mataKuliah?->kode_matkul,
                 'nama_matkul' => $kelas->mataKuliahPeriode?->mataKuliah?->nama_matkul,
+                'semester_ditawarkan' => $kelas->mataKuliahPeriode?->semester_ditawarkan,
                 'sks' => $kelas->mataKuliahPeriode?->mataKuliah?->sks,
                 'dosen' => $kelas->dosen?->nama ?? 'Belum Ditentukan',
                 'hari' => $kelas->hari,
@@ -287,6 +287,30 @@ class KrsController extends Controller
             ->with('success', 'KRS berhasil diajukan dan dikunci. Tunggu persetujuan dosen wali.');
     }
 
+    public function reset(Krs $krs)
+    {
+        $user = auth()->user();
+        if (! $user || ! $user->isMahasiswa()) {
+            abort(403, 'Unauthorized access');
+        }
+
+        if ($krs->id_mahasiswa !== $user->mahasiswa->id_mahasiswa) {
+            abort(403, 'Unauthorized access');
+        }
+
+        if ($krs->status !== 'rejected') {
+            return back()->with('error', 'Hanya KRS yang ditolak yang dapat diajukan ulang.');
+        }
+
+        $krs->update([
+            'status' => 'draft'
+        ]);
+
+        return redirect()
+            ->route('mahasiswa.krs.create')
+            ->with('success', 'KRS berhasil di-reset menjadi draft. Silakan ubah pilihan Anda dan ajukan ulang.');
+    }
+
     public function destroyItem(DetailKrs $detailKrs)
     {
         $user = auth()->user();
@@ -312,7 +336,7 @@ class KrsController extends Controller
     // Helper Functions for KRS
     private function getKrsContext($mahasiswa): array
     {
-        $periode = PeriodeRegistrasi::getPeriodeAktif();
+        $periode = PeriodeRegistrasi::getPeriodeTerakhir();
 
         if (! $periode) {
             return [
@@ -321,7 +345,7 @@ class KrsController extends Controller
                 'jadwal' => null,
                 'currentKrs' => null,
                 'canFillKrs' => false,
-                'message' => 'Belum ada periode registrasi aktif.',
+                'message' => 'Belum ada data periode.',
             ];
         }
 
@@ -406,8 +430,7 @@ class KrsController extends Controller
         return $mkPeriode
             && $mkPeriode->tahun_ajaran === $periode->tahun_ajaran
             && $mkPeriode->jenis_semester === $periode->jenis_semester
-            && $mkPeriode->kode_prodi === $mahasiswa->kode_prodi
-            && (int) $mkPeriode->semester_ditawarkan === (int) $registrasi->semester;
+            && $mkPeriode->kode_prodi === $mahasiswa->kode_prodi;
     }
 
     private function getKrsSksLimit($mahasiswa, ?RegistrasiSemester $registrasi): array

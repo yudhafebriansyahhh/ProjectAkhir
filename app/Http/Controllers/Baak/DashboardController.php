@@ -168,55 +168,7 @@ class DashboardController extends Controller
 
         $mahasiswaDOCount = Mahasiswa::where('status', 'DO')->count();
 
-        // ==========================================
-        // RECENT ACTIVITIES
-        // ==========================================
 
-        $recentKRS = Krs::with(['mahasiswa:id_mahasiswa,nim,nama'])
-            ->where('status', 'approved')
-            ->orderBy('updated_at', 'desc')
-            ->limit(5)
-            ->get()
-            ->map(function ($krs) {
-                $namaMahasiswa = $krs->mahasiswa?->nama ?? 'Mahasiswa';
-                $nimMahasiswa = $krs->mahasiswa?->nim ?? '-';
-
-                return [
-                    'type' => 'krs_approved',
-                    'icon' => 'fa-check-circle',
-                    'color' => 'green',
-                    'message' => "KRS {$namaMahasiswa} ({$nimMahasiswa}) disetujui",
-                    'time' => $krs->updated_at->diffForHumans(),
-                    'timestamp' => $krs->updated_at->timestamp,
-                ];
-            });
-
-        $recentNilai = NilaiMahasiswa::with([
-            'mahasiswa:id_mahasiswa,nim,nama',
-            'kelas.mataKuliahPeriode.mataKuliah:kode_matkul,nama_matkul',
-        ])
-            ->whereNotNull('nilai_akhir')
-            ->orderBy('updated_at', 'desc')
-            ->limit(5)
-            ->get()
-            ->map(function ($nilai) {
-                $mataKuliah = $nilai->kelas?->mataKuliahPeriode?->mataKuliah?->nama_matkul ?? 'Mata Kuliah';
-                $namaMahasiswa = $nilai->mahasiswa?->nama ?? 'Mahasiswa';
-
-                return [
-                    'type' => 'nilai_input',
-                    'icon' => 'fa-file-alt',
-                    'color' => 'blue',
-                    'message' => "Nilai {$mataKuliah} untuk {$namaMahasiswa} diinput",
-                    'time' => $nilai->updated_at->diffForHumans(),
-                    'timestamp' => $nilai->updated_at->timestamp,
-                ];
-            });
-
-        $recentActivities = $recentKRS->concat($recentNilai)
-            ->sortByDesc('timestamp')
-            ->take(10)
-            ->values();
 
         // ==========================================
         // PERIODE INFO
@@ -262,7 +214,7 @@ class DashboardController extends Controller
                 'nilai_kosong' => $nilaiBelumDiinput,
                 'mahasiswa_do' => $mahasiswaDOCount,
             ],
-            'recent_activities' => $recentActivities,
+
             'periode_aktif' => $periodeInfo,
         ]);
     }

@@ -121,10 +121,38 @@ class PeriodeRegistrasiController extends Controller
 
             $message = 'Periode registrasi berhasil diaktifkan';
         } else {
-            // Tutup periode ini
-            $periodeRegistrasi->update(['status' => 'tutup']);
+            // Tutup periode ini dan proses mahasiswa yang tidak registrasi
+            \Illuminate\Support\Facades\Artisan::call('registrasi:process-expired');
+            
+            // Note: ProcessExpiredRegistrasi checks if it's past tanggal_selesai. 
+            // If we manually close it before it expires, it might not process them unless we modify the command or process it here.
+            // Let's explicitly process the current period here if manually closed.
+            
+            \Illuminate\Support\Facades\DB::transaction(function () use ($periodeRegistrasi) {
+                $mahasiswas = \App\Models\Mahasiswa::where('status', 'aktif')->get();
+                foreach ($mahasiswas as $mhs) {
+                    $sudahRegistrasi = \App\Models\RegistrasiSemester::where('id_mahasiswa', $mhs->id_mahasiswa)
+                        ->where('tahun_ajaran', $periodeRegistrasi->tahun_ajaran)
+                        ->where('jenis_semester', $periodeRegistrasi->jenis_semester)
+                        ->exists();
 
-            $message = 'Periode registrasi berhasil ditutup';
+                    if (!$sudahRegistrasi) {
+                        \App\Models\RegistrasiSemester::create([
+                            'id_mahasiswa' => $mhs->id_mahasiswa,
+                            'tahun_ajaran' => $periodeRegistrasi->tahun_ajaran,
+                            'semester' => $mhs->semester_ke + 1,
+                            'jenis_semester' => $periodeRegistrasi->jenis_semester,
+                            'status_semester' => 'nonaktif',
+                            'tanggal_registrasi' => now(),
+                            'keterangan' => 'Tidak melakukan registrasi'
+                        ]);
+                        $mhs->update(['status' => 'nonaktif']);
+                    }
+                }
+                $periodeRegistrasi->update(['status' => 'tutup']);
+            });
+
+            $message = 'Periode registrasi berhasil ditutup dan mahasiswa yang tidak registrasi telah di-nonaktifkan';
         }
 
         return back()->with('success', $message);

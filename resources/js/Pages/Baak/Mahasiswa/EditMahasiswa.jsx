@@ -10,6 +10,7 @@ import { SelectDropdown } from '@/Components/ui/select-dropdown';
 
 const statusOptions = [
     { value: 'aktif', label: 'Aktif' },
+    { value: 'nonaktif', label: 'Nonaktif' },
     { value: 'lulus', label: 'Lulus' },
     { value: 'keluar', label: 'Keluar' },
     { value: 'DO', label: 'DO (Drop Out)' },

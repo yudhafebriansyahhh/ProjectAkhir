@@ -68,6 +68,10 @@ const customSelectStyles = {
         boxShadow:
             '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
     }),
+    menuPortal: (base) => ({
+        ...base,
+        zIndex: 9999,
+    }),
     menuList: (base) => ({
         ...base,
         padding: '4px',
@@ -137,6 +141,8 @@ export function SelectDropdown({
             isDisabled={isDisabled}
             noOptionsMessage={noOptionsMessage}
             autoComplete="off"
+            menuPortalTarget={typeof document !== 'undefined' ? document.body : null}
+            menuPosition="fixed"
             {...props}
         />
     );

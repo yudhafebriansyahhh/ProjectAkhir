@@ -103,19 +103,46 @@ class DosenController extends Controller
             ->with('success', "Dosen berhasil ditambahkan. Username: {$data['nip']}, Password: {$data['nip']}");
     }
 
-    public function show(Dosen $dosen)
+    public function show(Request $request, Dosen $dosen)
     {
+        $periodeAktif = \App\Models\PeriodeRegistrasi::getPeriodeAktif();
+        $semuaPeriode = \App\Models\PeriodeRegistrasi::orderByDesc('id_periode')->get();
+
+        $selectedPeriodeId = $request->input('periode_id', $periodeAktif ? $periodeAktif->id_periode : 'semua');
+
+        $selectedPeriode = null;
+        if ($selectedPeriodeId !== 'semua') {
+            $selectedPeriode = $semuaPeriode->firstWhere('id_periode', $selectedPeriodeId);
+        }
+
         $dosen->load([
             'prodi',
             'user',
-            'kelas.mataKuliahPeriode.mataKuliah', // ✅ FIX: Load via mataKuliahPeriode
+            'kelas' => function ($q) use ($selectedPeriode) {
+                if ($selectedPeriode) {
+                    $q->whereHas('mataKuliahPeriode', function ($query) use ($selectedPeriode) {
+                        $query->where('tahun_ajaran', $selectedPeriode->tahun_ajaran)
+                              ->where('jenis_semester', $selectedPeriode->jenis_semester);
+                    });
+                }
+            },
+            'kelas.mataKuliahPeriode.mataKuliah',
             'mahasiswaBimbingan',
         ]);
 
-        $dosen->loadCount(['kelas', 'mahasiswaBimbingan']);
+        $dosen->loadCount(['kelas' => function ($q) use ($selectedPeriode) {
+            if ($selectedPeriode) {
+                $q->whereHas('mataKuliahPeriode', function ($query) use ($selectedPeriode) {
+                    $query->where('tahun_ajaran', $selectedPeriode->tahun_ajaran)
+                          ->where('jenis_semester', $selectedPeriode->jenis_semester);
+                });
+            }
+        }, 'mahasiswaBimbingan']);
 
         return Inertia::render('Baak/Dosen/Show', [
             'dosen' => $dosen,
+            'periode_list' => $semuaPeriode,
+            'selected_periode_id' => $selectedPeriodeId,
         ]);
     }
 

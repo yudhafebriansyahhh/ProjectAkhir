@@ -108,20 +108,36 @@ class MataKuliahController extends Controller
         return redirect()->route('baak.mata-kuliah.index')->with('success', 'Mata kuliah berhasil ditambahkan');
     }
 
-    public function show($kode_matkul)
+    public function show(Request $request, $kode_matkul)
     {
         $mataKuliah = MataKuliah::with('prodi')->findOrFail($kode_matkul);
 
+        $periodeAktif = \App\Models\PeriodeRegistrasi::getPeriodeAktif();
+        $semuaPeriode = \App\Models\PeriodeRegistrasi::orderByDesc('id_periode')->get();
+
+        $selectedPeriodeId = $request->input('periode_id', $periodeAktif ? $periodeAktif->id_periode : 'semua');
+
+        $selectedPeriode = null;
+        if ($selectedPeriodeId !== 'semua') {
+            $selectedPeriode = $semuaPeriode->firstWhere('id_periode', $selectedPeriodeId);
+        }
+
         // Load kelas via mata_kuliah_periode
         $kelas = Kelas::with(['mataKuliahPeriode', 'dosen'])
-            ->whereHas('mataKuliahPeriode', function ($q) use ($kode_matkul) {
+            ->whereHas('mataKuliahPeriode', function ($q) use ($kode_matkul, $selectedPeriode) {
                 $q->where('kode_matkul', $kode_matkul);
+                if ($selectedPeriode) {
+                    $q->where('tahun_ajaran', $selectedPeriode->tahun_ajaran)
+                      ->where('jenis_semester', $selectedPeriode->jenis_semester);
+                }
             })
             ->get();
 
         return Inertia::render('Baak/MataKuliah/Show', [
             'mata_kuliah' => $mataKuliah,
-            'kelas' => $kelas, // Kirim terpisah
+            'kelas' => $kelas,
+            'periode_list' => $semuaPeriode,
+            'selected_periode_id' => $selectedPeriodeId,
         ]);
     }
 

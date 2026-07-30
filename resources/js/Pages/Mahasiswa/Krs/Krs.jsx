@@ -56,6 +56,23 @@ export default function Krs({ semesterAktif = '-', krsStatus = null, mataKuliah 
         });
     };
 
+    const handleAjukanUlang = () => {
+        Swal.fire({
+            title: 'Ajukan Ulang KRS?',
+            text: 'Ini akan mengubah status KRS Anda menjadi Draft agar Anda dapat memperbaiki dan menambahkan kelas kembali.',
+            icon: 'question',
+            showCancelButton: true,
+            confirmButtonText: 'Ya, ubah ke Draft',
+            cancelButtonText: 'Batal',
+        }).then((result) => {
+            if (result.isConfirmed) {
+                router.post(route('mahasiswa.krs.reset', krsStatus.id_krs), {}, {
+                    preserveScroll: true,
+                });
+            }
+        });
+    };
+
     return (
         <MahasiswaLayout title="Kartu Rencana Studi (KRS)">
             <Head title="Kartu Rencana Studi (KRS)" />
@@ -94,6 +111,14 @@ export default function Krs({ semesterAktif = '-', krsStatus = null, mataKuliah 
                                 className="inline-flex items-center px-4 py-2 text-sm font-medium text-white bg-emerald-600 hover:bg-emerald-700 rounded-lg shadow-sm border border-emerald-600 transition-colors duration-200">
                                 <i className="fa-solid fa-lock mr-2"></i>
                                 Ajukan/Kunci KRS
+                            </button>
+                        )}
+                        {krsStatus?.status === 'rejected' && (
+                            <button type="button"
+                                onClick={handleAjukanUlang}
+                                className="inline-flex items-center px-4 py-2 text-sm font-medium text-white bg-amber-600 hover:bg-amber-700 rounded-lg shadow-sm border border-amber-600 transition-colors duration-200">
+                                <i className="fa-solid fa-rotate-left mr-2"></i>
+                                Ajukan Ulang KRS
                             </button>
                         )}
                     </div>
